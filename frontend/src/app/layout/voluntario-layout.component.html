@@ -1,0 +1,18 @@
+<nb-layout>
+  <nb-layout-header fixed>
+    <div class="header">
+      <div>
+        <strong>Portal do Voluntário</strong>
+      </div>
+      <button nbButton status="danger" size="tiny" (click)="sair()">Sair</button>
+    </div>
+  </nb-layout-header>
+
+  <nb-sidebar state="collapsed" responsive>
+    <nb-menu [items]="menu"></nb-menu>
+  </nb-sidebar>
+
+  <nb-layout-column>
+    <router-outlet></router-outlet>
+  </nb-layout-column>
+</nb-layout>

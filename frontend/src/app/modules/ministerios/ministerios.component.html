@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div>
+    <h2>Ministérios</h2>
+    <p>Gerencie ministérios, lideranças e voluntários vinculados.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovo()">Novo ministério</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Lista de ministérios</nb-card-header>
+  <nb-card-body>
+    <div class="toolbar">
+      <input nbInput fullWidth [(ngModel)]="termoBusca" placeholder="Buscar por nome ou descrição" />
+      <button nbButton status="info" type="button" (click)="filtrar()">Buscar</button>
+    </div>
+
+    <nb-list>
+      <nb-list-item *ngFor="let ministerio of ministerios">
+        <div class="item">
+          <div>
+            <strong>{{ ministerio.nome }}</strong>
+            <small>{{ ministerio.descricao || 'Sem descrição' }}</small>
+            <small>Líderes: {{ ministerio.lideres.length }} | Voluntários: {{ ministerio.voluntarios.length }}</small>
+          </div>
+          <div class="item-actions">
+            <button nbButton size="tiny" status="basic" type="button" (click)="editar(ministerio)">Editar</button>
+            <button nbButton size="tiny" status="danger" type="button" (click)="excluir(ministerio)">Excluir</button>
+          </div>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicao()"></div>
+<div class="modal-wrapper" *ngIf="modalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>{{ ministerioEditandoId ? 'Editar ministério' : 'Novo ministério' }}</nb-card-header>
+    <nb-card-body>
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <input nbInput fullWidth formControlName="nome" placeholder="Nome do ministério" />
+        <input nbInput fullWidth formControlName="descricao" placeholder="Descrição" />
+        <nb-checkbox formControlName="ativo">Ministério ativo</nb-checkbox>
+        <nb-select fullWidth multiple formControlName="lideresIds" placeholder="Líderes">
+          <nb-option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ usuario.nome }}</nb-option>
+        </nb-select>
+        <nb-select fullWidth formControlName="liderPrincipalId" placeholder="Líder principal">
+          <nb-option [value]="null">Sem líder principal</nb-option>
+          <nb-option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ usuario.nome }}</nb-option>
+        </nb-select>
+        <nb-select fullWidth multiple formControlName="voluntarioIds" placeholder="Voluntários vinculados">
+          <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
+        </nb-select>
+        <div class="actions">
+          <button nbButton status="primary" [disabled]="carregando">{{ ministerioEditandoId ? 'Atualizar' : 'Salvar' }}</button>
+          <button nbButton status="basic" type="button" (click)="cancelarEdicao()">Fechar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

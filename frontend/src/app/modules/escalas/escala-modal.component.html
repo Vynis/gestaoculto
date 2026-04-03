@@ -1,0 +1,51 @@
+<div class="modal-backdrop" *ngIf="aberto" (click)="fecharModal()"></div>
+<div class="modal-wrapper" *ngIf="aberto">
+  <nb-card class="modal-card" (click)="$event.stopPropagation()">
+    <nb-card-header>{{ escalaEditando ? 'Editar escala' : 'Nova escala' }}</nb-card-header>
+    <nb-card-body>
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <nb-select formControlName="cultoId" placeholder="Culto">
+          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} </nb-option>
+        </nb-select>
+
+        <nb-select formControlName="voluntarioId" placeholder="Voluntário">
+          <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
+        </nb-select>
+
+        <div class="voluntario-acao">
+          <button *ngIf="!cadastroVoluntarioAberto" nbButton status="info" size="small" type="button" (click)="abrirCadastroVoluntarioRapido()">
+            Cadastrar voluntário
+          </button>
+        </div>
+
+        <div class="cadastro-voluntario" *ngIf="cadastroVoluntarioAberto" [formGroup]="novoVoluntarioForm">
+          <h5>Novo voluntário</h5>
+          <div class="form-grid interno">
+            <input nbInput formControlName="nome" placeholder="Nome completo" />
+            <input nbInput formControlName="telefone" placeholder="Telefone (opcional)" />
+            <input nbInput formControlName="email" placeholder="E-mail (opcional)" />
+            <nb-select multiple formControlName="ministerioIds" placeholder="Ministérios (opcional)">
+              <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+            </nb-select>
+            <div class="modal-actions">
+              <button nbButton status="success" type="button" (click)="salvarNovoVoluntario()">Salvar voluntário</button>
+              <button nbButton status="basic" type="button" (click)="cancelarCadastroVoluntarioRapido()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <nb-select formControlName="ministerioId" placeholder="Equipe (opcional)">
+          <nb-option [value]="null">Sem equipe</nb-option>
+          <nb-option *ngFor="let ministerio of ministeriosDisponiveis" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+        </nb-select>
+
+        <input nbInput formControlName="funcao" placeholder="Função" />
+
+        <div class="modal-actions">
+          <button nbButton status="primary" [disabled]="salvando">{{ escalaEditando ? 'Atualizar' : 'Adicionar' }}</button>
+          <button nbButton status="basic" type="button" (click)="fecharModal()">Fechar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

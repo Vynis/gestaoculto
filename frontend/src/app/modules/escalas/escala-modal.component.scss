@@ -1,0 +1,65 @@
+.form-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.voluntario-acao,
+.cadastro-voluntario {
+  grid-column: 1 / -1;
+}
+
+.cadastro-voluntario {
+  border: 1px dashed #cfd7e6;
+  border-radius: 0.6rem;
+  padding: 0.75rem;
+}
+
+.cadastro-voluntario h5 {
+  margin: 0 0 0.6rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 990;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+@media (max-width: 640px) {
+  .modal-actions button {
+    flex: 1 1 140px;
+  }
+
+  .modal-wrapper {
+    align-items: flex-start;
+    padding: 0.5rem;
+  }
+
+  .modal-card {
+    width: 100%;
+    max-height: calc(100vh - 1rem);
+  }
+}

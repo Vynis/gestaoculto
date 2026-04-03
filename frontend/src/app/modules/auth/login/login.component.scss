@@ -1,0 +1,43 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(58, 122, 254, 0.12), transparent 35%),
+    radial-gradient(circle at 85% 88%, rgba(31, 157, 99, 0.12), transparent 35%),
+    linear-gradient(180deg, #f2f8ff, #edf6f1);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.helper-text {
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+  color: #5f6f86;
+  text-align: center;
+}
+
+h2 {
+  margin: 0;
+}
+
+p {
+  margin: 0.25rem 0 0;
+  opacity: 0.75;
+}

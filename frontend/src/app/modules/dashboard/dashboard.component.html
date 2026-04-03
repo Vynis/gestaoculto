@@ -1,0 +1,41 @@
+<div class="page-header">
+  <h2>Dashboard</h2>
+  <p>Visão rápida do próximo culto e das pendências.</p>
+</div>
+
+<div class="cards" *ngIf="resumo as r">
+  <nb-card class="card card-next">
+    <nb-card-header>Próximo culto</nb-card-header>
+    <nb-card-body>{{ r.proximoCultoNome || 'Nenhum culto agendado' }}</nb-card-body>
+  </nb-card>
+
+  <nb-card class="card card-primary">
+    <nb-card-header>Voluntários escalados</nb-card-header>
+    <nb-card-body>{{ r.voluntariosEscalados }}</nb-card-body>
+  </nb-card>
+
+  <nb-card class="card card-warning">
+    <nb-card-header>Tarefas pendentes</nb-card-header>
+    <nb-card-body>{{ r.tarefasPendentes }}</nb-card-body>
+  </nb-card>
+
+  <nb-card class="card card-info">
+    <nb-card-header>Convidados</nb-card-header>
+    <nb-card-body>{{ r.convidadosRegistrados }}</nb-card-body>
+  </nb-card>
+
+  <nb-card class="card card-success">
+    <nb-card-header>Novos convertidos</nb-card-header>
+    <nb-card-body>{{ r.novosConvertidos }}</nb-card-body>
+  </nb-card>
+
+  <nb-card class="card card-danger">
+    <nb-card-header>Alertas operacionais</nb-card-header>
+    <nb-card-body>
+      <div class="alerta-wrapper">
+        {{ r.alertasOperacionais }}
+        <nb-badge [text]="r.alertasOperacionais.toString()" status="danger" position="top end"></nb-badge>
+      </div>
+    </nb-card-body>
+  </nb-card>
+</div>

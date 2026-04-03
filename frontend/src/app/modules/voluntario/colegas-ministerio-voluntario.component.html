@@ -1,0 +1,14 @@
+<nb-card>
+  <nb-card-header>Equipe dos meus ministérios</nb-card-header>
+  <nb-card-body>
+    <nb-list>
+      <nb-list-item *ngFor="let item of itens">
+        <div>
+          <strong>{{ item.voluntarioNome }}</strong>
+          <small>{{ item.ministerioNome }}</small>
+          <small>{{ item.voluntarioTelefone || '-' }} | {{ item.voluntarioEmail || '-' }}</small>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>

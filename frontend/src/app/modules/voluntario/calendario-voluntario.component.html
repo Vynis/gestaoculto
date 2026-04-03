@@ -1,0 +1,90 @@
+<div class="toolbar">
+  <button nbButton size="tiny" status="basic" (click)="mesAnterior()">Mês anterior</button>
+  <strong>{{ mes }}/{{ ano }}</strong>
+  <button nbButton size="tiny" status="basic" (click)="mesProximo()">Próximo mês</button>
+</div>
+
+<div class="grid">
+  <button
+    type="button"
+    class="dia"
+    *ngFor="let dia of dias"
+    [class.fora-mes]="dia.foraMes"
+    [class.tem-evento]="dia.total > 0"
+    [class.selecionado]="dia.chave === diaSelecionado"
+    (click)="selecionarDia(dia.chave)"
+  >
+    <span>{{ dia.data.getDate() }}</span>
+    <small class="dia-total" *ngIf="dia.total">{{ dia.total }} escala(s)</small>
+    <small class="dia-ministerio" *ngFor="let ministerio of resumoMinisteriosDoDia(dia.chave)">{{ ministerio }}</small>
+    <small class="dia-ministerio extra" *ngIf="possuiMaisMinisteriosNoDia(dia.chave)">
+      +{{ totalMinisteriosDia(dia.chave) - 2 }} ministério(s)
+    </small>
+  </button>
+</div>
+
+<nb-card>
+  <nb-card-header>Compromissos do dia</nb-card-header>
+  <nb-card-body>
+    <nb-list>
+      <nb-list-item *ngFor="let item of eventosDiaSelecionado">
+        <div>
+          <strong>{{ item.cultoNome }}</strong><br />
+          <small>{{ formatarHorario(item.horarioInicio) }} - {{ item.ministerioNome || 'Ministério não informado' }}</small>
+          <small>{{ item.funcao }}</small>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>
+
+<nb-card>
+  <nb-card-header>Cultos planejados do mês</nb-card-header>
+  <nb-card-body>
+    <nb-list>
+      <nb-list-item *ngFor="let culto of cultosPlanejados">
+        <div class="culto-item">
+          <div>
+            <strong>{{ culto.nome }}</strong><br />
+            <small>{{ culto.dataCulto | date:'dd/MM/yyyy' }} {{ formatarHorario(culto.horarioInicio) }}</small>
+            <small [class]="statusClass(culto.statusDisponibilidadeCodigo)">{{ culto.statusDisponibilidadeNome }}</small>
+            <small *ngIf="culto.ministerios.length">Ministérios: {{ nomesMinisterios(culto) }}</small>
+          </div>
+          <button nbButton size="tiny" status="info" type="button" [disabled]="!culto.podeResponder" (click)="abrirDisponibilidade(culto.id)">
+            Informar disponibilidade
+          </button>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalDisponibilidadeAberto" (click)="fecharModalDisponibilidade()"></div>
+<div class="modal-wrapper" *ngIf="modalDisponibilidadeAberto && detalheDisponibilidade as d">
+  <nb-card class="modal-card">
+    <nb-card-header>Disponibilidade para {{ d.culto.nome }}</nb-card-header>
+    <nb-card-body>
+      <form [formGroup]="disponibilidadeForm" class="form">
+        <nb-checkbox formControlName="disponivel">Estou disponível para servir</nb-checkbox>
+
+        <div class="ministerios" *ngIf="disponibilidadeForm.controls.disponivel.value">
+          <p>Escolha em quais ministérios você pode servir:</p>
+          <nb-checkbox
+            *ngFor="let ministerio of d.ministeriosPermitidos"
+            [checked]="(disponibilidadeForm.controls.ministerioIds.value || []).includes(ministerio.ministerioId)"
+            (checkedChange)="alternarMinisterio(ministerio.ministerioId, $event)"
+          >
+            {{ ministerio.ministerioNome }}
+          </nb-checkbox>
+        </div>
+
+        <textarea nbInput fullWidth rows="3" formControlName="observacao" placeholder="Observação (opcional)"></textarea>
+
+        <div class="actions">
+          <button nbButton status="primary" type="button" (click)="salvarDisponibilidade()">Salvar</button>
+          <button nbButton status="basic" type="button" (click)="fecharModalDisponibilidade()">Fechar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

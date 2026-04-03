@@ -1,0 +1,63 @@
+<div class="page-header">
+  <div>
+    <h2>Escalas</h2>
+    <p>Confirme presença e acompanhe cada função com clareza.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovaEscala()">Nova escala</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Escalas do culto</nb-card-header>
+  <nb-card-body>
+    <div class="toolbar">
+      <nb-select [formControl]="filtro.controls.cultoId" placeholder="Selecione o culto">
+        <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} </nb-option>
+      </nb-select>
+      <nb-select [formControl]="filtro.controls.ministerioId" placeholder="Filtrar por ministério">
+        <nb-option [value]="null">Todos ministérios</nb-option>
+        <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+      </nb-select>
+      <button nbButton status="info" (click)="carregar()" [disabled]="carregando">{{ carregando ? 'Carregando...' : 'Carregar' }}</button>
+      <button nbButton status="danger" (click)="excluirTodasDoCultoSelecionado()">Excluir todas do culto</button>
+    </div>
+
+    <nb-list>
+      <nb-list-item *ngFor="let escala of escalasFiltradas">
+        <div class="item">
+          <div>
+            <strong>{{ escala.funcao }}</strong>
+            <p>{{ escala.voluntarioNome || ('Voluntário #' + escala.voluntarioId) }} - {{ escala.presencaStatusNome || ('Status ' + escala.presencaStatusId) }}</p>
+            <small>Ministério: {{ escala.ministerioNome || 'Não informado' }}</small>
+            <div class="status-row">
+              <nb-badge [text]="statusTexto(escala.presencaStatusId)" [status]="statusVisual(escala.presencaStatusId)"></nb-badge>
+            </div>
+          </div>
+          <div class="item-actions">
+            <button nbButton size="small" status="basic" type="button" (click)="editarEscala(escala)">Editar</button>
+            <button nbButton size="small" status="success" type="button" *ngIf="escala.presencaStatusId !== 2" (click)="confirmarPresenca(escala.id)">
+              Confirmar
+            </button>
+            <button nbButton size="small" status="warning" type="button" *ngIf="escala.presencaStatusId === 2" (click)="cancelarConfirmacao(escala.id)">
+              Cancelar confirmação
+            </button>
+            <button nbButton size="small" status="danger" type="button" (click)="excluirEscala(escala)">Excluir</button>
+          </div>
+        </div>
+      </nb-list-item>
+    </nb-list>
+
+    <p class="feedback" *ngIf="carregando">Carregando escalas...</p>
+    <p class="feedback" *ngIf="semRegistros">Nenhum registro encontrado para o culto/filtro selecionado.</p>
+  </nb-card-body>
+</nb-card>
+
+<app-escala-modal
+  [aberto]="modalAberto"
+  [cultos]="cultos"
+  [voluntarios]="voluntarios"
+  [ministerios]="ministerios"
+  [escalaEditando]="escalaEditando"
+  [prefill]="prefillModal"
+  (fechar)="fecharModalEscala()"
+  (salvou)="aoSalvarModalEscala()"
+></app-escala-modal>

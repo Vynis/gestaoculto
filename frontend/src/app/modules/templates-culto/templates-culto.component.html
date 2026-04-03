@@ -1,0 +1,124 @@
+<div class="page-header">
+  <div>
+    <h2>Templates de culto</h2>
+    <p class="hint">Use templates para montar cultos com poucos cliques.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovo()">Novo template</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Templates cadastrados</nb-card-header>
+  <nb-card-body>
+    <nb-list>
+      <nb-list-item *ngFor="let item of templates">
+        <div class="item">
+          <div>
+            <strong>{{ item.nome }}</strong>
+            <small>{{ item.tipoCulto }} - {{ item.etapas.length }} etapa(s) - {{ item.ativo ? 'Ativo' : 'Inativo' }}</small>
+          </div>
+          <div class="item-actions">
+            <button nbButton size="tiny" status="info" type="button" (click)="duplicar(item)">Duplicar</button>
+            <button nbButton size="tiny" status="basic" type="button" (click)="editar(item)">Editar</button>
+            <button nbButton size="tiny" status="danger" type="button" (click)="excluir(item)">Excluir</button>
+          </div>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicao()"></div>
+<div class="modal-wrapper" *ngIf="modalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>{{ templateEditandoId ? 'Editar template' : 'Novo template' }}</nb-card-header>
+    <nb-card-body>
+      <form id="template-form" class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <input nbInput fullWidth formControlName="nome" placeholder="Nome do template" />
+        <input nbInput fullWidth formControlName="tipoCulto" placeholder="Tipo de culto" />
+        <input nbInput fullWidth formControlName="descricao" placeholder="Descrição" />
+        <nb-checkbox formControlName="ativo">Template ativo</nb-checkbox>
+      </form>
+
+      <div class="etapas-box">
+        <h4>{{ etapaEditandoIndex !== null ? 'Editar etapa do template' : 'Adicionar etapa ao template' }}</h4>
+        <form class="form-grid" [formGroup]="etapaForm" (ngSubmit)="salvarEtapa()">
+          <input nbInput type="number" formControlName="sequencia" placeholder="Sequência" />
+          <input nbInput type="time" formControlName="horarioInicialPadrao" placeholder="Horário inicial (opcional)" />
+          <input nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração (min)" />
+          <input nbInput formControlName="atividade" placeholder="Atividade" />
+          <input nbInput formControlName="descricao" placeholder="Descrição" />
+          <div class="actions">
+            <button nbButton status="info" type="submit">{{ etapaEditandoIndex !== null ? 'Atualizar etapa' : 'Adicionar etapa' }}</button>
+            <button *ngIf="etapaEditandoIndex !== null" nbButton status="basic" type="button" (click)="cancelarEdicaoEtapa()">
+              Cancelar edição
+            </button>
+            <button *ngIf="etapaEditandoIndex !== null" nbButton status="success" type="button" (click)="abrirAcoesDaEtapa(etapaEditandoIndex)">
+              Ações por ministério
+            </button>
+          </div>
+        </form>
+
+        <ag-grid-angular
+          class="ag-theme-alpine etapas-grid"
+          [rowData]="etapasGridRowData"
+          [columnDefs]="etapasGridColumnDefs"
+          [defaultColDef]="etapasGridDefaultColDef"
+          [pagination]="true"
+          [paginationPageSize]="6"
+          [localeText]="etapasGridLocaleText"
+          (cellClicked)="onEtapasGridCellClicked($event)"
+        ></ag-grid-angular>
+      </div>
+    </nb-card-body>
+    <nb-card-footer>
+      <div class="actions">
+        <button nbButton status="primary" type="submit" form="template-form" [disabled]="salvandoTemplate">
+          {{ templateEditandoId ? 'Atualizar template' : 'Salvar template' }}
+        </button>
+        <button nbButton status="basic" type="button" (click)="cancelarEdicao()">Fechar</button>
+      </div>
+    </nb-card-footer>
+  </nb-card>
+</div>
+
+<div class="modal-backdrop" *ngIf="acaoModalAberto" (click)="fecharAcoesDaEtapa()"></div>
+<div class="modal-wrapper" *ngIf="acaoModalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>Acoes por ministerio da etapa</nb-card-header>
+    <nb-card-body>
+      <div class="form-grid" [formGroup]="acaoEtapaForm">
+        <nb-select formControlName="ministerioId" placeholder="Ministerio">
+          <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+        </nb-select>
+        <input nbInput formControlName="descricaoAcao" placeholder="Descricao da acao" />
+        <input nbInput type="number" formControlName="ordem" placeholder="Ordem (opcional)" />
+        <input nbInput formControlName="observacao" placeholder="Observacao (opcional)" />
+        <nb-checkbox formControlName="ativo">Acao ativa</nb-checkbox>
+        <div class="actions">
+          <button nbButton status="info" type="button" (click)="salvarAcaoEtapa()">
+            {{ acaoEtapaEditandoIndex !== null ? 'Atualizar acao' : 'Adicionar acao' }}
+          </button>
+          <button *ngIf="acaoEtapaEditandoIndex !== null" nbButton status="basic" type="button" (click)="cancelarEdicaoAcaoEtapa()">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <ag-grid-angular
+        class="ag-theme-alpine acoes-grid"
+        [rowData]="acoesEtapaGridRowData"
+        [columnDefs]="acoesGridColumnDefs"
+        [defaultColDef]="acoesGridDefaultColDef"
+        [pagination]="true"
+        [paginationPageSize]="5"
+        [localeText]="acoesGridLocaleText"
+        (cellClicked)="onAcoesGridCellClicked($event)"
+      ></ag-grid-angular>
+    </nb-card-body>
+    <nb-card-footer>
+      <div class="actions">
+        <button nbButton status="basic" type="button" (click)="fecharAcoesDaEtapa()">Fechar</button>
+      </div>
+    </nb-card-footer>
+  </nb-card>
+</div>

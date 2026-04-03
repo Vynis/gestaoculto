@@ -1,0 +1,135 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.dia {
+  border: 1px solid #d9e3f2;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.45rem;
+  text-align: left;
+  min-height: 96px;
+}
+
+.dia-total {
+  display: block;
+  margin-top: 0.15rem;
+  color: #1f4f94;
+  font-weight: 600;
+}
+
+.dia-ministerio {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  background: #eef3ff;
+  color: #26457a;
+  border-radius: 0.3rem;
+  padding: 0.08rem 0.3rem;
+}
+
+.dia-ministerio.extra {
+  background: #f4f7fb;
+  color: #4d5b73;
+}
+
+.dia.fora-mes {
+  opacity: 0.5;
+}
+
+.dia.tem-evento {
+  border-color: #94c7a0;
+  background: #f2fcf4;
+}
+
+.dia.selecionado {
+  border-color: #4f7ac8;
+  box-shadow: 0 0 0 1px #4f7ac8 inset;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.culto-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.status {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.status.ok {
+  background: #e8f8ec;
+  color: #16663a;
+}
+
+.status.no {
+  background: #feeef0;
+  color: #8a1f2b;
+}
+
+.status.scale {
+  background: #e8f0fe;
+  color: #1f4f94;
+}
+
+.status.neutral {
+  background: #eef1f6;
+  color: #4d5b73;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 990;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: min(720px, 100%);
+}
+
+.form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.ministerios {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+}

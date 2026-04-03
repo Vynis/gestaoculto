@@ -1,0 +1,34 @@
+<nb-layout>
+  <nb-layout-column>
+    <div class="auth-page">
+      <nb-card>
+        <nb-card-header>
+          <h3>Primeiro acesso</h3>
+          <p>Gere seu código e finalize o cadastro de senha.</p>
+        </nb-card-header>
+        <nb-card-body>
+          <form [formGroup]="formSolicitar" class="form" (ngSubmit)="solicitarCodigo()">
+            <label>E-mail ou telefone</label>
+            <input nbInput fullWidth formControlName="identificador" placeholder="email@igreja.com ou telefone" />
+            <button nbButton status="info" fullWidth [disabled]="carregando">Gerar código</button>
+          </form>
+
+          <p *ngIf="codigoGerado" class="codigo">Código gerado: <strong>{{ codigoGerado }}</strong></p>
+
+          <form [formGroup]="formAtivar" class="form" (ngSubmit)="ativar()">
+            <input nbInput fullWidth formControlName="identificador" placeholder="E-mail ou telefone" />
+            <input nbInput fullWidth formControlName="codigo" placeholder="Código" />
+            <input nbInput fullWidth formControlName="nome" placeholder="Nome (opcional)" />
+            <input nbInput fullWidth formControlName="email" placeholder="E-mail (opcional)" />
+            <input nbInput fullWidth formControlName="telefone" placeholder="Telefone (opcional)" />
+            <input nbInput fullWidth type="password" formControlName="senha" placeholder="Nova senha" />
+            <nb-checkbox formControlName="manterConectado">Manter conectado</nb-checkbox>
+            <button nbButton status="primary" fullWidth [disabled]="carregando">Ativar acesso</button>
+          </form>
+
+          <a routerLink="/voluntario/login">Voltar para login</a>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </nb-layout-column>
+</nb-layout>

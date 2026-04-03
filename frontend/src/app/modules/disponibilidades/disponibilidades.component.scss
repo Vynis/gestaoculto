@@ -1,0 +1,59 @@
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.linha {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.linha small {
+  display: block;
+}
+
+.badge {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  border-radius: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  background: #eef1f6;
+  color: #4d5b73;
+}
+
+.acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.badge.ok {
+  background: #e8f8ec;
+  color: #16663a;
+}
+
+.feedback {
+  margin-top: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .linha {
+    flex-direction: column;
+  }
+
+  .acoes {
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,59 @@
+<div class="page-header">
+  <div>
+    <h2>Músicas</h2>
+    <p>Biblioteca do louvor com filtros e cadastro rápido.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNova()">Nova música</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Lista de músicas</nb-card-header>
+  <nb-card-body>
+    <div class="toolbar">
+      <input nbInput fullWidth [(ngModel)]="termoBusca" placeholder="Buscar por título ou artista" />
+      <nb-select [(ngModel)]="filtroAtivo" placeholder="Status" [ngModelOptions]="{ standalone: true }">
+        <nb-option value="">Todos</nb-option>
+        <nb-option value="true">Ativas</nb-option>
+        <nb-option value="false">Inativas</nb-option>
+      </nb-select>
+      <button nbButton status="info" type="button" (click)="carregar()">Filtrar</button>
+    </div>
+
+    <nb-list>
+      <nb-list-item *ngFor="let musica of musicas">
+        <div class="item">
+          <div>
+            <strong>{{ musica.titulo }}</strong>
+            <small>{{ musica.artistaBanda }} {{ musica.tom ? '- Tom ' + musica.tom : '' }}</small>
+          </div>
+          <div class="item-actions">
+            <button nbButton size="tiny" status="basic" type="button" (click)="editar(musica)">Editar</button>
+            <button nbButton size="tiny" status="danger" type="button" (click)="excluir(musica)">Excluir</button>
+          </div>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalAberto" (click)="fecharModal()"></div>
+<div class="modal-wrapper" *ngIf="modalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>{{ musicaEditandoId ? 'Editar música' : 'Nova música' }}</nb-card-header>
+    <nb-card-body>
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <input nbInput formControlName="titulo" placeholder="Título" />
+        <input nbInput formControlName="artistaBanda" placeholder="Artista/Banda" />
+        <input nbInput formControlName="tom" placeholder="Tom" />
+        <input nbInput formControlName="linkCifra" placeholder="Link de cifra" />
+        <input nbInput formControlName="linkVideo" placeholder="Link de vídeo" />
+        <input nbInput formControlName="observacoes" placeholder="Observações" />
+        <nb-checkbox formControlName="ativo">Música ativa</nb-checkbox>
+        <div class="actions">
+          <button nbButton status="primary">{{ musicaEditandoId ? 'Atualizar' : 'Salvar' }}</button>
+          <button nbButton status="basic" type="button" (click)="fecharModal()">Fechar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

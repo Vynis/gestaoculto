@@ -1,0 +1,37 @@
+.filtro {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.linha {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.linha small {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .filtro {
+    grid-template-columns: 1fr;
+  }
+
+  .linha {
+    flex-direction: column;
+  }
+
+  .acoes {
+    flex-direction: row;
+  }
+}

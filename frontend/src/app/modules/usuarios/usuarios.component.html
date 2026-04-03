@@ -1,0 +1,51 @@
+<div class="page-header">
+  <div>
+    <h2>Usuários</h2>
+    <p>CRUD padrão para cadastro de acesso e perfis.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovo()">Novo usuário</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Lista de usuários</nb-card-header>
+  <nb-card-body>
+    <div class="toolbar">
+      <input nbInput fullWidth [(ngModel)]="termoBusca" placeholder="Buscar por nome ou e-mail" />
+      <button nbButton status="info" type="button" (click)="filtrar()">Buscar</button>
+    </div>
+
+    <ag-grid-angular
+      class="ag-theme-alpine usuarios-grid"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [pagination]="true"
+      [paginationPageSize]="paginationPageSize"
+      [localeText]="localeText"
+      (cellClicked)="onGridCellClicked($event)"
+    ></ag-grid-angular>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicao()"></div>
+<div class="modal-wrapper" *ngIf="modalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>{{ usuarioEditandoId ? 'Editar usuário' : 'Novo usuário' }}</nb-card-header>
+    <nb-card-body>
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <input nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
+        <input nbInput fullWidth formControlName="email" placeholder="E-mail" />
+        <input nbInput fullWidth formControlName="telefone" placeholder="Telefone" />
+        <input nbInput fullWidth formControlName="senha" type="password" placeholder="Senha (deixe em branco para manter)" />
+        <nb-select fullWidth multiple formControlName="perfilIds" placeholder="Perfis de acesso">
+          <nb-option *ngFor="let perfil of perfis" [value]="perfil.id">{{ perfil.nome }} ({{ perfil.codigo }})</nb-option>
+        </nb-select>
+        <nb-checkbox formControlName="ativo">Usuário ativo</nb-checkbox>
+        <div class="actions">
+          <button nbButton status="primary" [disabled]="carregando">{{ usuarioEditandoId ? 'Atualizar' : 'Salvar' }}</button>
+          <button nbButton status="basic" type="button" (click)="cancelarEdicao()">Fechar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

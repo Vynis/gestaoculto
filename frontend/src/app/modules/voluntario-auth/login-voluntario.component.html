@@ -1,0 +1,26 @@
+<nb-layout>
+  <nb-layout-column>
+    <div class="auth-page">
+      <nb-card>
+        <nb-card-header>
+          <h3>Portal do Voluntário</h3>
+          <p>Entre com seu acesso para ver sua escala.</p>
+        </nb-card-header>
+        <nb-card-body>
+          <form [formGroup]="form" (ngSubmit)="entrar()" class="form">
+            <input nbInput fullWidth type="email" formControlName="email" placeholder="Seu e-mail" />
+            <input nbInput fullWidth type="password" formControlName="senha" placeholder="Sua senha" />
+            <nb-checkbox formControlName="manterConectado">Manter conectado</nb-checkbox>
+            <button nbButton status="primary" fullWidth [disabled]="carregando">Entrar</button>
+          </form>
+
+          <div class="links">
+            <a routerLink="/voluntario/primeiro-acesso">Primeiro acesso</a>
+            <a routerLink="/voluntario/recuperar-acesso">Recuperar acesso</a>
+            <a routerLink="/auth/login">Entrar na área de gestão</a>
+          </div>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </nb-layout-column>
+</nb-layout>

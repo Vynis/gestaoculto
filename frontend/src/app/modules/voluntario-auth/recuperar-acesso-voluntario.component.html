@@ -1,0 +1,29 @@
+<nb-layout>
+  <nb-layout-column>
+    <div class="auth-page">
+      <nb-card>
+        <nb-card-header>
+          <h3>Recuperar acesso</h3>
+          <p>Gere um código para redefinir sua senha.</p>
+        </nb-card-header>
+        <nb-card-body>
+          <form [formGroup]="solicitarForm" class="form" (ngSubmit)="solicitarCodigo()">
+            <input nbInput fullWidth formControlName="identificador" placeholder="E-mail ou telefone" />
+            <button nbButton status="info" fullWidth [disabled]="carregando">Gerar código</button>
+          </form>
+
+          <p *ngIf="codigoGerado" class="codigo">Código: <strong>{{ codigoGerado }}</strong></p>
+
+          <form [formGroup]="redefinirForm" class="form" (ngSubmit)="redefinir()">
+            <input nbInput fullWidth formControlName="identificador" placeholder="E-mail ou telefone" />
+            <input nbInput fullWidth formControlName="codigo" placeholder="Código" />
+            <input nbInput fullWidth type="password" formControlName="novaSenha" placeholder="Nova senha" />
+            <button nbButton status="primary" fullWidth [disabled]="carregando">Redefinir senha</button>
+          </form>
+
+          <a routerLink="/voluntario/login">Voltar para login</a>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </nb-layout-column>
+</nb-layout>

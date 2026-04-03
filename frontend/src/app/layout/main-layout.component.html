@@ -1,0 +1,25 @@
+<nb-layout windowMode>
+  <nb-layout-header fixed>
+    <div class="topbar">
+      <button nbButton ghost size="small" status="primary" type="button" (click)="alternarMenu()">
+        <nb-icon icon="menu-2-outline"></nb-icon>
+      </button>
+      <div class="brand">
+        <span class="brand-title">Gestão de Culto</span>
+        <span class="brand-subtitle">Operação simples e objetiva</span>
+      </div>
+      <div class="actions">
+        <nb-user [name]="authService.getUsuarioAtual()?.nome || 'Usuário'"></nb-user>
+        <button nbButton status="danger" size="small" (click)="sair()">Sair</button>
+      </div>
+    </div>
+  </nb-layout-header>
+
+  <nb-sidebar tag="menu-sidebar" responsive>
+    <nb-menu [items]="menu"></nb-menu>
+  </nb-sidebar>
+
+  <nb-layout-column>
+    <router-outlet></router-outlet>
+  </nb-layout-column>
+</nb-layout>

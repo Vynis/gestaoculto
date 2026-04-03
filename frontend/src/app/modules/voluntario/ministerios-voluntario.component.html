@@ -1,0 +1,10 @@
+<nb-card>
+  <nb-card-header>Meus ministérios</nb-card-header>
+  <nb-card-body>
+    <nb-list>
+      <nb-list-item *ngFor="let item of itens">
+        {{ item.ministerioNome }} <strong *ngIf="item.principal">(principal)</strong>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>

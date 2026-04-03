@@ -1,0 +1,14 @@
+<nb-card>
+  <nb-card-header>Meus dados</nb-card-header>
+  <nb-card-body>
+    <form [formGroup]="form" (ngSubmit)="salvar()" class="form">
+      <input nbInput fullWidth formControlName="nome" placeholder="Nome" />
+      <input nbInput fullWidth type="email" formControlName="email" placeholder="E-mail" />
+      <input nbInput fullWidth formControlName="telefone" placeholder="Telefone" />
+      <input nbInput fullWidth formControlName="observacoes" placeholder="Observações pessoais" />
+      <input nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Indisponibilidade" />
+      <input nbInput fullWidth type="password" formControlName="novaSenha" placeholder="Nova senha (opcional)" />
+      <button nbButton status="primary" [disabled]="carregando">Salvar alterações</button>
+    </form>
+  </nb-card-body>
+</nb-card>

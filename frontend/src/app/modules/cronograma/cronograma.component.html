@@ -1,0 +1,119 @@
+<div class="page-header">
+  <div>
+    <h2>Cronograma</h2>
+    <p>Visualize o andamento do culto por sequência e horário.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovaEtapa()">Nova etapa</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Cronograma do culto</nb-card-header>
+  <nb-card-body>
+    <div class="toolbar">
+      <nb-select [formControl]="filtro.controls.cultoId" placeholder="Selecione o culto">
+        <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} </nb-option>
+      </nb-select>
+      <button nbButton status="info" type="button" (click)="carregar()" [disabled]="carregando">{{ carregando ? 'Carregando...' : 'Carregar' }}</button>
+      <button nbButton status="danger" type="button" (click)="excluirTodasEtapasDoCulto()">Excluir todas as etapas</button>
+      <nb-select [(ngModel)]="templateSelecionadoId" [ngModelOptions]="{ standalone: true }" placeholder="Template com etapas">
+        <nb-option *ngFor="let template of templates" [value]="template.id">{{ template.nome }}</nb-option>
+      </nb-select>
+      <button
+        nbButton
+        status="primary"
+        type="button"
+        [disabled]="aplicandoTemplate || !templateSelecionadoId"
+        (click)="aplicarTemplateRapido()"
+      >
+        Aplicar template
+      </button>
+    </div>
+
+    <div class="timeline">
+      <div class="step" *ngFor="let etapa of etapas">
+        <span class="hour">{{ etapa.horarioInicio | date: 'HH:mm' }}</span>
+        <div>
+          <div class="title-row">
+            <span class="seq-badge">#{{ etapa.sequencia }}</span>
+            <strong>{{ etapa.atividade }}</strong>
+          </div>
+          <p>{{ etapa.descricao }}</p>
+          <small *ngIf="etapa.ministerioResponsavelNome">Equipe: {{ etapa.ministerioResponsavelNome }}</small>
+          <div class="acoes-ministerio" *ngIf="etapa.acoesMinisterio?.length">
+            <small><strong>Acoes por ministerio:</strong></small>
+            <ul>
+              <li *ngFor="let acao of etapa.acoesMinisterio">
+                <strong>{{ acao.ministerioNome || ('Ministerio #' + acao.ministerioId) }}:</strong>
+                {{ acao.descricaoAcao }}
+                <span *ngIf="acao.observacao">({{ acao.observacao }})</span>
+              </li>
+            </ul>
+          </div>
+          <div class="meta">
+            <span *ngIf="etapa.atrasoMinutos > 0" class="atraso">Atraso: {{ etapa.atrasoMinutos }} min</span>
+            <button nbButton size="tiny" status="basic" type="button" (click)="editarEtapa(etapa)">Editar</button>
+            <button nbButton size="tiny" status="danger" type="button" (click)="excluirEtapa(etapa)">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="feedback" *ngIf="carregando">Carregando cronograma...</p>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicaoEtapa()"></div>
+<div class="modal-wrapper" *ngIf="modalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>{{ etapaEditandoId ? 'Editar etapa' : 'Nova etapa' }}</nb-card-header>
+    <nb-card-body>
+      <form id="etapa-form" class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <nb-select formControlName="cultoId" placeholder="Culto">
+          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }}</nb-option>
+        </nb-select>
+        <input nbInput type="number" formControlName="sequencia" placeholder="Sequência" />
+        <input nbInput type="time" formControlName="horarioInicio" />
+        <input nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração" />
+        <input nbInput formControlName="atividade" placeholder="Atividade" />
+        <input nbInput formControlName="descricao" placeholder="Descrição" />
+
+        <div class="acoes-editor">
+          <h4>Acoes por ministerio da etapa</h4>
+          <div class="form-grid" [formGroup]="acaoForm">
+            <nb-select formControlName="ministerioId" placeholder="Ministerio">
+              <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+            </nb-select>
+            <input nbInput formControlName="descricaoAcao" placeholder="Descricao da acao" />
+            <input nbInput type="number" formControlName="ordem" placeholder="Ordem (opcional)" />
+            <input nbInput formControlName="observacao" placeholder="Observacao (opcional)" />
+            <nb-checkbox formControlName="ativo">Acao ativa</nb-checkbox>
+            <div class="form-actions">
+              <button nbButton status="info" type="button" (click)="salvarAcaoMinisterio()">{{ acaoEditandoIndex !== null ? 'Atualizar acao' : 'Adicionar acao' }}</button>
+              <button *ngIf="acaoEditandoIndex !== null" nbButton status="basic" type="button" (click)="cancelarEdicaoAcao()">Cancelar</button>
+            </div>
+          </div>
+
+          <ag-grid-angular
+            class="ag-theme-alpine acoes-grid"
+            [rowData]="acoesMinisterioRowData"
+            [columnDefs]="acoesGridColumnDefs"
+            [defaultColDef]="acoesGridDefaultColDef"
+            [pagination]="true"
+            [paginationPageSize]="5"
+            [localeText]="acoesGridLocaleText"
+            (cellClicked)="onAcaoGridCellClicked($event)"
+          ></ag-grid-angular>
+        </div>
+
+      </form>
+    </nb-card-body>
+    <nb-card-footer>
+      <div class="modal-footer-actions">
+        <button nbButton status="primary" type="submit" form="etapa-form">
+          {{ etapaEditandoId ? 'Atualizar etapa' : 'Adicionar etapa' }}
+        </button>
+        <button nbButton status="basic" type="button" (click)="cancelarEdicaoEtapa()">Fechar</button>
+      </div>
+    </nb-card-footer>
+  </nb-card>
+</div>

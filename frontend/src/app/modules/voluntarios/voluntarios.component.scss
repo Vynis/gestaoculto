@@ -1,0 +1,112 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.voluntarios-grid {
+  width: 100%;
+  height: 480px;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+small {
+  color: #5f6f86;
+}
+
+:host ::ng-deep nb-checkbox {
+  margin-top: 0.35rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 990;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+:host ::ng-deep .grid-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:host ::ng-deep .grid-btn {
+  border: 1px solid #cfd7e6;
+  background: #f8fafc;
+  color: #2c4f7d;
+  border-radius: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  cursor: pointer;
+}
+
+:host ::ng-deep .grid-btn.icon {
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:host ::ng-deep .grid-btn .icon-pencil::before {
+  content: '\270E';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+:host ::ng-deep .grid-btn.edit {
+  border-color: #a9c6e8;
+  background: #eef6ff;
+  color: #1f5a94;
+}
+
+:host ::ng-deep .grid-btn .icon-trash::before {
+  content: '\1F5D1';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+:host ::ng-deep .grid-btn.delete {
+  border-color: #e7b3b9;
+  background: #fff0f2;
+  color: #9f2330;
+}
+
+@media (max-width: 900px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

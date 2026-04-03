@@ -1,0 +1,74 @@
+@import '@nebular/theme/styles/theming';
+@import '@nebular/theme/styles/themes/corporate';
+@import '@nebular/theme/styles/globals';
+@import 'ag-grid-community/styles/ag-grid.css';
+@import 'ag-grid-community/styles/ag-theme-alpine.css';
+
+$nb-themes: nb-register-theme(
+  (
+    color-primary-100: #d8ebff,
+    color-primary-200: #bad9ff,
+    color-primary-300: #94c3ff,
+    color-primary-400: #68a4ff,
+    color-primary-500: #3a7afe,
+    color-primary-600: #2a60da,
+    color-primary-700: #1f48b6,
+    color-primary-800: #173393,
+    color-primary-900: #112578
+  ),
+  corporate,
+  corporate
+);
+
+@include nb-install() {
+  @include nb-theme-global();
+}
+
+:root {
+  --gc-bg-top: #f3f8ff;
+  --gc-bg-bottom: #eef7f0;
+  --gc-surface: #ffffff;
+  --gc-border: #d9e5f5;
+  --gc-text: #223149;
+  --gc-muted: #5f6f86;
+  --gc-success: #1f9d63;
+  --gc-warning: #dc8b28;
+  --gc-danger: #d34c4c;
+}
+
+html,
+body {
+  font-family: 'Nunito Sans', sans-serif;
+  color: var(--gc-text);
+  background: linear-gradient(180deg, var(--gc-bg-top), var(--gc-bg-bottom));
+}
+
+h2,
+h3 {
+  margin: 0;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+nb-layout .layout {
+  background: transparent;
+}
+
+nb-card {
+  border: 1px solid var(--gc-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(17, 37, 120, 0.06);
+}
+
+nb-card-header {
+  font-weight: 700;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.page-header p {
+  margin: 0.2rem 0 0;
+  color: var(--gc-muted);
+}

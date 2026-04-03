@@ -1,0 +1,45 @@
+<div class="page-header">
+  <h2>Repertório por culto</h2>
+  <p>Planeje músicas por ordem e vincule ao cronograma.</p>
+</div>
+
+<nb-card>
+  <nb-card-header>Repertório</nb-card-header>
+  <nb-card-body>
+    <div class="toolbar">
+      <nb-select [formControl]="filtro.controls.cultoId" placeholder="Selecione o culto">
+        <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} </nb-option>
+      </nb-select>
+      <button nbButton status="info" type="button" (click)="carregar()">Carregar</button>
+      <button nbButton status="warning" type="button" (click)="duplicarCultoAnterior()">Duplicar culto anterior</button>
+      <button nbButton status="primary" type="button" (click)="salvar()">Salvar repertório</button>
+    </div>
+
+    <form class="form-grid" [formGroup]="itemForm" (ngSubmit)="adicionarItem()">
+      <nb-select formControlName="musicaId" placeholder="Música">
+        <nb-option [value]="0">Selecione</nb-option>
+        <nb-option *ngFor="let musica of musicas" [value]="musica.id">{{ musica.titulo }}</nb-option>
+      </nb-select>
+      <nb-select formControlName="etapaCultoId" placeholder="Etapa (opcional)">
+        <nb-option [value]="null">Sem etapa</nb-option>
+        <nb-option *ngFor="let etapa of etapas" [value]="etapa.id">{{ etapa.sequencia }} - {{ etapa.atividade }}</nb-option>
+      </nb-select>
+      <input nbInput formControlName="responsavel" placeholder="Responsável (opcional)" />
+      <input nbInput formControlName="observacoes" placeholder="Observações" />
+      <button nbButton status="success" type="submit">Adicionar música</button>
+    </form>
+
+    <nb-list>
+      <nb-list-item *ngFor="let item of repertorio.itens; let i = index">
+        <div class="item">
+          <div>
+            <strong>{{ item.ordem }}. {{ item.musicaTitulo }}</strong>
+            <small *ngIf="item.etapaAtividade">Etapa: {{ item.etapaAtividade }}</small>
+            <small *ngIf="item.responsavel">Responsável: {{ item.responsavel }}</small>
+          </div>
+          <button nbButton size="tiny" status="danger" type="button" (click)="removerItem(i)">Excluir</button>
+        </div>
+      </nb-list-item>
+    </nb-list>
+  </nb-card-body>
+</nb-card>

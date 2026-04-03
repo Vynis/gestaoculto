@@ -1,0 +1,55 @@
+<div class="page-header">
+  <div>
+    <h2>Voluntários</h2>
+    <p>Cadastre pessoas para escala e operação dos cultos.</p>
+  </div>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovo()">Novo voluntário</button>
+</div>
+
+<nb-card>
+  <nb-card-header>Voluntários cadastrados</nb-card-header>
+  <nb-card-body>
+    <ag-grid-angular
+      class="ag-theme-alpine voluntarios-grid"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [pagination]="true"
+      [paginationPageSize]="paginationPageSize"
+      [localeText]="localeText"
+      (cellClicked)="onGridCellClicked($event)"
+    ></ag-grid-angular>
+  </nb-card-body>
+</nb-card>
+
+<div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicao()"></div>
+<div class="modal-wrapper" *ngIf="modalAberto">
+  <nb-card class="modal-card">
+    <nb-card-header>{{ voluntarioEditandoId ? 'Editar voluntário' : 'Novo voluntário' }}</nb-card-header>
+    <nb-card-body>
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+        <input nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
+        <nb-select fullWidth formControlName="usuarioId" placeholder="Usuário de acesso (opcional)">
+          <nb-option [value]="null">Sem vínculo</nb-option>
+          <nb-option *ngFor="let usuario of usuariosDisponiveis()" [value]="usuario.id">
+            {{ usuario.nome }} ({{ usuario.email }})
+          </nb-option>
+        </nb-select>
+        <input nbInput fullWidth formControlName="telefone" placeholder="Telefone" />
+        <input nbInput fullWidth formControlName="email" placeholder="E-mail" />
+        <nb-select fullWidth multiple formControlName="ministerioIds" placeholder="Ministérios de atuação">
+          <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+        </nb-select>
+        <input nbInput fullWidth formControlName="observacoes" placeholder="Observações" />
+        <input nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Restrições de disponibilidade" />
+        <nb-checkbox formControlName="ativo">Voluntário ativo</nb-checkbox>
+        <div class="actions">
+          <button nbButton status="primary" [disabled]="carregando">
+            {{ voluntarioEditandoId ? 'Atualizar voluntário' : 'Salvar voluntário' }}
+          </button>
+          <button nbButton status="basic" type="button" (click)="cancelarEdicao()">Fechar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

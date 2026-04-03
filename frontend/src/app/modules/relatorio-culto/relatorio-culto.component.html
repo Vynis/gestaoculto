@@ -1,0 +1,152 @@
+<div class="relatorio-page" [class.publico]="modoPublico">
+<div class="page-header">
+  <div>
+    <h2>Relatorio do culto</h2>
+    <p>Visao completa do cronograma e da equipe escalada para o dia selecionado.</p>
+  </div>
+</div>
+
+<nb-card>
+  <nb-card-header>Filtro de geracao</nb-card-header>
+  <nb-card-body>
+    <form class="filtro" [formGroup]="filtro" (ngSubmit)="gerar()">
+      <nb-select fullWidth formControlName="cultoId" placeholder="Selecione o culto">
+        <nb-option *ngFor="let culto of cultos" [value]="culto.id">
+          {{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} 
+        </nb-option>
+      </nb-select>
+      <button nbButton status="primary" type="submit" [disabled]="carregando">Gerar relatorio</button>
+    </form>
+
+    <div class="acoes-impressao no-print" *ngIf="relatorio">
+      <button nbButton status="success" type="button" (click)="gerarPdf()">Gerar PDF</button>
+    </div>
+  </nb-card-body>
+</nb-card>
+
+<nb-card *ngIf="relatorio">
+  <nb-card-header>
+    Resultado para {{ relatorio.data | date: 'dd/MM/yyyy' }} - {{ relatorio.quantidadeCultos }} culto(s)
+  </nb-card-header>
+  <nb-card-body>
+    <div class="culto-bloco" *ngFor="let bloco of relatorio.cultos">
+      <div class="culto-topo">
+        <div>
+          <h3>{{ bloco.culto.nome }}</h3>
+          <p>
+            {{ bloco.culto.tipoCulto }} - Inicio {{ horaTexto(bloco.culto.horarioInicio) }}
+            <span *ngIf="bloco.culto.horarioFimPrevisto">- Fim previsto {{ horaTexto(bloco.culto.horarioFimPrevisto) }}</span>
+          </p>
+          <small>Status do culto: {{ bloco.culto.statusCultoNome || ('Status #' + bloco.culto.statusCultoId) }}</small>
+        </div>
+      </div>
+
+      <div class="resumo-grid">
+        <nb-card>
+          <nb-card-header>Resumo operacional</nb-card-header>
+          <nb-card-body>
+            <p><strong>Etapas:</strong> {{ bloco.resumo.totalEtapas }}</p>
+            <p><strong>Voluntarios escalados:</strong> {{ bloco.resumo.totalEscalados }}</p>
+            <p><strong>Confirmados:</strong> {{ bloco.resumo.totalConfirmados }} ({{ percentualConfirmacao(bloco.resumo.totalEscalados, bloco.resumo.totalConfirmados) }})</p>
+            <p><strong>Pendentes:</strong> {{ bloco.resumo.totalPendentes }}</p>
+          </nb-card-body>
+        </nb-card>
+
+        <nb-card>
+          <nb-card-header>Equipes com mais atuacao</nb-card-header>
+          <nb-card-body>
+            <nb-list>
+              <nb-list-item *ngFor="let equipe of bloco.resumo.equipes">{{ equipe.nome }} - {{ equipe.total }} pessoa(s)</nb-list-item>
+            </nb-list>
+          </nb-card-body>
+        </nb-card>
+      </div>
+
+      <nb-card>
+        <nb-card-header>Cronograma detalhado</nb-card-header>
+        <nb-card-body>
+          <nb-list>
+            <nb-list-item *ngFor="let etapa of bloco.cronograma">
+              <div class="linha">
+                <div>
+                  <strong>#{{ etapa.sequencia }} - {{ etapa.atividade }}</strong>
+                  <p>{{ etapa.descricao || 'Sem descricao' }}</p>
+                  <small>
+                    {{ horaTexto(etapa.horarioInicio) }}
+                    <span *ngIf="etapa.horarioFimCalculado"> ate {{ horaTexto(etapa.horarioFimCalculado) }}</span>
+                    - {{ etapa.duracaoMinutos }} min
+                  </small>
+                  <small *ngIf="etapa.acoesMinisterio?.length">Acoes por ministerio:</small>
+                  <ul *ngIf="etapa.acoesMinisterio?.length" class="acoes-lista">
+                    <li *ngFor="let acao of etapa.acoesMinisterio">
+                      <strong>{{ acao.ministerioNome || ('Ministerio #' + acao.ministerioId) }}:</strong>
+                      {{ acao.descricaoAcao }}
+                      <span *ngIf="acao.observacao">({{ acao.observacao }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </nb-list-item>
+          </nb-list>
+        </nb-card-body>
+      </nb-card>
+
+      <nb-card>
+        <nb-card-header>Repertorio de musicas</nb-card-header>
+        <nb-card-body>
+          <nb-list *ngIf="bloco.repertorio?.itens?.length; else semRepertorio">
+            <nb-list-item *ngFor="let item of bloco.repertorio.itens">
+              <div class="linha">
+                <div>
+                  <strong>{{ item.ordem }}. {{ item.musicaTitulo || ('Musica #' + item.musicaId) }}</strong>
+                  <small *ngIf="item.etapaAtividade">Etapa: {{ item.etapaAtividade }}</small>
+                  <small *ngIf="item.responsavel">Responsavel: {{ item.responsavel }}</small>
+                  <small *ngIf="tomRepertorio(item)">Tom: {{ tomRepertorio(item) }}</small>
+                  <small *ngIf="linkCifraRepertorio(item)">
+                    Link cifra:
+                    <a [href]="linkCifraRepertorio(item)" target="_blank" rel="noopener noreferrer">{{ linkCifraRepertorio(item) }}</a>
+                  </small>
+                  <small *ngIf="linkVideoRepertorio(item)">
+                    Link video:
+                    <a [href]="linkVideoRepertorio(item)" target="_blank" rel="noopener noreferrer">{{ linkVideoRepertorio(item) }}</a>
+                  </small>
+                  <small *ngIf="observacoesItemRepertorio(item)">Obs repertorio: {{ observacoesItemRepertorio(item) }}</small>
+                  <small *ngIf="observacoesMusicaRepertorio(item)">Obs musica: {{ observacoesMusicaRepertorio(item) }}</small>
+                </div>
+              </div>
+            </nb-list-item>
+          </nb-list>
+          <ng-template #semRepertorio>
+            <p>Sem repertorio cadastrado para este culto.</p>
+          </ng-template>
+        </nb-card-body>
+      </nb-card>
+
+      <nb-card>
+        <nb-card-header>Voluntarios escalados no dia</nb-card-header>
+        <nb-card-body>
+          <div class="grupo-equipe" *ngFor="let grupo of voluntariosAgrupadosPorEquipe(bloco.voluntarios)">
+            <h4>{{ grupo.equipe }}</h4>
+            <nb-list>
+              <nb-list-item *ngFor="let item of grupo.itens">
+                <div class="linha">
+                  <div>
+                    <strong>{{ item.voluntarioNome || ('Voluntario #' + item.voluntarioId) }}</strong>
+                    <p>Funcao: {{ item.funcao }}</p>
+                  </div>
+                  <div class="status">{{ item.presencaStatusNome || ('Status #' + item.presencaStatusId) }}</div>
+                </div>
+              </nb-list-item>
+            </nb-list>
+          </div>
+        </nb-card-body>
+      </nb-card>
+
+      <nb-card *ngIf="bloco.culto.observacoesGerais">
+        <nb-card-header>Observacoes gerais do culto</nb-card-header>
+        <nb-card-body>{{ bloco.culto.observacoesGerais }}</nb-card-body>
+      </nb-card>
+    </div>
+  </nb-card-body>
+</nb-card>
+</div>

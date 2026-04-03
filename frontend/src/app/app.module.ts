@@ -1,0 +1,126 @@
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  NbActionsModule,
+  NbBadgeModule,
+  NbButtonModule,
+  NbCardModule,
+  NbCheckboxModule,
+  NbDatepickerModule,
+  NbIconModule,
+  NbInputModule,
+  NbLayoutModule,
+  NbListModule,
+  NbMenuModule,
+  NbSelectModule,
+  NbSidebarModule,
+  NbTabsetModule,
+  NbThemeModule,
+  NbToastrModule,
+  NbUserModule
+} from '@nebular/theme';
+import { NbEvaIconsModule } from '@nebular/eva-icons';
+import { AgGridModule } from 'ag-grid-angular';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { LoginComponent } from './modules/auth/login/login.component';
+import { MainLayoutComponent } from './layout/main-layout.component';
+import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
+import { DashboardComponent } from './modules/dashboard/dashboard.component';
+import { CultosComponent } from './modules/cultos/cultos.component';
+import { CronogramaComponent } from './modules/cronograma/cronograma.component';
+import { EscalasComponent } from './modules/escalas/escalas.component';
+import { ConvidadosComponent } from './modules/convidados/convidados.component';
+import { TemplatesCultoComponent } from './modules/templates-culto/templates-culto.component';
+import { VoluntariosComponent } from './modules/voluntarios/voluntarios.component';
+import { MinisteriosComponent } from './modules/ministerios/ministerios.component';
+import { MusicasComponent } from './modules/musicas/musicas.component';
+import { RepertorioComponent } from './modules/repertorio/repertorio.component';
+import { UsuariosComponent } from './modules/usuarios/usuarios.component';
+import { RelatorioCultoComponent } from './modules/relatorio-culto/relatorio-culto.component';
+import { RelatorioCultoPublicoPageComponent } from './modules/relatorio-culto/relatorio-culto-publico-page.component';
+import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { LoginVoluntarioComponent } from './modules/voluntario-auth/login-voluntario.component';
+import { PrimeiroAcessoVoluntarioComponent } from './modules/voluntario-auth/primeiro-acesso-voluntario.component';
+import { RecuperarAcessoVoluntarioComponent } from './modules/voluntario-auth/recuperar-acesso-voluntario.component';
+import { PainelVoluntarioComponent } from './modules/voluntario/painel-voluntario.component';
+import { CalendarioVoluntarioComponent } from './modules/voluntario/calendario-voluntario.component';
+import { EscalaVoluntarioComponent } from './modules/voluntario/escala-voluntario.component';
+import { MinisteriosVoluntarioComponent } from './modules/voluntario/ministerios-voluntario.component';
+import { ColegasMinisterioVoluntarioComponent } from './modules/voluntario/colegas-ministerio-voluntario.component';
+import { MeusDadosVoluntarioComponent } from './modules/voluntario/meus-dados-voluntario.component';
+import { DisponibilidadesComponent } from './modules/disponibilidades/disponibilidades.component';
+import { EscalaModalComponent } from './modules/escalas/escala-modal.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    LoginComponent,
+    MainLayoutComponent,
+    VoluntarioLayoutComponent,
+    DashboardComponent,
+    CultosComponent,
+    CronogramaComponent,
+    EscalasComponent,
+    ConvidadosComponent,
+    TemplatesCultoComponent,
+    VoluntariosComponent,
+    MinisteriosComponent,
+    MusicasComponent,
+    RepertorioComponent,
+    UsuariosComponent,
+    RelatorioCultoComponent,
+    RelatorioCultoPublicoPageComponent,
+    LoginVoluntarioComponent,
+    PrimeiroAcessoVoluntarioComponent,
+    RecuperarAcessoVoluntarioComponent,
+    PainelVoluntarioComponent,
+    CalendarioVoluntarioComponent,
+    EscalaVoluntarioComponent,
+    MinisteriosVoluntarioComponent,
+    ColegasMinisterioVoluntarioComponent,
+    MeusDadosVoluntarioComponent,
+    DisponibilidadesComponent,
+    EscalaModalComponent
+  ],
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    HttpClientModule,
+    FormsModule,
+    ReactiveFormsModule,
+    AppRoutingModule,
+    NbThemeModule.forRoot({ name: 'corporate' }),
+    NbSidebarModule.forRoot(),
+    NbMenuModule.forRoot(),
+    NbToastrModule.forRoot(),
+    NbDatepickerModule.forRoot(),
+    NbLayoutModule,
+    NbCardModule,
+    NbButtonModule,
+    NbInputModule,
+    NbIconModule,
+    NbEvaIconsModule,
+    NbActionsModule,
+    NbUserModule,
+    NbBadgeModule,
+    NbSelectModule,
+    NbListModule,
+    NbCheckboxModule,
+    NbTabsetModule,
+    AgGridModule
+  ],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    }
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }

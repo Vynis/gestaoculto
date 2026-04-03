@@ -1,0 +1,44 @@
+<nb-layout>
+  <nb-layout-column>
+    <div class="login-page">
+      <nb-card class="login-card">
+        <nb-card-header>
+          <h2>Acesse sua conta</h2>
+          <p>Use seu e-mail e senha para entrar</p>
+        </nb-card-header>
+
+        <nb-card-body>
+          <form [formGroup]="form" (ngSubmit)="entrar()" class="login-form">
+            <div class="field">
+              <label>E-mail</label>
+              <input nbInput fullWidth formControlName="email" type="email" placeholder="seuemail@igreja.com" />
+            </div>
+
+            <div class="field">
+              <label>Senha</label>
+              <input nbInput fullWidth formControlName="senha" type="password" placeholder="Digite sua senha" />
+            </div>
+
+            <nb-checkbox formControlName="manterConectado">Manter conectado</nb-checkbox>
+
+            <button nbButton status="primary" size="large" fullWidth [disabled]="carregando">
+              Entrar
+            </button>
+          </form>
+
+          <button nbButton status="info" outline fullWidth [disabled]="carregando" (click)="entrarComGoogle()">
+            Entrar com Google
+          </button>
+
+          <button nbButton ghost status="basic" fullWidth>Esqueci minha senha</button>
+
+          <a routerLink="/voluntario/login">Sou voluntário</a>
+
+          <div class="helper-text">
+            <span>Fluxo rápido: entrar, abrir culto e iniciar operação.</span>
+          </div>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </nb-layout-column>
+</nb-layout>
