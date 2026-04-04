@@ -27,16 +27,27 @@
   word-break: break-word;
 }
 
-.modal-card-inline {
+.modal-backdrop {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(760px, calc(100% - 2rem));
-  max-height: calc(100vh - 2rem);
-  overflow: auto;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 990;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
   z-index: 1000;
+}
+
+.modal-card-inline {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
   box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.25);
 }
 
@@ -51,5 +62,6 @@
 
   .acoes {
     flex-direction: row;
+    flex-wrap: wrap;
   }
 }

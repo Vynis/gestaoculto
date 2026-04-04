@@ -28,7 +28,9 @@
   </nb-card-body>
 </nb-card>
 
-<nb-card *ngIf="detalhe as d" class="modal-card-inline">
+<div class="modal-backdrop" *ngIf="detalhe" (click)="detalhe = null"></div>
+<div class="modal-wrapper" *ngIf="detalhe as d">
+  <nb-card class="modal-card-inline" (click)="$event.stopPropagation()">
     <nb-card-header>Detalhes da participação</nb-card-header>
     <nb-card-body>
       <p><strong>{{ d.item.cultoNome }}</strong> - {{ d.item.dataCulto | date:'dd/MM/yyyy' }}</p>
@@ -67,3 +69,4 @@
       <button nbButton status="basic" type="button" (click)="detalhe = null">Fechar</button>
     </nb-card-footer>
   </nb-card>
+</div>

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NbMenuItem } from '@nebular/theme';
+import { NbMenuItem, NbSidebarService } from '@nebular/theme';
 import { AuthService } from '../core/services/auth.service';
 import { VersionDisplayInfo } from '../core/models/version.models';
 import { VersionService } from '../core/services/version.service';
@@ -22,6 +22,7 @@ export class VoluntarioLayoutComponent implements OnInit {
 
   constructor(
     public readonly authService: AuthService,
+    private readonly sidebarService: NbSidebarService,
     private readonly versionService: VersionService
   ) {}
 
@@ -33,6 +34,10 @@ export class VoluntarioLayoutComponent implements OnInit {
 
   sair(): void {
     this.authService.logout();
+  }
+
+  alternarMenu(): void {
+    this.sidebarService.toggle(true, 'voluntario-menu-sidebar');
   }
 
   get versaoFrontendLabel(): string {

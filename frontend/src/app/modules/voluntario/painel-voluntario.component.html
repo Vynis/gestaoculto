@@ -180,10 +180,10 @@
               <small *ngIf="musica.musicaTom">Tom: {{ musica.musicaTom }}</small>
               <small *ngIf="musica.etapaAtividade">Etapa: {{ musica.etapaAtividade }}</small>
               <small *ngIf="musica.responsavel">Responsável: {{ musica.responsavel }}</small>
-              <small *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
-              <small *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
-              <small *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
-              <small *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
+              <small class="quebra-linha" *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
             </div>
           </nb-list-item>
         </nb-list>
