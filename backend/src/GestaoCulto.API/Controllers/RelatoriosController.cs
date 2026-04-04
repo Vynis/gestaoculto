@@ -269,7 +269,21 @@ namespace GestaoCulto.API.Controllers
                     x.Id,
                     x.RepertorioCultoId,
                     x.MusicaId,
-                    MusicaTitulo = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                    MusicaTitulo = !string.IsNullOrWhiteSpace(x.MusicaTitulo)
+                        ? x.MusicaTitulo
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                    MusicaTom = !string.IsNullOrWhiteSpace(x.MusicaTom)
+                        ? x.MusicaTom
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Tom).FirstOrDefault(),
+                    MusicaLinkCifra = !string.IsNullOrWhiteSpace(x.MusicaLinkCifra)
+                        ? x.MusicaLinkCifra
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkCifra).FirstOrDefault(),
+                    MusicaLinkVideo = !string.IsNullOrWhiteSpace(x.MusicaLinkVideo)
+                        ? x.MusicaLinkVideo
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkVideo).FirstOrDefault(),
+                    MusicaObservacoes = !string.IsNullOrWhiteSpace(x.MusicaObservacoes)
+                        ? x.MusicaObservacoes
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Observacoes).FirstOrDefault(),
                     x.EtapaCultoId,
                     EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
                     x.Ordem,

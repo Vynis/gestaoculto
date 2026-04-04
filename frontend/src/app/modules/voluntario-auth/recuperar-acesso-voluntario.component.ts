@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NbToastrService } from '@nebular/theme';
 import { VoluntarioAuthService } from '../../core/services/voluntario-auth.service';
 
@@ -10,23 +11,28 @@ import { VoluntarioAuthService } from '../../core/services/voluntario-auth.servi
 })
 export class RecuperarAcessoVoluntarioComponent {
   carregando = false;
-  codigoGerado = '';
+  token = '';
 
   readonly solicitarForm = this.fb.group({
     identificador: ['', Validators.required]
   });
 
   readonly redefinirForm = this.fb.group({
-    identificador: ['', Validators.required],
-    codigo: ['', Validators.required],
-    novaSenha: ['', [Validators.required, Validators.minLength(6)]]
+    novaSenha: ['', [Validators.required, Validators.minLength(6)]],
+    confirmarSenha: ['', [Validators.required, Validators.minLength(6)]]
   });
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly voluntarioAuthService: VoluntarioAuthService,
-    private readonly toastr: NbToastrService
-  ) {}
+    private readonly toastr: NbToastrService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
+  ) {
+    this.route.queryParamMap.subscribe((params) => {
+      this.token = (params.get('token') || '').trim();
+    });
+  }
 
   solicitarCodigo(): void {
     if (this.solicitarForm.invalid) {
@@ -38,9 +44,7 @@ export class RecuperarAcessoVoluntarioComponent {
     const identificador = this.solicitarForm.controls.identificador.value || '';
     this.voluntarioAuthService.solicitarRecuperacao(identificador).subscribe({
       next: (res) => {
-        this.codigoGerado = res.codigo;
-        this.redefinirForm.patchValue({ identificador, codigo: res.codigo });
-        this.toastr.success('Código de recuperação gerado.', 'Recuperação');
+        this.toastr.success(res.mensagem, 'Recuperação');
       },
       error: (error) => {
         this.toastr.danger(error?.error?.mensagem ?? 'Não foi possível gerar o código.', 'Atenção');
@@ -52,15 +56,27 @@ export class RecuperarAcessoVoluntarioComponent {
   }
 
   redefinir(): void {
+    if (!this.token) {
+      this.toastr.warning('Link de recuperação inválido.', 'Atenção');
+      return;
+    }
+
     if (this.redefinirForm.invalid) {
       this.redefinirForm.markAllAsTouched();
       return;
     }
 
+    const raw = this.redefinirForm.getRawValue();
+    if (raw.novaSenha !== raw.confirmarSenha) {
+      this.toastr.warning('As senhas não conferem.', 'Atenção');
+      return;
+    }
+
     this.carregando = true;
-    this.voluntarioAuthService.redefinirAcesso(this.redefinirForm.getRawValue() as any).subscribe({
-      next: () => {
-        this.toastr.success('Senha atualizada com sucesso. Faça login novamente.', 'Sucesso');
+    this.voluntarioAuthService.redefinirAcessoPorToken(this.token, raw.novaSenha || '').subscribe({
+      next: (res) => {
+        this.toastr.success(res.mensagem, 'Sucesso');
+        this.router.navigate(['/voluntario/login']);
       },
       error: (error) => {
         this.toastr.danger(error?.error?.mensagem ?? 'Falha ao redefinir senha.', 'Atenção');

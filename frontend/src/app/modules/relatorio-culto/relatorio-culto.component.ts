@@ -3,9 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
 import { Router } from '@angular/router';
 import { Culto } from '../../core/models/culto.models';
-import { Musica } from '../../core/models/musica.models';
 import { RelatorioCultoDiaResponse, RelatorioCultoRepertorioItem, RelatorioCultoVoluntario } from '../../core/models/relatorio-culto.models';
-import { MusicaService } from '../../core/services/musica.service';
 import { RelatorioService } from '../../core/services/relatorio.service';
 
 @Component({
@@ -18,7 +16,6 @@ export class RelatorioCultoComponent implements OnInit {
   relatorio: RelatorioCultoDiaResponse | null = null;
   cultos: Culto[] = [];
   modoPublico = false;
-  private musicasPorId = new Map<number, Musica>();
 
   readonly filtro = this.fb.group({
     cultoId: [null as number | null, Validators.required]
@@ -27,7 +24,6 @@ export class RelatorioCultoComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly relatorioService: RelatorioService,
-    private readonly musicaService: MusicaService,
     private readonly toastr: NbToastrService,
     private readonly router: Router
   ) {}
@@ -39,16 +35,6 @@ export class RelatorioCultoComponent implements OnInit {
       this.cultos = data.slice().sort((a, b) => this.compararCultosDesc(a, b));
       const primeiro = this.cultos[0]?.id ?? null;
       this.filtro.patchValue({ cultoId: primeiro });
-    });
-
-    this.musicaService.listar().subscribe({
-      next: (musicas) => {
-        this.musicasPorId = new Map((musicas || []).map((item) => [item.id, item]));
-        this.relatorio = this.enriquecerRelatorioComDadosMusica(this.relatorio);
-      },
-      error: () => {
-        this.musicasPorId = new Map<number, Musica>();
-      }
     });
   }
 
@@ -68,7 +54,7 @@ export class RelatorioCultoComponent implements OnInit {
 
     this.relatorioService.obterRelatorioCultoPorId(cultoId).subscribe({
       next: (response) => {
-        this.relatorio = this.enriquecerRelatorioComDadosMusica(response);
+        this.relatorio = response;
         if (!response.cultos.length) {
           this.toastr.warning('Nenhum culto encontrado para a data selecionada.', 'Relatorio');
         }
@@ -330,40 +316,6 @@ export class RelatorioCultoComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-  }
-
-  private enriquecerRelatorioComDadosMusica(relatorio: RelatorioCultoDiaResponse | null): RelatorioCultoDiaResponse | null {
-    if (!relatorio) {
-      return null;
-    }
-
-    if (!this.musicasPorId.size) {
-      return relatorio;
-    }
-
-    return {
-      ...relatorio,
-      cultos: (relatorio.cultos || []).map((bloco) => ({
-        ...bloco,
-        repertorio: {
-          ...bloco.repertorio,
-          itens: (bloco.repertorio?.itens || []).map((item) => {
-            const musica = this.musicasPorId.get(item.musicaId);
-            if (!musica) {
-              return item;
-            }
-
-            return {
-              ...item,
-              musicaTom: item.musicaTom ?? item.tom ?? musica.tom,
-              musicaLinkCifra: item.musicaLinkCifra ?? item.linkCifra ?? musica.linkCifra,
-              musicaLinkVideo: item.musicaLinkVideo ?? item.linkVideo ?? musica.linkVideo,
-              musicaObservacoes: item.musicaObservacoes ?? musica.observacoes
-            };
-          })
-        }
-      }))
-    };
   }
 
   private textoValido(valor: string | null | undefined): string | null {

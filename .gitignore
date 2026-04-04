@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+build-temp/
 coverage/
 
 bin/
@@ -17,5 +18,6 @@ obj/
 .env.*
 
 frontend/dist/
+publish/
 backend/**/bin/
 backend/**/obj/

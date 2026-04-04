@@ -28,6 +28,7 @@ import { AgGridModule } from 'ag-grid-angular';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './modules/auth/login/login.component';
+import { RecuperarSenhaComponent } from './modules/auth/recuperar-senha/recuperar-senha.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
@@ -60,6 +61,7 @@ import { EscalaModalComponent } from './modules/escalas/escala-modal.component';
   declarations: [
     AppComponent,
     LoginComponent,
+    RecuperarSenhaComponent,
     MainLayoutComponent,
     VoluntarioLayoutComponent,
     DashboardComponent,

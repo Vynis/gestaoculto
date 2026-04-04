@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using GestaoCulto.API.Middleware;
 using GestaoCulto.API.Swagger;
+using GestaoCulto.API.Versioning;
 using GestaoCulto.Infrastructure;
 using GestaoCulto.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
@@ -19,15 +20,21 @@ namespace GestaoCulto.API
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _environment;
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            _environment = environment;
         }
 
         public IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
+            var buildVersionInfo = BuildVersionProvider.Load(Configuration, _environment.ContentRootPath, _environment.EnvironmentName);
+            services.AddSingleton(buildVersionInfo);
+
             services.AddInfrastructure(Configuration);
 
             services.AddCors(options =>
@@ -57,6 +64,7 @@ namespace GestaoCulto.API
                 var swaggerTitle = Configuration["Swagger:Title"] ?? "GestaoCulto.API";
                 var swaggerVersion = Configuration["Swagger:Version"] ?? "v1";
                 var swaggerDescription = Configuration["Swagger:Description"] ?? "API de gestão de culto.";
+                swaggerDescription = $"{swaggerDescription} (build {buildVersionInfo.Version}, commit {buildVersionInfo.Commit})";
 
                 c.SwaggerDoc(swaggerVersion, new OpenApiInfo
                 {
@@ -93,10 +101,22 @@ namespace GestaoCulto.API
                 app.UseDeveloperExceptionPage();
             }
 
+            var basePath = Configuration["AppInfo:BasePath"];
+            if (!string.IsNullOrWhiteSpace(basePath))
+            {
+                basePath = basePath.Trim();
+                if (!basePath.StartsWith('/'))
+                {
+                    basePath = $"/{basePath}";
+                }
+
+                app.UsePathBase(basePath);
+            }
+
             app.UseSwagger(c => { c.RouteTemplate = "docs/{documentName}/swagger.json"; });
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/docs/v1/swagger.json", "Gestão de Culto API v1");
+                c.SwaggerEndpoint("v1/swagger.json", "Gestão de Culto API v1");
                 c.RoutePrefix = "docs";
                 c.DisplayRequestDuration();
             });

@@ -1,0 +1,29 @@
+<nb-layout>
+  <nb-layout-column>
+    <div class="auth-page">
+      <nb-card>
+        <nb-card-header>
+          <img class="brand-logo" src="assets/logo-vertical.png" alt="Gestão de Culto" />
+          <h3>Recuperar senha da gestão</h3>
+          <p>Informe seu e-mail para receber um link de redefinição.</p>
+        </nb-card-header>
+        <nb-card-body>
+          <form [formGroup]="solicitarForm" class="form" (ngSubmit)="solicitarLink()">
+            <input nbInput fullWidth formControlName="email" type="email" placeholder="Seu e-mail" />
+            <button nbButton status="info" fullWidth [disabled]="carregando">Enviar link</button>
+          </form>
+
+          <form [formGroup]="redefinirForm" class="form" *ngIf="token" (ngSubmit)="redefinir()">
+            <input nbInput fullWidth formControlName="novaSenha" type="password" placeholder="Nova senha" />
+            <input nbInput fullWidth formControlName="confirmarSenha" type="password" placeholder="Confirmar nova senha" />
+            <button nbButton status="primary" fullWidth [disabled]="carregando">Redefinir senha</button>
+          </form>
+
+          <p class="info" *ngIf="!token">Quando receber o e-mail, abra o link para concluir a redefinição.</p>
+
+          <a routerLink="/auth/login">Voltar para login</a>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </nb-layout-column>
+</nb-layout>

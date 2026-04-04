@@ -11,6 +11,7 @@ namespace GestaoCulto.Infrastructure.Persistence
         }
 
         public DbSet<Usuario> Usuarios => Set<Usuario>();
+        public DbSet<UsuarioRecuperacaoSenha> UsuariosRecuperacaoSenha => Set<UsuarioRecuperacaoSenha>();
         public DbSet<Perfil> Perfis => Set<Perfil>();
         public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
         public DbSet<UsuarioGoogle> UsuariosGoogle => Set<UsuarioGoogle>();
@@ -96,6 +97,21 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.VinculadoEm).HasColumnName("vinculado_em");
                 entity.Property(x => x.UltimoLoginGoogleEm).HasColumnName("ultimo_login_google_em");
                 entity.HasOne(x => x.Usuario).WithOne(x => x.UsuarioGoogle).HasForeignKey<UsuarioGoogle>(x => x.UsuarioId);
+            });
+
+            modelBuilder.Entity<UsuarioRecuperacaoSenha>(entity =>
+            {
+                entity.ToTable("usuario_recuperacao_senha");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.UsuarioId).HasColumnName("usuario_id");
+                entity.Property(x => x.TokenHash).HasColumnName("token_hash").HasMaxLength(128).IsRequired();
+                entity.Property(x => x.Contexto).HasColumnName("contexto").HasMaxLength(20).IsRequired();
+                entity.Property(x => x.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(x => x.UsadoEm).HasColumnName("usado_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Usuario).WithMany(x => x.RecuperacoesSenha).HasForeignKey(x => x.UsuarioId);
             });
 
             modelBuilder.Entity<Ministerio>(entity =>
@@ -351,6 +367,12 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.MusicaId).HasColumnName("musica_id");
                 entity.Property(x => x.EtapaCultoId).HasColumnName("etapa_culto_id");
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Property(x => x.MusicaTitulo).HasColumnName("musica_titulo").HasMaxLength(180);
+                entity.Property(x => x.MusicaArtistaBanda).HasColumnName("musica_artista_banda").HasMaxLength(180);
+                entity.Property(x => x.MusicaTom).HasColumnName("musica_tom").HasMaxLength(20);
+                entity.Property(x => x.MusicaLinkCifra).HasColumnName("musica_link_cifra").HasMaxLength(500);
+                entity.Property(x => x.MusicaLinkVideo).HasColumnName("musica_link_video").HasMaxLength(500);
+                entity.Property(x => x.MusicaObservacoes).HasColumnName("musica_observacoes").HasMaxLength(500);
                 entity.Property(x => x.Responsavel).HasColumnName("responsavel").HasMaxLength(150);
                 entity.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");

@@ -26,6 +26,7 @@ namespace GestaoCulto.Infrastructure
             services.AddScoped<ITokenService, JwtTokenService>();
             services.AddScoped<IPasswordHasher, SimplePasswordHasher>();
             services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
             services.AddScoped<DbSeeder>();
 
             var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]);

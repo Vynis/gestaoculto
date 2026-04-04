@@ -22,6 +22,24 @@
   display: block;
 }
 
+.quebra-linha {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.modal-card-inline {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(760px, calc(100% - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1rem;
+  z-index: 1000;
+  box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.25);
+}
+
 @media (max-width: 760px) {
   .filtro {
     grid-template-columns: 1fr;

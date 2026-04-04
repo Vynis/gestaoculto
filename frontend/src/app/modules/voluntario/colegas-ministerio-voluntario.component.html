@@ -1,14 +1,23 @@
 <nb-card>
   <nb-card-header>Equipe dos meus ministérios</nb-card-header>
   <nb-card-body>
-    <nb-list>
-      <nb-list-item *ngFor="let item of itens">
-        <div>
-          <strong>{{ item.voluntarioNome }}</strong>
-          <small>{{ item.ministerioNome }}</small>
-          <small>{{ item.voluntarioTelefone || '-' }} | {{ item.voluntarioEmail || '-' }}</small>
-        </div>
-      </nb-list-item>
-    </nb-list>
+    <p class="empty" *ngIf="!equipes.length">Nenhum colega encontrado para os seus ministérios.</p>
+
+    <section class="equipe" *ngFor="let equipe of equipes">
+      <div class="equipe-header">
+        <h5>{{ equipe.ministerioNome }}</h5>
+        <small>{{ equipe.colegas.length }} pessoa(s)</small>
+      </div>
+
+      <nb-list>
+        <nb-list-item *ngFor="let item of equipe.colegas">
+          <div class="colega-item">
+            <strong>{{ item.voluntarioNome }}</strong>
+            <small *ngIf="item.funcao">{{ item.funcao }}</small>
+            <small>{{ item.voluntarioTelefone || '-' }} | {{ item.voluntarioEmail || '-' }}</small>
+          </div>
+        </nb-list-item>
+      </nb-list>
+    </section>
   </nb-card-body>
 </nb-card>

@@ -28,6 +28,12 @@ export class RepertorioComponent implements OnInit {
 
   readonly itemForm = this.fb.group({
     musicaId: [0, Validators.required],
+    musicaTitulo: [''],
+    musicaArtistaBanda: [''],
+    musicaTom: [''],
+    musicaLinkCifra: [''],
+    musicaLinkVideo: [''],
+    musicaObservacoes: [''],
     etapaCultoId: [null as number | null],
     responsavel: [''],
     observacoes: ['']
@@ -53,6 +59,35 @@ export class RepertorioComponent implements OnInit {
       }
 
       this.carregarEtapasDoCulto(cultoId);
+    });
+
+    this.itemForm.controls.musicaId.valueChanges.subscribe((valor) => {
+      const musicaId = Number(valor || 0);
+      if (!musicaId) {
+        this.itemForm.patchValue({
+          musicaTitulo: '',
+          musicaArtistaBanda: '',
+          musicaTom: '',
+          musicaLinkCifra: '',
+          musicaLinkVideo: '',
+          musicaObservacoes: ''
+        }, { emitEvent: false });
+        return;
+      }
+
+      const musica = this.musicas.find((x) => x.id === musicaId);
+      if (!musica) {
+        return;
+      }
+
+      this.itemForm.patchValue({
+        musicaTitulo: musica.titulo || '',
+        musicaArtistaBanda: musica.artistaBanda || '',
+        musicaTom: musica.tom || '',
+        musicaLinkCifra: musica.linkCifra || '',
+        musicaLinkVideo: musica.linkVideo || '',
+        musicaObservacoes: musica.observacoes || ''
+      }, { emitEvent: false });
     });
 
     this.cultoService.listar().subscribe((data) => {
@@ -94,7 +129,12 @@ export class RepertorioComponent implements OnInit {
 
     const item: RepertorioItem = {
       musicaId: Number(raw.musicaId),
-      musicaTitulo: musica?.titulo,
+      musicaTitulo: this.normalizarTexto(raw.musicaTitulo) || musica?.titulo,
+      musicaArtistaBanda: this.normalizarTexto(raw.musicaArtistaBanda),
+      musicaTom: this.normalizarTexto(raw.musicaTom),
+      musicaLinkCifra: this.normalizarTexto(raw.musicaLinkCifra),
+      musicaLinkVideo: this.normalizarTexto(raw.musicaLinkVideo),
+      musicaObservacoes: this.normalizarTexto(raw.musicaObservacoes),
       etapaCultoId: raw.etapaCultoId,
       etapaAtividade: etapa?.atividade,
       ordem: this.repertorio.itens.length + 1,
@@ -103,7 +143,18 @@ export class RepertorioComponent implements OnInit {
     };
 
     this.repertorio.itens = [...this.repertorio.itens, item];
-    this.itemForm.reset({ musicaId: 0, etapaCultoId: null, responsavel: '', observacoes: '' });
+    this.itemForm.reset({
+      musicaId: 0,
+      musicaTitulo: '',
+      musicaArtistaBanda: '',
+      musicaTom: '',
+      musicaLinkCifra: '',
+      musicaLinkVideo: '',
+      musicaObservacoes: '',
+      etapaCultoId: null,
+      responsavel: '',
+      observacoes: ''
+    });
   }
 
   async removerItem(index: number): Promise<void> {
@@ -116,6 +167,12 @@ export class RepertorioComponent implements OnInit {
 
     this.repertorio.itens.splice(index, 1);
     this.repertorio.itens = this.repertorio.itens.map((x, i) => ({ ...x, ordem: i + 1 }));
+  }
+
+  atualizarEtapaDoItem(item: RepertorioItem, etapaCultoId: number | null): void {
+    const etapaId = etapaCultoId ? Number(etapaCultoId) : null;
+    item.etapaCultoId = etapaId;
+    item.etapaAtividade = this.etapas.find((x) => x.id === etapaId)?.atividade || null;
   }
 
   salvar(): void {
@@ -184,5 +241,10 @@ export class RepertorioComponent implements OnInit {
     const sequencia = Number(item.sequencia || 0);
     const atividade = String(item.atividade || '').trim().toLowerCase();
     return `${sequencia}|${atividade}`;
+  }
+
+  private normalizarTexto(valor: string | null | undefined): string | null {
+    const texto = String(valor || '').trim();
+    return texto ? texto : null;
   }
 }

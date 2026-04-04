@@ -11,6 +11,12 @@ namespace GestaoCulto.Domain.Entities
         public long? EtapaCultoId { get; set; }
         public EtapaCulto? EtapaCulto { get; set; }
         public int Ordem { get; set; }
+        public string? MusicaTitulo { get; set; }
+        public string? MusicaArtistaBanda { get; set; }
+        public string? MusicaTom { get; set; }
+        public string? MusicaLinkCifra { get; set; }
+        public string? MusicaLinkVideo { get; set; }
+        public string? MusicaObservacoes { get; set; }
         public string? Responsavel { get; set; }
         public string? Observacoes { get; set; }
     }

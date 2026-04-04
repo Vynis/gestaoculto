@@ -38,6 +38,14 @@ export class AuthService {
     );
   }
 
+  solicitarRecuperacaoSenha(email: string): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/esqueci-senha`, { email });
+  }
+
+  redefinirSenhaPorToken(token: string, novaSenha: string): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/redefinir-senha`, { token, novaSenha });
+  }
+
   aplicarSessao(response: AuthResponse): void {
     this.storeSession(response);
   }

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './modules/auth/login/login.component';
+import { RecuperarSenhaComponent } from './modules/auth/recuperar-senha/recuperar-senha.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
 import { AuthGuard } from './core/guards/auth.guard';
@@ -32,6 +33,7 @@ import { MeusDadosVoluntarioComponent } from './modules/voluntario/meus-dados-vo
 
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
+  { path: 'auth/recuperar-senha', component: RecuperarSenhaComponent },
   { path: 'voluntario/login', component: LoginVoluntarioComponent },
   { path: 'voluntario/primeiro-acesso', component: PrimeiroAcessoVoluntarioComponent },
   { path: 'voluntario/recuperar-acesso', component: RecuperarAcessoVoluntarioComponent },

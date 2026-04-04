@@ -50,6 +50,26 @@ namespace GestaoCulto.Infrastructure.Persistence
             }
 
             await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS usuario_recuperacao_senha (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  usuario_id BIGINT UNSIGNED NOT NULL,
+                  token_hash VARCHAR(128) NOT NULL,
+                  contexto VARCHAR(20) NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  usado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  KEY ix_usuario_recuperacao_usuario (usuario_id),
+                  KEY ix_usuario_recuperacao_token (token_hash),
+                  KEY ix_usuario_recuperacao_contexto (contexto),
+                  KEY ix_usuario_recuperacao_expira (expira_em),
+                  KEY ix_usuario_recuperacao_usado (usado_em),
+                  CONSTRAINT fk_usuario_recuperacao_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS ministerio_voluntario (
                   ministerio_id BIGINT UNSIGNED NOT NULL,
                   voluntario_id BIGINT UNSIGNED NOT NULL,
@@ -135,6 +155,12 @@ namespace GestaoCulto.Infrastructure.Persistence
                   musica_id BIGINT UNSIGNED NOT NULL,
                   etapa_culto_id BIGINT UNSIGNED NULL,
                   ordem INT NOT NULL,
+                  musica_titulo VARCHAR(180) NULL,
+                  musica_artista_banda VARCHAR(180) NULL,
+                  musica_tom VARCHAR(20) NULL,
+                  musica_link_cifra VARCHAR(500) NULL,
+                  musica_link_video VARCHAR(500) NULL,
+                  musica_observacoes VARCHAR(500) NULL,
                   responsavel VARCHAR(150) NULL,
                   observacoes VARCHAR(500) NULL,
                   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -147,6 +173,54 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_rep_item_etapa FOREIGN KEY (etapa_culto_id) REFERENCES etapa_culto(id) ON DELETE SET NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_titulo"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_titulo VARCHAR(180) NULL AFTER ordem;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_artista_banda"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_artista_banda VARCHAR(180) NULL AFTER musica_titulo;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_tom"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_tom VARCHAR(20) NULL AFTER musica_artista_banda;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_link_cifra"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_link_cifra VARCHAR(500) NULL AFTER musica_tom;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_link_video"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_link_video VARCHAR(500) NULL AFTER musica_link_cifra;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_observacoes"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_observacoes VARCHAR(500) NULL AFTER musica_link_video;
+                ");
+            }
 
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS template_etapa_culto (

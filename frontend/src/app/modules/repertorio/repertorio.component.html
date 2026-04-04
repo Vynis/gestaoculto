@@ -20,6 +20,12 @@
         <nb-option [value]="0">Selecione</nb-option>
         <nb-option *ngFor="let musica of musicas" [value]="musica.id">{{ musica.titulo }}</nb-option>
       </nb-select>
+      <input nbInput formControlName="musicaTitulo" placeholder="Título no repertório" />
+      <input nbInput formControlName="musicaArtistaBanda" placeholder="Artista/Banda" />
+      <input nbInput formControlName="musicaTom" placeholder="Tom (ex.: D, Gm)" />
+      <input nbInput formControlName="musicaLinkCifra" placeholder="Link da cifra" />
+      <input nbInput formControlName="musicaLinkVideo" placeholder="Link de referência" />
+      <input nbInput formControlName="musicaObservacoes" placeholder="Observações da música" />
       <nb-select formControlName="etapaCultoId" placeholder="Etapa (opcional)">
         <nb-option [value]="null">Sem etapa</nb-option>
         <nb-option *ngFor="let etapa of etapas" [value]="etapa.id">{{ etapa.sequencia }} - {{ etapa.atividade }}</nb-option>
@@ -32,10 +38,29 @@
     <nb-list>
       <nb-list-item *ngFor="let item of repertorio.itens; let i = index">
         <div class="item">
-          <div>
+          <div class="item-content">
             <strong>{{ item.ordem }}. {{ item.musicaTitulo }}</strong>
             <small *ngIf="item.etapaAtividade">Etapa: {{ item.etapaAtividade }}</small>
             <small *ngIf="item.responsavel">Responsável: {{ item.responsavel }}</small>
+
+            <div class="item-editor-grid">
+              <nb-select
+                placeholder="Etapa"
+                [(ngModel)]="item.etapaCultoId"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="atualizarEtapaDoItem(item, $event)">
+                <nb-option [value]="null">Sem etapa</nb-option>
+                <nb-option *ngFor="let etapa of etapas" [value]="etapa.id">
+                  {{ etapa.sequencia }} - {{ etapa.atividade }}
+                </nb-option>
+              </nb-select>
+              <input nbInput placeholder="Título no repertório" [(ngModel)]="item.musicaTitulo" [ngModelOptions]="{ standalone: true }" />
+              <input nbInput placeholder="Artista/Banda" [(ngModel)]="item.musicaArtistaBanda" [ngModelOptions]="{ standalone: true }" />
+              <input nbInput placeholder="Tom" [(ngModel)]="item.musicaTom" [ngModelOptions]="{ standalone: true }" />
+              <input nbInput placeholder="Link da cifra" [(ngModel)]="item.musicaLinkCifra" [ngModelOptions]="{ standalone: true }" />
+              <input nbInput placeholder="Link de referência" [(ngModel)]="item.musicaLinkVideo" [ngModelOptions]="{ standalone: true }" />
+              <input nbInput placeholder="Observações da música" [(ngModel)]="item.musicaObservacoes" [ngModelOptions]="{ standalone: true }" />
+            </div>
           </div>
           <button nbButton size="tiny" status="danger" type="button" (click)="removerItem(i)">Excluir</button>
         </div>

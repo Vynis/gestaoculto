@@ -2,9 +2,14 @@
   "name": "frontend",
   "version": "0.0.0",
   "scripts": {
+    "prepare:version": "C:\\Progra~1\\nodejs\\node.exe ./scripts/generate-version.js",
+    "prestart": "npm run prepare:version",
+    "prebuild": "npm run prepare:version",
+    "prewatch": "npm run prepare:version",
     "ng": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng",
     "start": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng serve",
     "build": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build",
+    "build:kinghost": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build --configuration production",
     "watch": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build --watch --configuration development",
     "test": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng test"
   },
