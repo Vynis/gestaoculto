@@ -41,7 +41,7 @@ export class EscalasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cultoService.listar().subscribe((data) => {
+    this.cultoService.listarAtivos().subscribe((data) => {
       this.cultos = data;
       const primeiro = data[0]?.id ?? 0;
       this.filtro.patchValue({ cultoId: primeiro });

@@ -90,7 +90,7 @@ export class RepertorioComponent implements OnInit {
       }, { emitEvent: false });
     });
 
-    this.cultoService.listar().subscribe((data) => {
+    this.cultoService.listarAtivos().subscribe((data) => {
       this.cultos = data;
     });
 

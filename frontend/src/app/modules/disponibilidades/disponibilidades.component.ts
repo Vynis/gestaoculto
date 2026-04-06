@@ -38,7 +38,7 @@ export class DisponibilidadesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cultoService.listar().subscribe((res) => {
+    this.cultoService.listarAtivos().subscribe((res) => {
       this.cultos = res || [];
     });
 

@@ -32,26 +32,44 @@ namespace GestaoCulto.Infrastructure.Services
                 throw new InvalidOperationException("Configuração SMTP incompleta para envio de e-mail.");
             }
 
-            var port = LerInt(_configuration["Email:Smtp:Port"], 587);
-            var enableSsl = LerBool(_configuration["Email:Smtp:EnableSsl"], true);
+            //var port = LerInt(_configuration["Email:Smtp:Port"], 587);
+            //var enableSsl = LerBool(_configuration["Email:Smtp:EnableSsl"], true);
 
-            using var message = new MailMessage();
-            message.From = new MailAddress(fromAddress, fromName);
-            message.Sender = new MailAddress(username);
-            message.To.Add(new MailAddress(to));
-            message.Subject = subject;
-            message.Body = htmlBody;
-            message.IsBodyHtml = true;
+            //using var message = new MailMessage();
+            //message.From = new MailAddress(fromAddress, fromName);
+            //message.Sender = new MailAddress(username);
+            //message.To.Add(new MailAddress(to));
+            //message.Subject = subject;
+            //message.Body = htmlBody;
+            //message.IsBodyHtml = true;
 
-            using var client = new SmtpClient(host, port)
+            //using var client = new SmtpClient(host, port)
+            //{
+            //    UseDefaultCredentials = false,
+            //    EnableSsl = enableSsl,
+            //    DeliveryMethod = SmtpDeliveryMethod.Network,
+            //    Credentials = new NetworkCredential(username, password)
+            //};
+
+            // await client.SendMailAsync(message);
+
+
+            MailMessage mail = new MailMessage()
             {
-                UseDefaultCredentials = false,
-                EnableSsl = enableSsl,
-                DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(username, password)
+                From = new MailAddress(username, "Gestão de Culto")
             };
 
-            await client.SendMailAsync(message);
+            mail.To.Add(new MailAddress(to));
+            mail.Subject = subject;
+            mail.Body = htmlBody;
+            mail.IsBodyHtml = true;
+            mail.Priority = MailPriority.High;
+
+            using (SmtpClient smtp = new SmtpClient(host, 587))
+            {
+                smtp.Credentials = new NetworkCredential(username, password);
+                await smtp.SendMailAsync(mail);
+            }
         }
 
         private static int LerInt(string? valor, int padrao)

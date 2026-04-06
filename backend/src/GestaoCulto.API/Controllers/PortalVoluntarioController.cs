@@ -131,10 +131,11 @@ namespace GestaoCulto.API.Controllers
 
             var inicio = new DateTime(ano, mes, 1);
             var fim = inicio.AddMonths(1).AddDays(-1);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
 
             var cultos = await _db.Cultos
                 .AsNoTracking()
-                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim)
+                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim && x.StatusCultoId == statusCultoAtivoId)
                 .OrderBy(x => x.DataCulto)
                 .ThenBy(x => x.HorarioInicio)
                 .Select(x => new
@@ -233,7 +234,8 @@ namespace GestaoCulto.API.Controllers
                 return Unauthorized(new { mensagem = "Voluntário não vinculado ao usuário autenticado." });
             }
 
-            var culto = await _db.Cultos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == cultoId);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+            var culto = await _db.Cultos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == cultoId && x.StatusCultoId == statusCultoAtivoId);
             if (culto == null)
             {
                 return NotFound(new { mensagem = "Culto não encontrado." });
@@ -302,7 +304,8 @@ namespace GestaoCulto.API.Controllers
                 return Unauthorized(new { mensagem = "Voluntário não vinculado ao usuário autenticado." });
             }
 
-            var culto = await _db.Cultos.FirstOrDefaultAsync(x => x.Id == cultoId);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+            var culto = await _db.Cultos.FirstOrDefaultAsync(x => x.Id == cultoId && x.StatusCultoId == statusCultoAtivoId);
             if (culto == null)
             {
                 return NotFound(new { mensagem = "Culto não encontrado." });
@@ -665,6 +668,8 @@ namespace GestaoCulto.API.Controllers
 
         private async Task<List<VoluntarioCompromissoDto>> ConsultarEscalas(long voluntarioId, DateTime inicio, DateTime fim)
         {
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+
             return await _db.Escalas
                 .AsNoTracking()
                 .Where(x => x.VoluntarioId == voluntarioId)
@@ -684,10 +689,23 @@ namespace GestaoCulto.API.Controllers
                     PresencaStatusId = x.PresencaStatusId,
                     PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == x.PresencaStatusId).Select(s => s.Nome).FirstOrDefault()
                 })
-                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim)
+                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim
+                    && _db.Cultos.Where(c => c.Id == x.CultoId).Select(c => c.StatusCultoId).FirstOrDefault() == statusCultoAtivoId)
                 .OrderBy(x => x.DataCulto)
                 .ThenBy(x => x.HorarioInicio)
                 .ToListAsync();
+        }
+
+        private async Task<long> ObterStatusCultoAtivoId()
+        {
+            var statusAtivoId = await _db.StatusCultos
+                .Where(x => x.Codigo == "ATIVO")
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync();
+
+            return statusAtivoId > 0
+                ? statusAtivoId
+                : await _db.StatusCultos.OrderBy(x => x.Ordem).Select(x => x.Id).FirstOrDefaultAsync();
         }
 
         private async Task<List<object>> ListarMinisterios(long voluntarioId)

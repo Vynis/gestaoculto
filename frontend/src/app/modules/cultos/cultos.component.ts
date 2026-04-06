@@ -35,11 +35,8 @@ export class CultosComponent implements OnInit {
   mensagemErro = '';
   cultoEditandoId: number | null = null;
   readonly statusOptions = [
-    { id: 1, label: 'Planejamento' },
-    { id: 2, label: 'Fechado' },
-    { id: 3, label: 'Em andamento' },
-    { id: 4, label: 'Finalizado' },
-    { id: 5, label: 'Cancelado' }
+    { id: 1, label: 'Ativo' },
+    { id: 2, label: 'Inativo' }
   ];
 
   readonly form = this.fb.group({

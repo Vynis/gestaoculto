@@ -343,6 +343,10 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            await GarantirColunasAuditoriaAsync("status_culto");
+            await GarantirColunasAuditoriaAsync("status_etapa");
+            await GarantirColunasAuditoriaAsync("presenca_escala_status");
+
             if (!_db.Perfis.Any())
             {
                 _db.Perfis.AddRange(
@@ -354,16 +358,58 @@ namespace GestaoCulto.Infrastructure.Persistence
                 );
             }
 
-            if (!_db.StatusCultos.Any())
+            var statusCultoAtivo = await _db.StatusCultos.FirstOrDefaultAsync(x => x.Codigo == "ATIVO")
+                ?? await _db.StatusCultos.FirstOrDefaultAsync(x => x.Id == 1);
+            if (statusCultoAtivo == null)
             {
-                _db.StatusCultos.AddRange(
-                    new StatusCulto { Nome = "Planejamento", Codigo = "PLANEJAMENTO", CorHex = "#6C757D", Ordem = 1 },
-                    new StatusCulto { Nome = "Fechado", Codigo = "FECHADO", CorHex = "#0D6EFD", Ordem = 2 },
-                    new StatusCulto { Nome = "Em andamento", Codigo = "EM_ANDAMENTO", CorHex = "#FD7E14", Ordem = 3 },
-                    new StatusCulto { Nome = "Finalizado", Codigo = "FINALIZADO", CorHex = "#198754", Ordem = 4 },
-                    new StatusCulto { Nome = "Cancelado", Codigo = "CANCELADO", CorHex = "#DC3545", Ordem = 5 }
-                );
+                statusCultoAtivo = new StatusCulto
+                {
+                    Nome = "Ativo",
+                    Codigo = "ATIVO",
+                    CorHex = "#198754",
+                    Ordem = 1,
+                    CriadoEm = DateTime.UtcNow
+                };
+                _db.StatusCultos.Add(statusCultoAtivo);
             }
+            else
+            {
+                statusCultoAtivo.Nome = "Ativo";
+                statusCultoAtivo.Codigo = "ATIVO";
+                statusCultoAtivo.CorHex = "#198754";
+                statusCultoAtivo.Ordem = 1;
+            }
+
+            var statusCultoInativo = await _db.StatusCultos.FirstOrDefaultAsync(x => x.Codigo == "INATIVO")
+                ?? await _db.StatusCultos.FirstOrDefaultAsync(x => x.Id == 2);
+            if (statusCultoInativo == null)
+            {
+                statusCultoInativo = new StatusCulto
+                {
+                    Nome = "Inativo",
+                    Codigo = "INATIVO",
+                    CorHex = "#6C757D",
+                    Ordem = 2,
+                    CriadoEm = DateTime.UtcNow
+                };
+                _db.StatusCultos.Add(statusCultoInativo);
+            }
+            else
+            {
+                statusCultoInativo.Nome = "Inativo";
+                statusCultoInativo.Codigo = "INATIVO";
+                statusCultoInativo.CorHex = "#6C757D";
+                statusCultoInativo.Ordem = 2;
+            }
+
+            await _db.SaveChangesAsync();
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                UPDATE culto
+                SET status_culto_id = {0}
+                WHERE status_culto_id <> {1}
+                  AND status_culto_id <> {0};
+            ", statusCultoInativo.Id, statusCultoAtivo.Id);
 
             if (!_db.StatusEtapas.Any())
             {
@@ -454,6 +500,25 @@ namespace GestaoCulto.Infrastructure.Persistence
             var result = await command.ExecuteScalarAsync();
             var total = Convert.ToInt32(result ?? 0);
             return total > 0;
+        }
+
+        private async Task GarantirColunasAuditoriaAsync(string tabela)
+        {
+            if (!await ColunaExisteAsync(tabela, "criado_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    ALTER TABLE {tabela}
+                    ADD COLUMN criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                ");
+            }
+
+            if (!await ColunaExisteAsync(tabela, "atualizado_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    ALTER TABLE {tabela}
+                    ADD COLUMN atualizado_em DATETIME NULL;
+                ");
+            }
         }
     }
 }

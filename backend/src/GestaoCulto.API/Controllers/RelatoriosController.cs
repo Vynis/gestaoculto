@@ -58,8 +58,11 @@ namespace GestaoCulto.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ListarCultosParaRelatorio()
         {
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+
             var cultos = await _db.Cultos
                 .AsNoTracking()
+                .Where(x => x.StatusCultoId == statusCultoAtivoId)
                 .OrderByDescending(x => x.DataCulto)
                 .ThenByDescending(x => x.HorarioInicio)
                 .Select(x => new
@@ -91,10 +94,11 @@ namespace GestaoCulto.API.Controllers
 
             var inicioDia = dataCulto.Date;
             var fimDia = inicioDia.AddDays(1);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
 
             var cultos = await _db.Cultos
                 .AsNoTracking()
-                .Where(c => c.DataCulto >= inicioDia && c.DataCulto < fimDia)
+                .Where(c => c.DataCulto >= inicioDia && c.DataCulto < fimDia && c.StatusCultoId == statusCultoAtivoId)
                 .OrderBy(c => c.HorarioInicio)
                 .Select(c => new CultoRelatorioItem
                 {
@@ -156,6 +160,18 @@ namespace GestaoCulto.API.Controllers
 
             var dataRef = cultos[0].DataCulto.ToString("yyyy-MM-dd");
             return Ok(await MontarRelatorio(cultos, dataRef));
+        }
+
+        private async Task<long> ObterStatusCultoAtivoId()
+        {
+            var statusAtivoId = await _db.StatusCultos
+                .Where(x => x.Codigo == "ATIVO")
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync();
+
+            return statusAtivoId > 0
+                ? statusAtivoId
+                : await _db.StatusCultos.OrderBy(x => x.Ordem).Select(x => x.Id).FirstOrDefaultAsync();
         }
 
         private async Task<object> MontarRelatorio(List<CultoRelatorioItem> cultos, string dataRef)

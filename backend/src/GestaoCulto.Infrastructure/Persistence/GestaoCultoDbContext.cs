@@ -217,6 +217,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Codigo).HasColumnName("codigo").HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CorHex).HasColumnName("cor_hex").HasMaxLength(7);
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Ignore(x => x.CriadoEm);
+                entity.Ignore(x => x.AtualizadoEm);
             });
 
             modelBuilder.Entity<StatusEtapa>(entity =>
@@ -228,6 +230,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Codigo).HasColumnName("codigo").HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CorHex).HasColumnName("cor_hex").HasMaxLength(7);
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Ignore(x => x.CriadoEm);
+                entity.Ignore(x => x.AtualizadoEm);
             });
 
             modelBuilder.Entity<PresencaEscalaStatus>(entity =>
@@ -239,6 +243,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Codigo).HasColumnName("codigo").HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CorHex).HasColumnName("cor_hex").HasMaxLength(7);
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Ignore(x => x.CriadoEm);
+                entity.Ignore(x => x.AtualizadoEm);
             });
 
             modelBuilder.Entity<StatusDisponibilidadeVoluntario>(entity =>

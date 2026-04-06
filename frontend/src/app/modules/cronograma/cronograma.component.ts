@@ -111,7 +111,7 @@ export class CronogramaComponent implements OnInit {
       this.carregar();
     });
 
-    this.cultoService.listar().subscribe((data) => {
+    this.cultoService.listarAtivos().subscribe((data) => {
       this.cultos = data;
     });
 

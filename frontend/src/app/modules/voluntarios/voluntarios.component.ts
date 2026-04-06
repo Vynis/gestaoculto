@@ -109,13 +109,36 @@ export class VoluntariosComponent implements OnInit {
     }
 
     const raw = this.form.getRawValue();
+    const nome = (raw.nome || '').trim();
+    const email = (raw.email || '').trim().toLowerCase();
+
+    const nomeDuplicado = this.voluntarios.some((v) =>
+      v.id !== (this.voluntarioEditandoId ?? 0)
+      && v.nome.trim().toLowerCase() === nome.toLowerCase()
+    );
+    if (nomeDuplicado) {
+      this.toastr.warning('Já existe voluntário cadastrado com este nome.', 'Cadastro rápido');
+      return;
+    }
+
+    if (email) {
+      const emailDuplicado = this.voluntarios.some((v) =>
+        v.id !== (this.voluntarioEditandoId ?? 0)
+        && (v.email || '').trim().toLowerCase() === email
+      );
+      if (emailDuplicado) {
+        this.toastr.warning('Já existe voluntário cadastrado com este e-mail.', 'Cadastro rápido');
+        return;
+      }
+    }
+
     const ministerioIds = (raw.ministerioIds || []).filter((id) => id > 0);
     const payload: Voluntario = {
       id: this.voluntarioEditandoId ?? 0,
-      nome: raw.nome || '',
+      nome,
       usuarioId: raw.usuarioId ?? null,
       telefone: raw.telefone || null,
-      email: raw.email || null,
+      email: email || null,
       ministerioPrincipalId: ministerioIds[0] ?? null,
       ministerioIds,
       observacoes: raw.observacoes || null,

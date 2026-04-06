@@ -104,6 +104,29 @@ namespace GestaoCulto.API.Controllers
         [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
         public async Task<IActionResult> Criar([FromBody] VoluntarioDto dto)
         {
+            var nome = (dto.Nome ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                return BadRequest(new { mensagem = "Informe o nome do voluntário." });
+            }
+
+            var email = NormalizarEmail(dto.Email);
+
+            var nomeDuplicado = await ExisteNomeDuplicado(nome, null);
+            if (nomeDuplicado)
+            {
+                return BadRequest(new { mensagem = "Já existe um voluntário cadastrado com este nome." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var emailDuplicado = await ExisteEmailDuplicado(email, null);
+                if (emailDuplicado)
+                {
+                    return BadRequest(new { mensagem = "Já existe um voluntário cadastrado com este e-mail." });
+                }
+            }
+
             if (dto.UsuarioId.HasValue && dto.UsuarioId.Value > 0)
             {
                 var usuarioExiste = await _db.Usuarios.AnyAsync(x => x.Id == dto.UsuarioId.Value);
@@ -143,9 +166,9 @@ namespace GestaoCulto.API.Controllers
             var entity = new Voluntario
             {
                 UsuarioId = dto.UsuarioId.HasValue && dto.UsuarioId.Value > 0 ? dto.UsuarioId : null,
-                Nome = dto.Nome,
+                Nome = nome,
                 Telefone = dto.Telefone,
-                Email = dto.Email,
+                Email = email,
                 MinisterioPrincipalId = ministerioPrincipalId,
                 Observacoes = dto.Observacoes,
                 RestricoesIndisponibilidade = dto.RestricoesIndisponibilidade,
@@ -185,6 +208,29 @@ namespace GestaoCulto.API.Controllers
                 return NotFound(new { mensagem = "Voluntário não encontrado." });
             }
 
+            var nome = (dto.Nome ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                return BadRequest(new { mensagem = "Informe o nome do voluntário." });
+            }
+
+            var email = NormalizarEmail(dto.Email);
+
+            var nomeDuplicado = await ExisteNomeDuplicado(nome, id);
+            if (nomeDuplicado)
+            {
+                return BadRequest(new { mensagem = "Já existe um voluntário cadastrado com este nome." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var emailDuplicado = await ExisteEmailDuplicado(email, id);
+                if (emailDuplicado)
+                {
+                    return BadRequest(new { mensagem = "Já existe um voluntário cadastrado com este e-mail." });
+                }
+            }
+
             if (dto.UsuarioId.HasValue && dto.UsuarioId.Value > 0)
             {
                 var usuarioExiste = await _db.Usuarios.AnyAsync(x => x.Id == dto.UsuarioId.Value);
@@ -221,10 +267,10 @@ namespace GestaoCulto.API.Controllers
                 ministerioPrincipalId = ministerioIds[0];
             }
 
-            entity.Nome = dto.Nome;
+            entity.Nome = nome;
             entity.UsuarioId = dto.UsuarioId.HasValue && dto.UsuarioId.Value > 0 ? dto.UsuarioId : null;
             entity.Telefone = dto.Telefone;
-            entity.Email = dto.Email;
+            entity.Email = email;
             entity.MinisterioPrincipalId = ministerioPrincipalId;
             entity.Observacoes = dto.Observacoes;
             entity.RestricoesIndisponibilidade = dto.RestricoesIndisponibilidade;
@@ -285,6 +331,29 @@ namespace GestaoCulto.API.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { mensagem = "Voluntário excluído com sucesso." });
+        }
+
+        private async Task<bool> ExisteNomeDuplicado(string nome, long? ignorarId)
+        {
+            var nomeNormalizado = nome.Trim().ToLower();
+            return await _db.Voluntarios.AnyAsync(x =>
+                (!ignorarId.HasValue || x.Id != ignorarId.Value)
+                && x.Nome.ToLower() == nomeNormalizado);
+        }
+
+        private async Task<bool> ExisteEmailDuplicado(string email, long? ignorarId)
+        {
+            var emailNormalizado = email.Trim().ToLower();
+            return await _db.Voluntarios.AnyAsync(x =>
+                (!ignorarId.HasValue || x.Id != ignorarId.Value)
+                && x.Email != null
+                && x.Email.ToLower() == emailNormalizado);
+        }
+
+        private static string? NormalizarEmail(string? email)
+        {
+            var valor = (email ?? string.Empty).Trim();
+            return string.IsNullOrWhiteSpace(valor) ? null : valor.ToLower();
         }
     }
 }

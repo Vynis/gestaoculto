@@ -1,17 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Culto, CultoRequest } from '../models/culto.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class CultoService {
   private readonly apiUrl = `${environment.apiUrl}/cultos`;
+  static readonly STATUS_CULTO_ATIVO_ID = 1;
 
   constructor(private readonly http: HttpClient) {}
 
   listar(): Observable<Culto[]> {
     return this.http.get<Culto[]>(this.apiUrl);
+  }
+
+  listarAtivos(): Observable<Culto[]> {
+    return this.listar().pipe(
+      map((cultos) => cultos.filter((culto) => Number(culto.statusCultoId) === CultoService.STATUS_CULTO_ATIVO_ID))
+    );
   }
 
   criar(dto: CultoRequest): Observable<Culto> {
