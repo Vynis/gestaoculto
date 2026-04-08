@@ -81,6 +81,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            await SincronizarVinculosVoluntarioMinisterioAsync();
+
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS voluntario_acesso_ativacao (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -500,6 +502,51 @@ namespace GestaoCulto.Infrastructure.Persistence
             var result = await command.ExecuteScalarAsync();
             var total = Convert.ToInt32(result ?? 0);
             return total > 0;
+        }
+
+        private async Task<bool> TabelaExisteAsync(string tabela)
+        {
+            var connection = _db.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_name = @tabela";
+
+            var paramTabela = command.CreateParameter();
+            paramTabela.ParameterName = "@tabela";
+            paramTabela.Value = tabela;
+            command.Parameters.Add(paramTabela);
+
+            var result = await command.ExecuteScalarAsync();
+            var total = Convert.ToInt32(result ?? 0);
+            return total > 0;
+        }
+
+        private async Task SincronizarVinculosVoluntarioMinisterioAsync()
+        {
+            var tabelaLegadaExiste = await TabelaExisteAsync("voluntario_ministerio");
+            var tabelaAtualExiste = await TabelaExisteAsync("ministerio_voluntario");
+
+            if (!tabelaLegadaExiste || !tabelaAtualExiste)
+            {
+                return;
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                INSERT IGNORE INTO ministerio_voluntario (ministerio_id, voluntario_id, principal, criado_em)
+                SELECT vm.ministerio_id,
+                       vm.voluntario_id,
+                       vm.principal,
+                       COALESCE(vm.criado_em, UTC_TIMESTAMP())
+                FROM voluntario_ministerio vm;
+            ");
         }
 
         private async Task GarantirColunasAuditoriaAsync(string tabela)

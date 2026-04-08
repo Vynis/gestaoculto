@@ -18,6 +18,8 @@ export class DisponibilidadesComponent implements OnInit {
   cultos: Culto[] = [];
   voluntarios: Voluntario[] = [];
   ministerios: Ministerio[] = [];
+  carregandoVoluntarios = false;
+  erroVoluntarios: string | null = null;
   status: StatusDisponibilidadeVoluntario[] = [];
   modalEscalaAberto = false;
   prefillEscala: EscalaModalPrefill | null = null;
@@ -46,9 +48,7 @@ export class DisponibilidadesComponent implements OnInit {
       this.ministerios = res || [];
     });
 
-    this.cadastroService.listarVoluntarios().subscribe((res) => {
-      this.voluntarios = res || [];
-    });
+    this.carregarVoluntarios();
 
     this.portalVoluntarioService.listarStatusDisponibilidade().subscribe((res) => {
       this.status = res || [];
@@ -111,6 +111,7 @@ export class DisponibilidadesComponent implements OnInit {
   }
 
   lancarNaEscala(item: DisponibilidadeGestaoItem): void {
+    this.carregarVoluntarios();
     const ministerioId = item.ministerios?.[0]?.ministerioId ?? null;
     const ministerioNome = item.ministerios?.[0]?.ministerioNome || '';
     this.prefillEscala = {
@@ -135,5 +136,28 @@ export class DisponibilidadesComponent implements OnInit {
 
   get semRegistros(): boolean {
     return this.carregouConsulta && !this.carregando && this.itens.length === 0;
+  }
+
+  carregarVoluntarios(): void {
+    this.carregandoVoluntarios = true;
+    this.erroVoluntarios = null;
+
+    this.cadastroService.listarVoluntarios().subscribe({
+      next: (res) => {
+        this.voluntarios = (res || [])
+          .slice()
+          .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+        this.erroVoluntarios = null;
+      },
+      error: () => {
+        if (!this.voluntarios.length) {
+          this.erroVoluntarios = 'Falha ao carregar voluntários.';
+        }
+        this.carregandoVoluntarios = false;
+      },
+      complete: () => {
+        this.carregandoVoluntarios = false;
+      }
+    });
   }
 }

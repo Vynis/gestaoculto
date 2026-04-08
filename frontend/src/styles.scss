@@ -54,6 +54,12 @@ nb-layout .layout {
   background: transparent;
 }
 
+.cdk-overlay-container,
+.cdk-global-overlay-wrapper,
+.cdk-overlay-pane {
+  z-index: 2000 !important;
+}
+
 nb-card {
   border: 1px solid var(--gc-border);
   border-radius: 14px;

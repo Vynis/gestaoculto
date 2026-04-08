@@ -33,11 +33,14 @@
   [aberto]="modalEscalaAberto"
   [cultos]="cultos"
   [voluntarios]="voluntarios"
+  [carregandoVoluntarios]="carregandoVoluntarios"
+  [erroVoluntarios]="erroVoluntarios"
   [ministerios]="ministerios"
   [escalaEditando]="null"
   [prefill]="prefillEscala"
   (fechar)="fecharModalEscala()"
   (salvou)="aoSalvarEscala()"
+  (recarregarVoluntarios)="carregarVoluntarios()"
 ></app-escala-modal>
 
 <nb-card>

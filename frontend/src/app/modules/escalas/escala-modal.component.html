@@ -5,12 +5,22 @@
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
         <nb-select formControlName="cultoId" placeholder="Culto">
-          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} </nb-option>
+          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }}</nb-option>
         </nb-select>
 
-        <nb-select formControlName="voluntarioId" placeholder="Voluntário">
-          <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
-        </nb-select>
+        <select class="gc-native-select" nbInput formControlName="voluntarioId">
+          <option [ngValue]="null">Selecione um voluntário</option>
+          <option *ngIf="carregandoVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Carregando voluntários...</option>
+          <option *ngIf="erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>{{ erroVoluntariosEfetivo }}</option>
+          <option *ngIf="!carregandoVoluntariosEfetivo && !erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Nenhum voluntário cadastrado</option>
+          <option *ngFor="let voluntario of voluntarios" [ngValue]="voluntario.id">{{ voluntario.nome || ('Voluntário #' + voluntario.id) }}</option>
+        </select>
+
+        <div class="voluntario-feedback" *ngIf="erroVoluntariosEfetivo && !voluntarios.length">
+          <button nbButton status="basic" size="tiny" type="button" (click)="tentarNovamenteCarregarVoluntarios()">
+            Tentar novamente
+          </button>
+        </div>
 
         <div class="voluntario-acao">
           <button *ngIf="!cadastroVoluntarioAberto" nbButton status="info" size="small" type="button" (click)="abrirCadastroVoluntarioRapido()">
@@ -24,9 +34,9 @@
             <input nbInput formControlName="nome" placeholder="Nome completo" />
             <input nbInput formControlName="telefone" placeholder="Telefone (opcional)" />
             <input nbInput formControlName="email" placeholder="E-mail (opcional)" />
-            <nb-select multiple formControlName="ministerioIds" placeholder="Ministérios (opcional)">
-              <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
-            </nb-select>
+            <select class="gc-native-select gc-native-select-multiple" nbInput multiple formControlName="ministerioIds">
+              <option *ngFor="let ministerio of ministerios" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+            </select>
             <div class="modal-actions">
               <button nbButton status="success" type="button" (click)="salvarNovoVoluntario()">Salvar voluntário</button>
               <button nbButton status="basic" type="button" (click)="cancelarCadastroVoluntarioRapido()">Cancelar</button>
@@ -34,10 +44,10 @@
           </div>
         </div>
 
-        <nb-select formControlName="ministerioId" placeholder="Equipe (opcional)">
-          <nb-option [value]="null">Sem equipe</nb-option>
-          <nb-option *ngFor="let ministerio of ministeriosDisponiveis" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
-        </nb-select>
+        <select class="gc-native-select" nbInput formControlName="ministerioId">
+          <option [ngValue]="null">Sem equipe</option>
+          <option *ngFor="let ministerio of ministeriosDisponiveis" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+        </select>
 
         <input nbInput formControlName="funcao" placeholder="Função" />
 
