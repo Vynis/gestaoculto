@@ -281,6 +281,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.HorarioInicialPadrao).HasColumnName("horario_inicial_padrao");
                 entity.Property(x => x.DuracaoMinutos).HasColumnName("duracao_minutos");
                 entity.Property(x => x.Atividade).HasColumnName("atividade").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.Descricao).HasColumnName("descricao").HasMaxLength(500);
                 entity.Property(x => x.MinisterioResponsavelId).HasColumnName("ministerio_responsavel_id");
                 entity.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
@@ -396,6 +397,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.DuracaoMinutos).HasColumnName("duracao_minutos");
                 entity.Property(x => x.HorarioFimCalculado).HasColumnName("horario_fim_calculado");
                 entity.Property(x => x.Atividade).HasColumnName("atividade").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.Descricao).HasColumnName("descricao").HasMaxLength(500);
                 entity.Property(x => x.ResponsavelPrincipalUsuarioId).HasColumnName("responsavel_principal_usuario_id");
                 entity.Property(x => x.MinisterioResponsavelId).HasColumnName("ministerio_responsavel_id");

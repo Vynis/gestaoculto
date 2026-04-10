@@ -57,7 +57,15 @@ nb-layout .layout {
 .cdk-overlay-container,
 .cdk-global-overlay-wrapper,
 .cdk-overlay-pane {
-  z-index: 2000 !important;
+  z-index: 4000 !important;
+}
+
+.modal-backdrop {
+  z-index: 3000 !important;
+}
+
+.modal-wrapper {
+  z-index: 3010 !important;
 }
 
 nb-card {

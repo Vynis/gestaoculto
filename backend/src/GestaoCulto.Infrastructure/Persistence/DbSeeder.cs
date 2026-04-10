@@ -232,6 +232,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                   horario_inicial_padrao TIME NULL,
                   duracao_minutos INT NOT NULL,
                   atividade VARCHAR(150) NOT NULL,
+                  bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'PRINCIPAL',
                   descricao VARCHAR(500) NULL,
                   ministerio_responsavel_id BIGINT UNSIGNED NULL,
                   observacoes VARCHAR(500) NULL,
@@ -246,6 +247,34 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_template_etapa_ministerio FOREIGN KEY (ministerio_responsavel_id) REFERENCES ministerio(id) ON DELETE SET NULL,
                   CONSTRAINT fk_template_etapa_status FOREIGN KEY (status_etapa_id) REFERENCES status_etapa(id) ON DELETE SET NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            if (!await ColunaExisteAsync("etapa_culto", "bloco_cronograma"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE etapa_culto
+                    ADD COLUMN bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'PRINCIPAL' AFTER atividade;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("template_etapa_culto", "bloco_cronograma"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE template_etapa_culto
+                    ADD COLUMN bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'PRINCIPAL' AFTER atividade;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                UPDATE etapa_culto
+                SET bloco_cronograma = 'PRINCIPAL'
+                WHERE bloco_cronograma IS NULL OR TRIM(bloco_cronograma) = '';
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                UPDATE template_etapa_culto
+                SET bloco_cronograma = 'PRINCIPAL'
+                WHERE bloco_cronograma IS NULL OR TRIM(bloco_cronograma) = '';
             ");
 
             await _db.Database.ExecuteSqlRawAsync(@"
@@ -298,6 +327,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_etapa_acao_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE RESTRICT
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
+
+            await SanearEtapasCronogramaDuplicadasAsync();
 
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS status_disponibilidade_voluntario (
@@ -566,6 +597,72 @@ namespace GestaoCulto.Infrastructure.Persistence
                     ADD COLUMN atualizado_em DATETIME NULL;
                 ");
             }
+        }
+
+        private async Task SanearEtapasCronogramaDuplicadasAsync()
+        {
+            if (!await TabelaExisteAsync("etapa_culto"))
+            {
+                return;
+            }
+
+            var subqueryDuplicadas = @"
+                SELECT d.id AS duplicate_id,
+                       base.keep_id
+                FROM etapa_culto d
+                INNER JOIN (
+                    SELECT culto_id,
+                           sequencia,
+                           LOWER(TRIM(COALESCE(bloco_cronograma, 'PRINCIPAL'))) AS bloco_normalizado,
+                           MIN(id) AS keep_id,
+                           COUNT(*) AS total
+                    FROM etapa_culto
+                    GROUP BY culto_id,
+                             sequencia,
+                             LOWER(TRIM(COALESCE(bloco_cronograma, 'PRINCIPAL')))
+                    HAVING COUNT(*) > 1
+                ) base
+                    ON base.culto_id = d.culto_id
+                   AND base.sequencia = d.sequencia
+                   AND base.bloco_normalizado = LOWER(TRIM(COALESCE(d.bloco_cronograma, 'PRINCIPAL')))
+                WHERE d.id <> base.keep_id";
+
+            if (await TabelaExisteAsync("escala"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    UPDATE escala e
+                    INNER JOIN ({subqueryDuplicadas}) mapa
+                        ON mapa.duplicate_id = e.etapa_culto_id
+                    SET e.etapa_culto_id = mapa.keep_id;
+                ");
+            }
+
+            if (await TabelaExisteAsync("repertorio_culto_item"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    UPDATE repertorio_culto_item r
+                    INNER JOIN ({subqueryDuplicadas}) mapa
+                        ON mapa.duplicate_id = r.etapa_culto_id
+                    SET r.etapa_culto_id = mapa.keep_id;
+                ");
+            }
+
+            if (await TabelaExisteAsync("etapa_culto_ministerio_acao"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    UPDATE etapa_culto_ministerio_acao a
+                    INNER JOIN ({subqueryDuplicadas}) mapa
+                        ON mapa.duplicate_id = a.etapa_culto_id
+                    SET a.etapa_culto_id = mapa.keep_id;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync($@"
+                DELETE d
+                FROM etapa_culto d
+                INNER JOIN ({subqueryDuplicadas}) mapa
+                    ON mapa.duplicate_id = d.id;
+            ");
         }
     }
 }

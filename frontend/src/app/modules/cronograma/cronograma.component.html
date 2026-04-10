@@ -36,6 +36,7 @@
           <div class="title-row">
             <span class="seq-badge">#{{ etapa.sequencia }}</span>
             <strong>{{ etapa.atividade }}</strong>
+            <span class="seq-badge">{{ etapa.blocoCronograma || 'PRINCIPAL' }}</span>
           </div>
           <p>{{ etapa.descricao }}</p>
           <small *ngIf="etapa.ministerioResponsavelNome">Equipe: {{ etapa.ministerioResponsavelNome }}</small>
@@ -75,14 +76,29 @@
         <input nbInput type="time" formControlName="horarioInicio" />
         <input nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração" />
         <input nbInput formControlName="atividade" placeholder="Atividade" />
+        <input
+          nbInput
+          formControlName="blocoCronograma"
+          placeholder="Bloco do cronograma"
+          list="cronograma-blocos"
+          autocomplete="off"
+        />
+        <datalist id="cronograma-blocos">
+          <option *ngFor="let bloco of blocosCronogramaDisponiveis" [value]="bloco"></option>
+        </datalist>
+        <select class="gc-native-select" nbInput formControlName="ministerioResponsavelId">
+          <option [ngValue]="null">Equipe responsável (opcional)</option>
+          <option *ngFor="let ministerio of ministeriosOrdenados" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+        </select>
         <input nbInput formControlName="descricao" placeholder="Descrição" />
 
         <div class="acoes-editor">
           <h4>Acoes por ministerio da etapa</h4>
           <div class="form-grid" [formGroup]="acaoForm">
-            <nb-select formControlName="ministerioId" placeholder="Ministerio">
-              <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
-            </nb-select>
+            <select class="gc-native-select" nbInput formControlName="ministerioId">
+              <option [ngValue]="null">Ministério</option>
+              <option *ngFor="let ministerio of ministeriosOrdenados" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+            </select>
             <input nbInput formControlName="descricaoAcao" placeholder="Descricao da acao" />
             <input nbInput type="number" formControlName="ordem" placeholder="Ordem (opcional)" />
             <input nbInput formControlName="observacao" placeholder="Observacao (opcional)" />

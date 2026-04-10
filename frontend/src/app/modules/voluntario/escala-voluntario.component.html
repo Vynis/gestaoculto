@@ -14,6 +14,9 @@
             <strong>{{ item.cultoNome }}</strong><br />
             <small>{{ item.dataCulto | date:'dd/MM/yyyy' }} {{ formatarHorario(item.horarioInicio) }}</small>
             <small>{{ item.ministerioNome || 'Ministério não informado' }} - {{ item.funcao }}</small>
+            <small *ngIf="item.etapaAtividade || item.etapaBlocoCronograma">
+              Etapa: {{ item.etapaAtividade || 'Sem atividade' }}<span *ngIf="item.etapaBlocoCronograma"> ({{ item.etapaBlocoCronograma }})</span>
+            </small>
             <small>Status: {{ item.presencaStatusNome || item.presencaStatusId }}</small>
           </div>
           <div class="acoes">
@@ -35,7 +38,9 @@
     <nb-card-body>
       <p><strong>{{ d.item.cultoNome }}</strong> - {{ d.item.dataCulto | date:'dd/MM/yyyy' }}</p>
       <p>{{ d.item.ministerioNome }} | {{ d.item.funcao }}</p>
-      <p *ngIf="d.item.etapaAtividade">Etapa: {{ d.item.etapaAtividade }}</p>
+      <p *ngIf="d.item.etapaAtividade || d.item.etapaBlocoCronograma">
+        Etapa: {{ d.item.etapaAtividade || 'Sem atividade' }}<span *ngIf="d.item.etapaBlocoCronograma"> ({{ d.item.etapaBlocoCronograma }})</span>
+      </p>
       <p *ngIf="d.item.observacoes">Obs: {{ d.item.observacoes }}</p>
 
       <h5>Colegas do mesmo ministério nesse culto</h5>

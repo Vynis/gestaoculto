@@ -193,6 +193,7 @@ namespace GestaoCulto.API.Controllers
                     e.HorarioFimCalculado,
                     e.DuracaoMinutos,
                     e.Atividade,
+                    e.BlocoCronograma,
                     e.Descricao,
                     e.MinisterioResponsavelId,
                     MinisterioResponsavelNome = _db.Ministerios.Where(m => m.Id == e.MinisterioResponsavelId).Select(m => m.Nome).FirstOrDefault(),
@@ -207,6 +208,7 @@ namespace GestaoCulto.API.Controllers
                 {
                     x.CultoId,
                     x.Sequencia,
+                    BlocoCronograma = (x.BlocoCronograma ?? "PRINCIPAL").Trim().ToLower(),
                     Atividade = (x.Atividade ?? string.Empty).Trim().ToLower()
                 })
                 .Select(g => g.OrderBy(x => x.Id).First())
@@ -214,6 +216,35 @@ namespace GestaoCulto.API.Controllers
                 .ThenBy(x => x.Sequencia)
                 .ThenBy(x => x.Id)
                 .ToList();
+
+            var ministeriosResponsaveisIds = etapas
+                .Where(x => x.MinisterioResponsavelId.HasValue)
+                .Select(x => x.MinisterioResponsavelId!.Value)
+                .Distinct()
+                .ToList();
+
+            var lideresMinisterio = await _db.MinisteriosLideres
+                .AsNoTracking()
+                .Where(x => ministeriosResponsaveisIds.Contains(x.MinisterioId))
+                .Join(
+                    _db.Usuarios.AsNoTracking(),
+                    ml => ml.UsuarioId,
+                    u => u.Id,
+                    (ml, u) => new
+                    {
+                        ml.MinisterioId,
+                        UsuarioNome = u.Nome,
+                        ml.Principal
+                    })
+                .OrderByDescending(x => x.Principal)
+                .ThenBy(x => x.UsuarioNome)
+                .ToListAsync();
+
+            var mapaLideresPorMinisterio = lideresMinisterio
+                .GroupBy(x => x.MinisterioId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.Principal ? $"{x.UsuarioNome} (principal)" : x.UsuarioNome).ToList());
 
             var etapaIds = etapas.Select(x => (long)x.Id).ToList();
             var acoesEtapa = await _db.EtapasCultoMinisteriosAcoes
@@ -317,9 +348,13 @@ namespace GestaoCulto.API.Controllers
                 x.HorarioFimCalculado,
                 x.DuracaoMinutos,
                 x.Atividade,
+                x.BlocoCronograma,
                 x.Descricao,
                 x.MinisterioResponsavelId,
                 x.MinisterioResponsavelNome,
+                LideresResponsaveis = x.MinisterioResponsavelId.HasValue && mapaLideresPorMinisterio.ContainsKey(x.MinisterioResponsavelId.Value)
+                    ? mapaLideresPorMinisterio[x.MinisterioResponsavelId.Value]
+                    : new List<string>(),
                 x.StatusEtapaId,
                 x.StatusEtapaNome,
                 x.AtrasoMinutos,

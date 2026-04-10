@@ -8,6 +8,13 @@
           <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }}</nb-option>
         </nb-select>
 
+        <select class="gc-native-select" nbInput formControlName="etapaCultoId">
+          <option [ngValue]="null">Etapa do cronograma (opcional)</option>
+          <option *ngIf="carregandoEtapas" [ngValue]="null" disabled>Carregando etapas...</option>
+          <option *ngIf="erroEtapas && !carregandoEtapas" [ngValue]="null" disabled>{{ erroEtapas }}</option>
+          <option *ngFor="let etapa of etapasCulto" [ngValue]="etapa.id">{{ descricaoEtapa(etapa) }}</option>
+        </select>
+
         <select class="gc-native-select" nbInput formControlName="voluntarioId">
           <option [ngValue]="null">Selecione um voluntário</option>
           <option *ngIf="carregandoVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Carregando voluntários...</option>

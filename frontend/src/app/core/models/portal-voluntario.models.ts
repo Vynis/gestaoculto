@@ -9,6 +9,7 @@ export interface VoluntarioCompromisso {
   funcao: string;
   etapaCultoId: number | null;
   etapaAtividade: string | null;
+  etapaBlocoCronograma?: string | null;
   observacoes: string | null;
   presencaStatusId: number;
   presencaStatusNome: string | null;

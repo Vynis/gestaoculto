@@ -34,6 +34,7 @@ namespace GestaoCulto.API.Controllers
         public string Funcao { get; set; } = string.Empty;
         public long? EtapaCultoId { get; set; }
         public string? EtapaAtividade { get; set; }
+        public string? EtapaBlocoCronograma { get; set; }
         public string? Observacoes { get; set; }
         public long PresencaStatusId { get; set; }
         public string? PresencaStatusNome { get; set; }
@@ -685,6 +686,7 @@ namespace GestaoCulto.API.Controllers
                     Funcao = x.Funcao,
                     EtapaCultoId = x.EtapaCultoId,
                     EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
+                    EtapaBlocoCronograma = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.BlocoCronograma).FirstOrDefault(),
                     Observacoes = x.Observacoes,
                     PresencaStatusId = x.PresencaStatusId,
                     PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == x.PresencaStatusId).Select(s => s.Nome).FirstOrDefault()

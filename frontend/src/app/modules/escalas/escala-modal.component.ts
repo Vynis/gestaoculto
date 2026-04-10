@@ -6,9 +6,12 @@ import { Ministerio, Voluntario } from '../../core/models/cadastro.models';
 import { Escala } from '../../core/models/escala.models';
 import { EscalaService } from '../../core/services/escala.service';
 import { CadastroService } from '../../core/services/cadastro.service';
+import { CronogramaService } from '../../core/services/cronograma.service';
+import { EtapaCulto } from '../../core/models/cronograma.models';
 
 export interface EscalaModalPrefill {
   cultoId: number;
+  etapaCultoId?: number | null;
   voluntarioId?: number | null;
   ministerioId?: number | null;
   funcao?: string | null;
@@ -35,8 +38,11 @@ export class EscalaModalComponent implements OnChanges {
   @Output() recarregarVoluntarios = new EventEmitter<void>();
 
   ministeriosDisponiveis: Ministerio[] = [];
+  etapasCulto: EtapaCulto[] = [];
   cadastroVoluntarioAberto = false;
   salvando = false;
+  carregandoEtapas = false;
+  erroEtapas: string | null = null;
   carregandoVoluntariosFallback = false;
   erroVoluntariosFallback: string | null = null;
 
@@ -63,11 +69,21 @@ export class EscalaModalComponent implements OnChanges {
     private readonly fb: FormBuilder,
     private readonly escalaService: EscalaService,
     private readonly cadastroService: CadastroService,
+    private readonly cronogramaService: CronogramaService,
     private readonly toastr: NbToastrService
   ) {
+    this.form.controls.cultoId.valueChanges.subscribe((cultoId) => {
+      this.carregarEtapasDoCulto(Number(cultoId) || 0);
+    });
+
+    this.form.controls.etapaCultoId.valueChanges.subscribe((etapaCultoId) => {
+      this.sugerirMinisterioDaEtapa(Number(etapaCultoId) || 0);
+    });
+
     this.form.controls.voluntarioId.valueChanges.subscribe((voluntarioId) => {
       this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
       this.atualizarEstadoControles();
+      this.sugerirMinisterioDaEtapa(Number(this.form.controls.etapaCultoId.value) || 0);
     });
   }
 
@@ -92,6 +108,7 @@ export class EscalaModalComponent implements OnChanges {
 
     if (changes['voluntarios'] || changes['ministerios']) {
       this.sincronizarSelecaoComDados();
+      this.sugerirMinisterioDaEtapa(Number(this.form.controls.etapaCultoId.value) || 0);
       this.garantirVoluntariosDisponiveis();
       return;
     }
@@ -238,6 +255,7 @@ export class EscalaModalComponent implements OnChanges {
 
       this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
       this.atualizarEstadoControles();
+      this.carregarEtapasDoCulto(this.escalaEditando.cultoId, this.escalaEditando.etapaCultoId);
       return;
     }
 
@@ -251,7 +269,7 @@ export class EscalaModalComponent implements OnChanges {
 
     this.form.reset({
       cultoId,
-      etapaCultoId: null,
+      etapaCultoId: this.prefill?.etapaCultoId ?? null,
       voluntarioId,
       ministerioId: this.prefill?.ministerioId ?? null,
       funcao: (this.prefill?.funcao || '').trim(),
@@ -261,6 +279,72 @@ export class EscalaModalComponent implements OnChanges {
 
     this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
     this.atualizarEstadoControles();
+    this.carregarEtapasDoCulto(cultoId, this.prefill?.etapaCultoId ?? null);
+  }
+
+  private carregarEtapasDoCulto(cultoId: number, etapaPreferencial: number | null = null): void {
+    if (!cultoId) {
+      this.etapasCulto = [];
+      this.erroEtapas = null;
+      this.form.controls.etapaCultoId.patchValue(null, { emitEvent: false });
+      return;
+    }
+
+    this.carregandoEtapas = true;
+    this.erroEtapas = null;
+
+    this.cronogramaService.listarPorCulto(cultoId).subscribe({
+      next: (data) => {
+        this.etapasCulto = (data || [])
+          .slice()
+          .sort((a, b) => Number(a.sequencia || 0) - Number(b.sequencia || 0));
+
+        const atual = Number(this.form.controls.etapaCultoId.value) || 0;
+        const preferencial = Number(etapaPreferencial) || 0;
+        const alvo = atual > 0 ? atual : preferencial;
+        const existe = alvo > 0 && this.etapasCulto.some((item) => Number(item.id) === alvo);
+
+        this.form.controls.etapaCultoId.patchValue(existe ? alvo : null, { emitEvent: false });
+        this.sugerirMinisterioDaEtapa(existe ? alvo : 0);
+      },
+      error: () => {
+        this.etapasCulto = [];
+        this.erroEtapas = 'Falha ao carregar etapas do cronograma.';
+        this.form.controls.etapaCultoId.patchValue(null, { emitEvent: false });
+      },
+      complete: () => {
+        this.carregandoEtapas = false;
+      }
+    });
+  }
+
+  private sugerirMinisterioDaEtapa(etapaCultoId: number): void {
+    if (!etapaCultoId) {
+      return;
+    }
+
+    const etapa = this.etapasCulto.find((item) => Number(item.id) === Number(etapaCultoId));
+    const ministerioEtapa = Number(etapa?.ministerioResponsavelId) || 0;
+    if (!ministerioEtapa) {
+      return;
+    }
+
+    const ministerioValido = this.ministeriosDisponiveis.some((item) => Number(item.id) === ministerioEtapa);
+    if (!ministerioValido) {
+      return;
+    }
+
+    const atual = Number(this.form.controls.ministerioId.value) || 0;
+    if (!atual) {
+      this.form.controls.ministerioId.patchValue(ministerioEtapa, { emitEvent: false });
+    }
+  }
+
+  descricaoEtapa(etapa: EtapaCulto): string {
+    const sequencia = Number(etapa.sequencia || 0);
+    const atividade = String(etapa.atividade || '').trim() || 'Etapa';
+    const bloco = String(etapa.blocoCronograma || 'PRINCIPAL').trim().toUpperCase();
+    return `#${sequencia} - ${atividade} (${bloco})`;
   }
 
   private obterVoluntarioPreferencial(): number {
