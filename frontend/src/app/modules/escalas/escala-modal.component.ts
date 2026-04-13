@@ -38,6 +38,7 @@ export class EscalaModalComponent implements OnChanges {
   @Output() recarregarVoluntarios = new EventEmitter<void>();
 
   ministeriosDisponiveis: Ministerio[] = [];
+  funcoesPadraoDisponiveis: string[] = [];
   etapasCulto: EtapaCulto[] = [];
   cadastroVoluntarioAberto = false;
   salvando = false;
@@ -80,6 +81,10 @@ export class EscalaModalComponent implements OnChanges {
       this.sugerirMinisterioDaEtapa(Number(etapaCultoId) || 0);
     });
 
+    this.form.controls.ministerioId.valueChanges.subscribe((ministerioId) => {
+      this.atualizarFuncoesPorMinisterio(Number(ministerioId) || 0);
+    });
+
     this.form.controls.voluntarioId.valueChanges.subscribe((voluntarioId) => {
       this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
       this.atualizarEstadoControles();
@@ -109,6 +114,7 @@ export class EscalaModalComponent implements OnChanges {
     if (changes['voluntarios'] || changes['ministerios']) {
       this.sincronizarSelecaoComDados();
       this.sugerirMinisterioDaEtapa(Number(this.form.controls.etapaCultoId.value) || 0);
+      this.atualizarFuncoesPorMinisterio(Number(this.form.controls.ministerioId.value) || 0);
       this.garantirVoluntariosDisponiveis();
       return;
     }
@@ -347,6 +353,20 @@ export class EscalaModalComponent implements OnChanges {
     return `#${sequencia} - ${atividade} (${bloco})`;
   }
 
+  get usarComboFuncao(): boolean {
+    return this.funcoesPadraoDisponiveis.length > 0;
+  }
+
+  get funcaoAtualNaoCatalogada(): string | null {
+    const atual = (this.form.controls.funcao.value || '').trim();
+    if (!atual || !this.usarComboFuncao) {
+      return null;
+    }
+
+    const existe = this.funcoesPadraoDisponiveis.some((item) => item.toLowerCase() === atual.toLowerCase());
+    return existe ? null : atual;
+  }
+
   private obterVoluntarioPreferencial(): number {
     if (this.existeVoluntario(this.escalaEditando?.voluntarioId)) {
       return Number(this.escalaEditando?.voluntarioId);
@@ -368,6 +388,7 @@ export class EscalaModalComponent implements OnChanges {
     const voluntario = this.voluntarios.find((item) => Number(item.id) === Number(voluntarioId));
     if (!voluntario) {
       this.ministeriosDisponiveis = [];
+      this.funcoesPadraoDisponiveis = [];
       if ((Number(this.form.controls.ministerioId.value) || 0) > 0) {
         this.form.controls.ministerioId.patchValue(null, { emitEvent: false });
       }
@@ -389,6 +410,40 @@ export class EscalaModalComponent implements OnChanges {
     const ministerioSelecionado = Number(this.form.controls.ministerioId.value) || 0;
     if (ministerioSelecionado > 0 && !idsPermitidos.includes(ministerioSelecionado)) {
       this.form.controls.ministerioId.patchValue(null, { emitEvent: false });
+    }
+
+    this.atualizarFuncoesPorMinisterio(Number(this.form.controls.ministerioId.value) || 0);
+  }
+
+  private atualizarFuncoesPorMinisterio(ministerioId: number): void {
+    if (!ministerioId) {
+      this.funcoesPadraoDisponiveis = [];
+      return;
+    }
+
+    const ministerio = this.ministeriosDisponiveis.find((item) => Number(item.id) === Number(ministerioId));
+    const funcoes = (ministerio?.funcoesPadrao || [])
+      .filter((item) => item?.ativo !== false && !!String(item.nome || '').trim())
+      .slice()
+      .sort((a, b) => {
+        const ordemA = Number(a.ordem || 0);
+        const ordemB = Number(b.ordem || 0);
+        if (ordemA !== ordemB) {
+          return ordemA - ordemB;
+        }
+        return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+      })
+      .map((item) => String(item.nome || '').trim());
+
+    this.funcoesPadraoDisponiveis = Array.from(new Set(funcoes));
+
+    if (!this.funcoesPadraoDisponiveis.length) {
+      return;
+    }
+
+    const atual = (this.form.controls.funcao.value || '').trim();
+    if (!atual) {
+      this.form.controls.funcao.patchValue(this.funcoesPadraoDisponiveis[0], { emitEvent: false });
     }
   }
 

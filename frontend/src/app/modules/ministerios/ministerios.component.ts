@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
-import { MinisterioCompleto, MinisterioRequest } from '../../core/models/ministerio.models';
+import { MinisterioCompleto, MinisterioFuncaoPadrao, MinisterioRequest } from '../../core/models/ministerio.models';
 import { MinisterioService } from '../../core/services/ministerio.service';
 import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 
@@ -18,6 +18,8 @@ export class MinisteriosComponent implements OnInit {
   ministerioEditandoId: number | null = null;
   carregando = false;
   termoBusca = '';
+  funcoesPadraoEmEdicao: MinisterioFuncaoPadrao[] = [];
+  novaFuncaoNome = '';
 
   readonly form = this.fb.group({
     nome: ['', Validators.required],
@@ -66,6 +68,10 @@ export class MinisteriosComponent implements OnInit {
     const lideresIds = ministerio.lideres.map((x) => x.usuarioId);
     const liderPrincipalId = ministerio.lideres.find((x) => x.principal)?.usuarioId ?? null;
     const voluntarioIds = ministerio.voluntarios.map((x) => x.voluntarioId);
+    this.funcoesPadraoEmEdicao = (ministerio.funcoesPadrao || [])
+      .slice()
+      .sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
+    this.novaFuncaoNome = '';
 
     this.form.patchValue({
       nome: ministerio.nome,
@@ -96,7 +102,16 @@ export class MinisteriosComponent implements OnInit {
       descricao: raw.descricao || null,
       ativo: raw.ativo ?? true,
       lideres: lideresIds.map((id) => ({ usuarioId: id, principal: id === liderPrincipalId })),
-      voluntarioIds: (raw.voluntarioIds || []).filter((x) => x > 0)
+      voluntarioIds: (raw.voluntarioIds || []).filter((x) => x > 0),
+      funcoesPadrao: this.funcoesPadraoEmEdicao
+        .map((item, index) => ({
+          id: item.id,
+          ministerioId: item.ministerioId,
+          nome: (item.nome || '').trim(),
+          ordem: index + 1,
+          ativo: item.ativo !== false
+        }))
+        .filter((item) => !!item.nome)
     };
 
     const requisicao = this.ministerioEditandoId === null
@@ -141,6 +156,8 @@ export class MinisteriosComponent implements OnInit {
 
   private limparFormulario(): void {
     this.ministerioEditandoId = null;
+    this.funcoesPadraoEmEdicao = [];
+    this.novaFuncaoNome = '';
     this.form.reset({
       nome: '',
       descricao: '',
@@ -149,5 +166,38 @@ export class MinisteriosComponent implements OnInit {
       liderPrincipalId: null,
       voluntarioIds: []
     });
+  }
+
+  adicionarFuncaoPadrao(): void {
+    const nome = (this.novaFuncaoNome || '').trim();
+    if (!nome) {
+      return;
+    }
+
+    const existe = this.funcoesPadraoEmEdicao.some((item) => (item.nome || '').trim().toLowerCase() === nome.toLowerCase());
+    if (existe) {
+      this.novaFuncaoNome = '';
+      return;
+    }
+
+    this.funcoesPadraoEmEdicao = [
+      ...this.funcoesPadraoEmEdicao,
+      {
+        nome,
+        ordem: this.funcoesPadraoEmEdicao.length + 1,
+        ativo: true
+      }
+    ];
+    this.novaFuncaoNome = '';
+  }
+
+  removerFuncaoPadrao(index: number): void {
+    this.funcoesPadraoEmEdicao = this.funcoesPadraoEmEdicao
+      .filter((_, idx) => idx !== index)
+      .map((item, idx) => ({ ...item, ordem: idx + 1 }));
+  }
+
+  alternarFuncaoPadrao(index: number): void {
+    this.funcoesPadraoEmEdicao = this.funcoesPadraoEmEdicao.map((item, idx) => idx === index ? { ...item, ativo: !item.ativo } : item);
   }
 }

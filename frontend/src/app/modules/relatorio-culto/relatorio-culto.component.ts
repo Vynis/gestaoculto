@@ -50,7 +50,7 @@ interface SecaoCronogramaAdicional {
 
 interface SecaoVoluntariosMinisterio {
   titulo: string;
-  voluntarios: string[];
+  voluntarios: Array<{ nome: string; funcao: string }>;
 }
 
 interface SecaoMenorPreview {
@@ -292,7 +292,7 @@ export class RelatorioCultoComponent implements OnInit {
     this.linhasRepertorio = [];
 
     const mapaBlocosAdicionais = new Map<string, LinhaCronogramaAdicional[]>();
-    const mapaVoluntariosPorMinisterio = new Map<number, { nome: string; voluntarios: Set<string> }>();
+    const mapaVoluntariosPorMinisterio = new Map<number, { nome: string; voluntarios: Map<string, Set<string>> }>();
 
     for (const bloco of relatorio.cultos || []) {
       const escalas = bloco.voluntarios || [];
@@ -361,15 +361,20 @@ export class RelatorioCultoComponent implements OnInit {
 
         const ministerioNome = this.textoValido(escala.ministerioNome) || `Ministério #${ministerioId}`;
         const voluntarioNome = this.textoValido(escala.voluntarioNome) || `Voluntário #${escala.voluntarioId}`;
+        const funcaoNome = this.textoValido(escala.funcao) || '-';
 
         if (!mapaVoluntariosPorMinisterio.has(ministerioId)) {
           mapaVoluntariosPorMinisterio.set(ministerioId, {
             nome: ministerioNome,
-            voluntarios: new Set<string>()
+            voluntarios: new Map<string, Set<string>>()
           });
         }
 
-        mapaVoluntariosPorMinisterio.get(ministerioId)!.voluntarios.add(voluntarioNome);
+        const itemMinisterio = mapaVoluntariosPorMinisterio.get(ministerioId)!;
+        if (!itemMinisterio.voluntarios.has(voluntarioNome)) {
+          itemMinisterio.voluntarios.set(voluntarioNome, new Set<string>());
+        }
+        itemMinisterio.voluntarios.get(voluntarioNome)!.add(funcaoNome);
       }
 
       this.linhasRepertorio = this.linhasRepertorio.concat(this.montarLinhasRepertorio(repertorio, bloco.cronograma || []));
@@ -422,7 +427,12 @@ export class RelatorioCultoComponent implements OnInit {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
       .map((item) => ({
         titulo: `Ministério - ${item.nome}`,
-        voluntarios: Array.from(item.voluntarios).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+        voluntarios: Array.from(item.voluntarios.entries())
+          .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'))
+          .map(([nome, funcoes]) => ({
+            nome,
+            funcao: Array.from(funcoes).sort((a, b) => a.localeCompare(b, 'pt-BR')).join(', ')
+          }))
       }));
   }
 
@@ -742,8 +752,8 @@ export class RelatorioCultoComponent implements OnInit {
       titulo: secao.titulo,
       tipo: 'ministerio',
       variante: index % 3,
-      cabecalho: ['VOLUNTÁRIO'],
-      linhas: secao.voluntarios.map((nome) => [nome])
+      cabecalho: ['VOLUNTÁRIO', 'FUNÇÃO'],
+      linhas: secao.voluntarios.map((item) => [item.nome, item.funcao])
     }));
 
     const secoesLideres: SecaoMenorPreview[] = this.linhasLideresEquipe.length
@@ -832,6 +842,10 @@ export class RelatorioCultoComponent implements OnInit {
 
     if (secao.tipo === 'adicional') {
       return [44, '*', ...Array.from({ length: Math.max(0, secao.cabecalho.length - 2) }, () => 70)];
+    }
+
+    if (secao.tipo === 'ministerio') {
+      return [120, '*'];
     }
 
     return ['*'];

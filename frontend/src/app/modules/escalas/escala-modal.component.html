@@ -56,7 +56,14 @@
           <option *ngFor="let ministerio of ministeriosDisponiveis" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
         </select>
 
-        <input nbInput formControlName="funcao" placeholder="Função" />
+        <select *ngIf="usarComboFuncao" class="gc-native-select" nbInput formControlName="funcao">
+          <option [ngValue]="null" disabled>Selecione a função</option>
+          <option *ngFor="let funcao of funcoesPadraoDisponiveis" [ngValue]="funcao">{{ funcao }}</option>
+          <option *ngIf="funcaoAtualNaoCatalogada" [ngValue]="funcaoAtualNaoCatalogada">Função legada: {{ funcaoAtualNaoCatalogada }}</option>
+        </select>
+
+        <input *ngIf="!usarComboFuncao" nbInput formControlName="funcao" placeholder="Função" />
+        <small *ngIf="!usarComboFuncao">Equipe sem funções cadastradas. Digite a função livremente.</small>
 
         <div class="modal-actions">
           <button nbButton status="primary" [disabled]="salvando">{{ escalaEditando ? 'Atualizar' : 'Adicionar' }}</button>

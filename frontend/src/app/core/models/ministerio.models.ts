@@ -10,6 +10,14 @@ export interface MinisterioVoluntario {
   principal: boolean;
 }
 
+export interface MinisterioFuncaoPadrao {
+  id?: number;
+  ministerioId?: number;
+  nome: string;
+  ordem?: number;
+  ativo: boolean;
+}
+
 export interface MinisterioCompleto {
   id: number;
   nome: string;
@@ -18,6 +26,7 @@ export interface MinisterioCompleto {
   ativo: boolean;
   lideres: MinisterioLider[];
   voluntarios: MinisterioVoluntario[];
+  funcoesPadrao: MinisterioFuncaoPadrao[];
 }
 
 export interface MinisterioRequest {
@@ -26,6 +35,7 @@ export interface MinisterioRequest {
   ativo: boolean;
   lideres: { usuarioId: number; principal: boolean }[];
   voluntarioIds: number[];
+  funcoesPadrao: MinisterioFuncaoPadrao[];
 }
 
 export interface MinisterioOpcoes {

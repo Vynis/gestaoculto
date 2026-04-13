@@ -16,6 +16,7 @@ namespace GestaoCulto.Infrastructure.Persistence
         public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
         public DbSet<UsuarioGoogle> UsuariosGoogle => Set<UsuarioGoogle>();
         public DbSet<Ministerio> Ministerios => Set<Ministerio>();
+        public DbSet<MinisterioFuncaoPadrao> MinisteriosFuncoesPadrao => Set<MinisterioFuncaoPadrao>();
         public DbSet<MinisterioLider> MinisteriosLideres => Set<MinisterioLider>();
         public DbSet<MinisterioVoluntario> MinisteriosVoluntarios => Set<MinisterioVoluntario>();
         public DbSet<Voluntario> Voluntarios => Set<Voluntario>();
@@ -125,6 +126,20 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Ativo).HasColumnName("ativo");
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
                 entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+            });
+
+            modelBuilder.Entity<MinisterioFuncaoPadrao>(entity =>
+            {
+                entity.ToTable("ministerio_funcao_padrao");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
+                entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Ministerio).WithMany().HasForeignKey(x => x.MinisterioId);
             });
 
             modelBuilder.Entity<MinisterioLider>(entity =>

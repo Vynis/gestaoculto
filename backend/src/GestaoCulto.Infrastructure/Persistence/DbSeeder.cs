@@ -81,6 +81,23 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS ministerio_funcao_padrao (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  ministerio_id BIGINT UNSIGNED NOT NULL,
+                  nome VARCHAR(120) NOT NULL,
+                  ordem INT NOT NULL DEFAULT 0,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  KEY ix_ministerio_funcao_padrao_ministerio (ministerio_id),
+                  KEY ix_ministerio_funcao_padrao_ativo (ativo),
+                  UNIQUE KEY uq_ministerio_funcao_padrao_nome (ministerio_id, nome),
+                  CONSTRAINT fk_ministerio_funcao_padrao_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
             await SincronizarVinculosVoluntarioMinisterioAsync();
 
             await _db.Database.ExecuteSqlRawAsync(@"

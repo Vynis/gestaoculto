@@ -113,12 +113,11 @@ export class DisponibilidadesComponent implements OnInit {
   lancarNaEscala(item: DisponibilidadeGestaoItem): void {
     this.carregarVoluntarios();
     const ministerioId = item.ministerios?.[0]?.ministerioId ?? null;
-    const ministerioNome = item.ministerios?.[0]?.ministerioNome || '';
     this.prefillEscala = {
       cultoId: item.cultoId,
       voluntarioId: item.voluntarioId,
       ministerioId,
-      funcao: ministerioNome ? `Escala ${ministerioNome}` : '',
+      funcao: '',
       observacoes: 'Lançado a partir da disponibilidade do voluntário.'
     };
     this.modalEscalaAberto = true;

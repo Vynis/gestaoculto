@@ -4,6 +4,15 @@ export interface Ministerio {
   codigo: string;
   descricao: string | null;
   ativo: boolean;
+  funcoesPadrao?: MinisterioFuncaoPadrao[];
+}
+
+export interface MinisterioFuncaoPadrao {
+  id?: number;
+  ministerioId?: number;
+  nome: string;
+  ordem?: number;
+  ativo: boolean;
 }
 
 export interface Voluntario {

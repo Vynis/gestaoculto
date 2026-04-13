@@ -90,15 +90,17 @@
           <table class="planilha-lideres">
             <thead>
               <tr>
-                <th>{{ secao.titulo }}</th>
+                <th colspan="2">{{ secao.titulo }}</th>
               </tr>
               <tr>
                 <th>VOLUNTÁRIO</th>
+                <th>FUNÇÃO</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let voluntario of secao.voluntarios">
-                <td>{{ voluntario }}</td>
+                <td>{{ voluntario.nome }}</td>
+                <td>{{ voluntario.funcao }}</td>
               </tr>
             </tbody>
           </table>

@@ -51,6 +51,37 @@
         <nb-select fullWidth multiple formControlName="voluntarioIds" placeholder="Voluntários vinculados">
           <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
         </nb-select>
+
+        <div class="funcoes-box">
+          <label>Funções padrão da equipe</label>
+          <div class="funcoes-toolbar">
+            <input
+              nbInput
+              fullWidth
+              [(ngModel)]="novaFuncaoNome"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Ex.: Líder de equipe"
+              (keydown.enter)="$event.preventDefault(); adicionarFuncaoPadrao()"
+            />
+            <button nbButton size="small" status="info" type="button" (click)="adicionarFuncaoPadrao()">Adicionar</button>
+          </div>
+
+          <div class="funcoes-lista" *ngIf="funcoesPadraoEmEdicao.length; else semFuncoes">
+            <div class="funcao-item" *ngFor="let funcao of funcoesPadraoEmEdicao; let i = index">
+              <span>{{ funcao.nome }}</span>
+              <div class="funcao-acoes">
+                <button nbButton size="tiny" [status]="funcao.ativo ? 'success' : 'basic'" type="button" (click)="alternarFuncaoPadrao(i)">
+                  {{ funcao.ativo ? 'Ativa' : 'Inativa' }}
+                </button>
+                <button nbButton size="tiny" status="danger" type="button" (click)="removerFuncaoPadrao(i)">Remover</button>
+              </div>
+            </div>
+          </div>
+          <ng-template #semFuncoes>
+            <small>Nenhuma função padrão cadastrada.</small>
+          </ng-template>
+        </div>
+
         <div class="actions">
           <button nbButton status="primary" [disabled]="carregando">{{ ministerioEditandoId ? 'Atualizar' : 'Salvar' }}</button>
           <button nbButton status="basic" type="button" (click)="cancelarEdicao()">Fechar</button>

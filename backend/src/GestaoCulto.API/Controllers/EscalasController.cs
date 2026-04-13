@@ -65,13 +65,25 @@ namespace GestaoCulto.API.Controllers
         [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
         public async Task<IActionResult> Criar([FromBody] EscalaRequest dto)
         {
+            var funcaoNormalizada = (dto.Funcao ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(funcaoNormalizada))
+            {
+                return BadRequest(new { mensagem = "Informe a função da escala." });
+            }
+
+            var erroFuncao = await ValidarFuncaoPorMinisterio(dto.MinisterioId, funcaoNormalizada);
+            if (!string.IsNullOrWhiteSpace(erroFuncao))
+            {
+                return BadRequest(new { mensagem = erroFuncao });
+            }
+
             var entity = new Escala
             {
                 CultoId = dto.CultoId,
                 EtapaCultoId = dto.EtapaCultoId,
                 VoluntarioId = dto.VoluntarioId,
                 MinisterioId = dto.MinisterioId,
-                Funcao = dto.Funcao,
+                Funcao = funcaoNormalizada,
                 HorarioPrevisto = null,
                 PresencaStatusId = dto.PresencaStatusId,
                 Observacoes = dto.Observacoes,
@@ -93,11 +105,23 @@ namespace GestaoCulto.API.Controllers
                 return NotFound(new { mensagem = "Escala não encontrada." });
             }
 
+            var funcaoNormalizada = (dto.Funcao ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(funcaoNormalizada))
+            {
+                return BadRequest(new { mensagem = "Informe a função da escala." });
+            }
+
+            var erroFuncao = await ValidarFuncaoPorMinisterio(dto.MinisterioId, funcaoNormalizada);
+            if (!string.IsNullOrWhiteSpace(erroFuncao))
+            {
+                return BadRequest(new { mensagem = erroFuncao });
+            }
+
             entity.CultoId = dto.CultoId;
             entity.EtapaCultoId = dto.EtapaCultoId;
             entity.VoluntarioId = dto.VoluntarioId;
             entity.MinisterioId = dto.MinisterioId;
-            entity.Funcao = dto.Funcao;
+            entity.Funcao = funcaoNormalizada;
             entity.PresencaStatusId = dto.PresencaStatusId;
             entity.Observacoes = dto.Observacoes;
             entity.AtualizadoEm = DateTime.UtcNow;
@@ -189,6 +213,30 @@ namespace GestaoCulto.API.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { mensagem = "Escalas do culto excluídas com sucesso.", removidas = escalas.Count });
+        }
+
+        private async Task<string?> ValidarFuncaoPorMinisterio(long? ministerioId, string funcao)
+        {
+            if (!ministerioId.HasValue || ministerioId.Value <= 0)
+            {
+                return null;
+            }
+
+            var funcoesAtivas = await _db.MinisteriosFuncoesPadrao
+                .AsNoTracking()
+                .Where(x => x.MinisterioId == ministerioId.Value && x.Ativo)
+                .Select(x => x.Nome)
+                .ToListAsync();
+
+            if (!funcoesAtivas.Any())
+            {
+                return null;
+            }
+
+            var existe = funcoesAtivas.Any(x => string.Equals((x ?? string.Empty).Trim(), funcao.Trim(), StringComparison.OrdinalIgnoreCase));
+            return existe
+                ? null
+                : "A função informada não está cadastrada para a equipe selecionada.";
         }
     }
 }
