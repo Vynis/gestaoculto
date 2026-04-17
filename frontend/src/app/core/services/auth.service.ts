@@ -100,11 +100,46 @@ export class AuthService {
   }
 
   destinoPadraoPosLogin(): string {
-    if (this.ehVoluntario()) {
+    return this.destinoPosLogin('auto');
+  }
+
+  destinoPosLogin(origem: 'gestao' | 'voluntario' | 'auto' = 'auto'): string {
+    const podeAcessarGestao = this.possuiAlgumPerfil(['ADMIN', 'GESTAO_CULTO', 'LIDER_MINISTERIO', 'RECEPCAO_DADOS']);
+    const podeAcessarVoluntario = this.ehVoluntario();
+
+    if (origem === 'gestao') {
+      if (podeAcessarGestao) {
+        return '/dashboard';
+      }
+
+      if (podeAcessarVoluntario) {
+        return '/voluntario/painel';
+      }
+
+      return '/auth/login';
+    }
+
+    if (origem === 'voluntario') {
+      if (podeAcessarVoluntario) {
+        return '/voluntario/painel';
+      }
+
+      if (podeAcessarGestao) {
+        return '/dashboard';
+      }
+
+      return '/voluntario/login';
+    }
+
+    if (podeAcessarVoluntario) {
       return '/voluntario/painel';
     }
 
-    return '/dashboard';
+    if (podeAcessarGestao) {
+      return '/dashboard';
+    }
+
+    return '/auth/login';
   }
 
   estaAutenticado(): boolean {

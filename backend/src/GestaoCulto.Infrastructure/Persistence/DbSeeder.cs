@@ -139,6 +139,48 @@ namespace GestaoCulto.Infrastructure.Persistence
             ");
 
             await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_google_calendar_conexao (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  google_email VARCHAR(180) NOT NULL,
+                  google_sub VARCHAR(150) NULL,
+                  access_token VARCHAR(2048) NOT NULL,
+                  refresh_token VARCHAR(2048) NOT NULL,
+                  access_token_expira_em DATETIME NULL,
+                  calendario_google_id VARCHAR(255) NULL,
+                  calendario_google_nome VARCHAR(255) NULL,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  ultimo_sync_em DATETIME NULL,
+                  ultimo_erro_sync VARCHAR(1000) NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_google_calendar_conexao_voluntario (voluntario_id),
+                  KEY ix_voluntario_google_calendar_conexao_ativo (ativo),
+                  CONSTRAINT fk_voluntario_google_calendar_conexao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_google_calendar_evento (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  escala_id BIGINT UNSIGNED NOT NULL,
+                  calendario_google_id VARCHAR(255) NOT NULL,
+                  evento_google_id VARCHAR(255) NOT NULL,
+                  ultima_sincronizacao_em DATETIME NULL,
+                  ultimo_erro_sync VARCHAR(1000) NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_google_calendar_evento_escala (escala_id),
+                  KEY ix_voluntario_google_calendar_evento_voluntario (voluntario_id),
+                  CONSTRAINT fk_voluntario_google_calendar_evento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_voluntario_google_calendar_evento_escala FOREIGN KEY (escala_id) REFERENCES escala(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS musica (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                   titulo VARCHAR(180) NOT NULL,

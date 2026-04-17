@@ -10,6 +10,8 @@ import {
   VoluntarioDisponibilidadeCultoDetalhe,
   VoluntarioColegaMinisterio,
   VoluntarioCompromisso,
+  VoluntarioGoogleCalendarItem,
+  VoluntarioGoogleCalendarStatus,
   VoluntarioEscalaDetalheResponse,
   VoluntarioMeusDados,
   VoluntarioMinisterioResumo,
@@ -87,5 +89,33 @@ export class PortalVoluntarioService {
 
   listarStatusDisponibilidade(): Observable<StatusDisponibilidadeVoluntario[]> {
     return this.http.get<StatusDisponibilidadeVoluntario[]>(`${environment.apiUrl}/disponibilidades/status`);
+  }
+
+  obterStatusGoogleCalendar(): Observable<VoluntarioGoogleCalendarStatus> {
+    return this.http.get<VoluntarioGoogleCalendarStatus>(`${this.apiUrl}/google-calendar/status`);
+  }
+
+  iniciarConexaoGoogleCalendar(): Observable<{ authUrl: string }> {
+    return this.http.post<{ authUrl: string }>(`${this.apiUrl}/google-calendar/connect`, {});
+  }
+
+  listarCalendariosGoogleCalendar(): Observable<VoluntarioGoogleCalendarItem[]> {
+    return this.http.get<VoluntarioGoogleCalendarItem[]>(`${this.apiUrl}/google-calendar/calendars`);
+  }
+
+  selecionarCalendarioGoogleCalendar(calendarId: string): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/google-calendar/select-calendar`, { calendarId });
+  }
+
+  criarCalendarioGoogleCalendar(): Observable<{ mensagem: string; calendarioGoogleId: string; calendarioGoogleNome: string }> {
+    return this.http.post<{ mensagem: string; calendarioGoogleId: string; calendarioGoogleNome: string }>(`${this.apiUrl}/google-calendar/create-calendar`, {});
+  }
+
+  sincronizarGoogleCalendar(): Observable<{ mensagem: string; sincronizados: number; falhas: number }> {
+    return this.http.post<{ mensagem: string; sincronizados: number; falhas: number }>(`${this.apiUrl}/google-calendar/sync`, {});
+  }
+
+  desconectarGoogleCalendar(): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/google-calendar/disconnect`, {});
   }
 }

@@ -4,6 +4,50 @@
   <button nbButton size="tiny" status="basic" (click)="mesProximo()">Próximo mês</button>
 </div>
 
+<nb-card>
+  <nb-card-header>Google Agenda (opcional)</nb-card-header>
+  <nb-card-body>
+    <div *ngIf="googleCalendarStatus as status; else carregandoStatusGoogle">
+      <p *ngIf="status.conectado; else googleDesconectado">
+        Conta conectada: <strong>{{ status.googleEmail }}</strong><br />
+        Calendário atual: <strong>{{ status.calendarioGoogleNome || 'Não selecionado' }}</strong>
+      </p>
+
+      <ng-template #googleDesconectado>
+        <p>Sua conta ainda não está conectada ao Google Agenda.</p>
+      </ng-template>
+
+      <div class="actions" *ngIf="!status.conectado">
+        <button nbButton status="primary" type="button" (click)="conectarGoogleCalendar()">Conectar com Google</button>
+      </div>
+
+      <div *ngIf="status.conectado" class="google-grid">
+        <div class="actions">
+          <button nbButton status="info" type="button" (click)="carregarCalendariosGoogleCalendar()">Listar calendários</button>
+          <button nbButton status="success" type="button" (click)="criarCalendarioGestaoCulto()">Criar calendário Gestão Culto</button>
+          <button nbButton status="warning" type="button" [disabled]="sincronizandoGoogle" (click)="sincronizarGoogleCalendar()">
+            {{ sincronizandoGoogle ? 'Sincronizando...' : 'Sincronizar agora' }}
+          </button>
+          <button nbButton status="danger" type="button" (click)="desconectarGoogleCalendar()">Desconectar</button>
+        </div>
+
+        <div class="google-select" *ngIf="googleCalendarios.length">
+          <select nbInput class="gc-native-select" [(ngModel)]="googleCalendarSelecionadoId">
+            <option *ngFor="let calendario of googleCalendarios" [ngValue]="calendario.id">{{ calendario.summary }}</option>
+          </select>
+          <button nbButton status="primary" type="button" (click)="salvarCalendarioSelecionado()">Usar este calendário</button>
+        </div>
+
+        <small *ngIf="status.ultimoErroSync">Último erro de sync: {{ status.ultimoErroSync }}</small>
+      </div>
+    </div>
+
+    <ng-template #carregandoStatusGoogle>
+      <small>Carregando status da integração Google Agenda...</small>
+    </ng-template>
+  </nb-card-body>
+</nb-card>
+
 <div class="grid">
   <button
     type="button"
