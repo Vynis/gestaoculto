@@ -65,14 +65,32 @@
     <nb-card-header>{{ cultoEditandoId ? 'Editar culto' : 'Novo culto' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput fullWidth formControlName="nome" placeholder="Nome do culto" />
-        <input nbInput fullWidth formControlName="tipoCulto" placeholder="Tipo do culto" />
-        <input nbInput fullWidth type="date" formControlName="dataCulto" />
-        <input nbInput fullWidth type="time" formControlName="horarioInicio" />
-        <nb-select formControlName="statusCultoId" placeholder="Status do culto">
-          <nb-option *ngFor="let status of statusOptions" [value]="status.id">{{ status.label }}</nb-option>
-        </nb-select>
-        <input nbInput fullWidth formControlName="observacoesGerais" placeholder="Observações" />
+        <div class="form-field">
+          <label for="culto-nome">Nome do culto</label>
+          <input id="culto-nome" nbInput fullWidth formControlName="nome" placeholder="Ex.: Culto de Celebração" />
+        </div>
+        <div class="form-field">
+          <label for="culto-tipo">Tipo do culto</label>
+          <input id="culto-tipo" nbInput fullWidth formControlName="tipoCulto" placeholder="Ex.: Domingo" />
+        </div>
+        <div class="form-field">
+          <label for="culto-data">Data</label>
+          <input id="culto-data" nbInput fullWidth type="date" formControlName="dataCulto" />
+        </div>
+        <div class="form-field">
+          <label for="culto-horario">Horário de início</label>
+          <input id="culto-horario" nbInput fullWidth type="time" formControlName="horarioInicio" />
+        </div>
+        <div class="form-field">
+          <label for="culto-status">Status do culto</label>
+          <nb-select id="culto-status" formControlName="statusCultoId" placeholder="Selecione o status">
+            <nb-option *ngFor="let status of statusOptions" [value]="status.id">{{ status.label }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="culto-observacoes">Observações</label>
+          <input id="culto-observacoes" nbInput fullWidth formControlName="observacoesGerais" placeholder="Observações gerais (opcional)" />
+        </div>
         <div class="actions">
           <button nbButton status="primary" [disabled]="carregando" type="submit">
             {{ cultoEditandoId ? 'Atualizar culto' : 'Salvar culto' }}

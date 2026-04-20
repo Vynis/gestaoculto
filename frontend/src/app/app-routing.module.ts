@@ -30,6 +30,9 @@ import { EscalaVoluntarioComponent } from './modules/voluntario/escala-voluntari
 import { MinisteriosVoluntarioComponent } from './modules/voluntario/ministerios-voluntario.component';
 import { ColegasMinisterioVoluntarioComponent } from './modules/voluntario/colegas-ministerio-voluntario.component';
 import { MeusDadosVoluntarioComponent } from './modules/voluntario/meus-dados-voluntario.component';
+import { AppInfoPageComponent } from './modules/publico/app-info-page.component';
+import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
+import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
@@ -38,6 +41,9 @@ const routes: Routes = [
   { path: 'voluntario/primeiro-acesso', component: PrimeiroAcessoVoluntarioComponent },
   { path: 'voluntario/recuperar-acesso', component: RecuperarAcessoVoluntarioComponent },
   { path: 'relatorio-culto-publico', component: RelatorioCultoPublicoPageComponent },
+  { path: 'app-info', component: AppInfoPageComponent },
+  { path: 'politica-de-privacidade', component: PoliticaPrivacidadePageComponent },
+  { path: 'termos-de-uso', component: TermosUsoPageComponent },
   {
     path: '',
     component: MainLayoutComponent,

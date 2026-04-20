@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   VoluntarioCalendarioResponse,
   VoluntarioCultoPlanejado,
-  VoluntarioDisponibilidadeCultoDetalhe
+  VoluntarioDisponibilidadeCultoDetalhe,
+  VoluntarioGoogleCalendarItem,
+  VoluntarioGoogleCalendarStatus
 } from '../../core/models/portal-voluntario.models';
 import { PortalVoluntarioService } from '../../core/services/portal-voluntario.service';
 
@@ -29,6 +32,11 @@ export class CalendarioVoluntarioComponent implements OnInit {
   cultosPlanejados: VoluntarioCultoPlanejado[] = [];
   modalDisponibilidadeAberto = false;
   detalheDisponibilidade: VoluntarioDisponibilidadeCultoDetalhe | null = null;
+  googleCalendarStatus: VoluntarioGoogleCalendarStatus | null = null;
+  googleCalendarios: VoluntarioGoogleCalendarItem[] = [];
+  googleCalendarSelecionadoId = '';
+  carregandoGoogle = false;
+  sincronizandoGoogle = false;
 
   readonly disponibilidadeForm = this.fb.group({
     disponivel: [true],
@@ -39,11 +47,15 @@ export class CalendarioVoluntarioComponent implements OnInit {
   constructor(
     private readonly portalVoluntarioService: PortalVoluntarioService,
     private readonly fb: FormBuilder,
-    private readonly toastr: NbToastrService
+    private readonly toastr: NbToastrService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
+    this.tratarRetornoGoogleCalendar();
     this.carregar();
+    this.carregarStatusGoogleCalendar();
   }
 
   carregar(): void {
@@ -55,6 +67,112 @@ export class CalendarioVoluntarioComponent implements OnInit {
 
     this.portalVoluntarioService.listarCultosPlanejados(this.ano, this.mes).subscribe((res) => {
       this.cultosPlanejados = res.cultos || [];
+    });
+  }
+
+  carregarStatusGoogleCalendar(): void {
+    this.carregandoGoogle = true;
+    this.portalVoluntarioService.obterStatusGoogleCalendar().subscribe({
+      next: (status) => {
+        this.googleCalendarStatus = status;
+        this.googleCalendarSelecionadoId = status.calendarioGoogleId || '';
+      },
+      error: () => {
+        this.googleCalendarStatus = null;
+      },
+      complete: () => {
+        this.carregandoGoogle = false;
+      }
+    });
+  }
+
+  conectarGoogleCalendar(): void {
+    this.portalVoluntarioService.iniciarConexaoGoogleCalendar().subscribe({
+      next: (res) => {
+        if (res?.authUrl) {
+          window.location.href = res.authUrl;
+          return;
+        }
+        this.toastr.warning('Não foi possível iniciar conexão com Google Agenda.', 'Google Agenda');
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Falha ao iniciar conexão com Google Agenda.', 'Google Agenda');
+      }
+    });
+  }
+
+  carregarCalendariosGoogleCalendar(): void {
+    this.portalVoluntarioService.listarCalendariosGoogleCalendar().subscribe({
+      next: (itens) => {
+        this.googleCalendarios = itens || [];
+        if (!this.googleCalendarSelecionadoId && this.googleCalendarios.length) {
+          this.googleCalendarSelecionadoId = this.googleCalendarios[0].id;
+        }
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Falha ao listar calendários do Google.', 'Google Agenda');
+      }
+    });
+  }
+
+  salvarCalendarioSelecionado(): void {
+    if (!this.googleCalendarSelecionadoId) {
+      this.toastr.warning('Selecione um calendário.', 'Google Agenda');
+      return;
+    }
+
+    this.portalVoluntarioService.selecionarCalendarioGoogleCalendar(this.googleCalendarSelecionadoId).subscribe({
+      next: (res) => {
+        this.toastr.success(res.mensagem, 'Google Agenda');
+        this.carregarStatusGoogleCalendar();
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Falha ao salvar calendário selecionado.', 'Google Agenda');
+      }
+    });
+  }
+
+  criarCalendarioGestaoCulto(): void {
+    this.portalVoluntarioService.criarCalendarioGoogleCalendar().subscribe({
+      next: (res) => {
+        this.toastr.success(res.mensagem, 'Google Agenda');
+        this.googleCalendarSelecionadoId = res.calendarioGoogleId;
+        this.carregarStatusGoogleCalendar();
+        this.carregarCalendariosGoogleCalendar();
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Falha ao criar calendário Gestão Culto.', 'Google Agenda');
+      }
+    });
+  }
+
+  sincronizarGoogleCalendar(): void {
+    this.sincronizandoGoogle = true;
+    this.portalVoluntarioService.sincronizarGoogleCalendar().subscribe({
+      next: (res) => {
+        this.toastr.success(res.mensagem, 'Google Agenda');
+        this.carregarStatusGoogleCalendar();
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Falha ao sincronizar com Google Agenda.', 'Google Agenda');
+      },
+      complete: () => {
+        this.sincronizandoGoogle = false;
+      }
+    });
+  }
+
+  desconectarGoogleCalendar(): void {
+    this.portalVoluntarioService.desconectarGoogleCalendar().subscribe({
+      next: (res) => {
+        this.toastr.success(res.mensagem, 'Google Agenda');
+        this.googleCalendarios = [];
+        this.googleCalendarSelecionadoId = '';
+        this.carregarStatusGoogleCalendar();
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Falha ao desconectar Google Agenda.', 'Google Agenda');
+      }
     });
   }
 
@@ -219,5 +337,29 @@ export class CalendarioVoluntarioComponent implements OnInit {
     const mes = `${data.getMonth() + 1}`.padStart(2, '0');
     const dia = `${data.getDate()}`.padStart(2, '0');
     return `${ano}-${mes}-${dia}`;
+  }
+
+  private tratarRetornoGoogleCalendar(): void {
+    const status = this.route.snapshot.queryParamMap.get('googleCalendarStatus');
+    const mensagem = this.route.snapshot.queryParamMap.get('googleCalendarMessage');
+    if (!status && !mensagem) {
+      return;
+    }
+
+    if (status === 'success') {
+      this.toastr.success(mensagem || 'Integração com Google Agenda concluída.', 'Google Agenda');
+    } else {
+      this.toastr.warning(mensagem || 'Não foi possível concluir integração com Google Agenda.', 'Google Agenda');
+    }
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        googleCalendarStatus: null,
+        googleCalendarMessage: null
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 }
