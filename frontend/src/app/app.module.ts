@@ -56,6 +56,9 @@ import { ColegasMinisterioVoluntarioComponent } from './modules/voluntario/coleg
 import { MeusDadosVoluntarioComponent } from './modules/voluntario/meus-dados-voluntario.component';
 import { DisponibilidadesComponent } from './modules/disponibilidades/disponibilidades.component';
 import { EscalaModalComponent } from './modules/escalas/escala-modal.component';
+import { AppInfoPageComponent } from './modules/publico/app-info-page.component';
+import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
+import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 
 @NgModule({
   declarations: [
@@ -87,7 +90,10 @@ import { EscalaModalComponent } from './modules/escalas/escala-modal.component';
     ColegasMinisterioVoluntarioComponent,
     MeusDadosVoluntarioComponent,
     DisponibilidadesComponent,
-    EscalaModalComponent
+    EscalaModalComponent,
+    AppInfoPageComponent,
+    PoliticaPrivacidadePageComponent,
+    TermosUsoPageComponent
   ],
   imports: [
     BrowserModule,

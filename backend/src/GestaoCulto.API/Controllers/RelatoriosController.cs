@@ -282,8 +282,10 @@ namespace GestaoCulto.API.Controllers
                     CultoId = e.CultoId,
                     EtapaCultoId = e.EtapaCultoId,
                     Funcao = e.Funcao,
-                    VoluntarioId = e.VoluntarioId,
-                    VoluntarioNome = _db.Voluntarios.Where(v => v.Id == e.VoluntarioId).Select(v => v.Nome).FirstOrDefault(),
+                    VoluntarioId = e.VoluntarioId ?? 0,
+                    VoluntarioNome = e.VoluntarioId.HasValue
+                        ? _db.Voluntarios.Where(v => v.Id == e.VoluntarioId.Value).Select(v => v.Nome).FirstOrDefault()
+                        : e.VoluntarioAvulsoNome,
                     MinisterioId = e.MinisterioId,
                     MinisterioNome = _db.Ministerios.Where(m => m.Id == e.MinisterioId).Select(m => m.Nome).FirstOrDefault(),
                     PresencaStatusId = e.PresencaStatusId,

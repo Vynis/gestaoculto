@@ -38,12 +38,12 @@ export class LoginVoluntarioComponent {
       next: () => {
         if (!this.authService.ehVoluntario()) {
           this.toastr.warning('Seu acesso não é de voluntário. Use a área de gestão.', 'Atenção');
-          this.router.navigate(['/dashboard']);
+          this.router.navigate([this.authService.destinoPosLogin('gestao')]);
           return;
         }
 
         this.toastr.success('Bem-vindo ao portal do voluntário.', 'Sucesso');
-        this.router.navigate(['/voluntario/painel']);
+        this.router.navigate([this.authService.destinoPosLogin('voluntario')]);
       },
       error: (error) => {
         this.carregando = false;

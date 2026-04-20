@@ -9,8 +9,10 @@ namespace GestaoCulto.Domain.Entities
         public Culto Culto { get; set; } = null!;
         public long? EtapaCultoId { get; set; }
         public EtapaCulto? EtapaCulto { get; set; }
-        public long VoluntarioId { get; set; }
-        public Voluntario Voluntario { get; set; } = null!;
+        public long? VoluntarioId { get; set; }
+        public Voluntario? Voluntario { get; set; }
+        public string? VoluntarioAvulsoNome { get; set; }
+        public string? VoluntarioAvulsoTelefone { get; set; }
         public long? MinisterioId { get; set; }
         public Ministerio? Ministerio { get; set; }
         public string Funcao { get; set; } = string.Empty;

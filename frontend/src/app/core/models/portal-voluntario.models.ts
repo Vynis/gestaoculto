@@ -157,3 +157,17 @@ export interface VoluntarioEscalaDetalheResponse {
   colegasMesmoMinisterio: VoluntarioColegaMinisterio[];
   repertorioLouvor: VoluntarioRepertorioLouvor | null;
 }
+
+export interface VoluntarioGoogleCalendarStatus {
+  conectado: boolean;
+  googleEmail: string | null;
+  calendarioGoogleId: string | null;
+  calendarioGoogleNome: string | null;
+  ultimoSyncEm: string | null;
+  ultimoErroSync: string | null;
+}
+
+export interface VoluntarioGoogleCalendarItem {
+  id: string;
+  summary: string;
+}

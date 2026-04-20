@@ -23,6 +23,8 @@ namespace GestaoCulto.Infrastructure.Persistence
         public DbSet<VoluntarioMinisterio> VoluntariosMinisterios => Set<VoluntarioMinisterio>();
         public DbSet<VoluntarioAcessoAtivacao> VoluntariosAcessoAtivacao => Set<VoluntarioAcessoAtivacao>();
         public DbSet<VoluntarioAcessoRecuperacao> VoluntariosAcessoRecuperacao => Set<VoluntarioAcessoRecuperacao>();
+        public DbSet<VoluntarioGoogleCalendarConexao> VoluntariosGoogleCalendarConexoes => Set<VoluntarioGoogleCalendarConexao>();
+        public DbSet<VoluntarioGoogleCalendarEvento> VoluntariosGoogleCalendarEventos => Set<VoluntarioGoogleCalendarEvento>();
         public DbSet<StatusCulto> StatusCultos => Set<StatusCulto>();
         public DbSet<StatusEtapa> StatusEtapas => Set<StatusEtapa>();
         public DbSet<PresencaEscalaStatus> PresencaEscalaStatus => Set<PresencaEscalaStatus>();
@@ -221,6 +223,44 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
                 entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
                 entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+            });
+
+            modelBuilder.Entity<VoluntarioGoogleCalendarConexao>(entity =>
+            {
+                entity.ToTable("voluntario_google_calendar_conexao");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.GoogleEmail).HasColumnName("google_email").HasMaxLength(180).IsRequired();
+                entity.Property(x => x.GoogleSub).HasColumnName("google_sub").HasMaxLength(150);
+                entity.Property(x => x.AccessToken).HasColumnName("access_token").HasMaxLength(2048).IsRequired();
+                entity.Property(x => x.RefreshToken).HasColumnName("refresh_token").HasMaxLength(2048).IsRequired();
+                entity.Property(x => x.AccessTokenExpiraEm).HasColumnName("access_token_expira_em");
+                entity.Property(x => x.CalendarioGoogleId).HasColumnName("calendario_google_id").HasMaxLength(255);
+                entity.Property(x => x.CalendarioGoogleNome).HasColumnName("calendario_google_nome").HasMaxLength(255);
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.UltimoSyncEm).HasColumnName("ultimo_sync_em");
+                entity.Property(x => x.UltimoErroSync).HasColumnName("ultimo_erro_sync").HasMaxLength(1000);
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+            });
+
+            modelBuilder.Entity<VoluntarioGoogleCalendarEvento>(entity =>
+            {
+                entity.ToTable("voluntario_google_calendar_evento");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.EscalaId).HasColumnName("escala_id");
+                entity.Property(x => x.CalendarioGoogleId).HasColumnName("calendario_google_id").HasMaxLength(255).IsRequired();
+                entity.Property(x => x.EventoGoogleId).HasColumnName("evento_google_id").HasMaxLength(255).IsRequired();
+                entity.Property(x => x.UltimaSincronizacaoEm).HasColumnName("ultima_sincronizacao_em");
+                entity.Property(x => x.UltimoErroSync).HasColumnName("ultimo_erro_sync").HasMaxLength(1000);
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+                entity.HasOne(x => x.Escala).WithMany().HasForeignKey(x => x.EscalaId);
             });
 
             modelBuilder.Entity<StatusCulto>(entity =>
@@ -449,6 +489,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.CultoId).HasColumnName("culto_id");
                 entity.Property(x => x.EtapaCultoId).HasColumnName("etapa_culto_id");
                 entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.VoluntarioAvulsoNome).HasColumnName("voluntario_avulso_nome").HasMaxLength(160);
+                entity.Property(x => x.VoluntarioAvulsoTelefone).HasColumnName("voluntario_avulso_telefone").HasMaxLength(40);
                 entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
                 entity.Property(x => x.Funcao).HasColumnName("funcao").HasMaxLength(120).IsRequired();
                 entity.Property(x => x.HorarioPrevisto).HasColumnName("horario_previsto");

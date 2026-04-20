@@ -38,19 +38,34 @@
     <nb-card-header>{{ ministerioEditandoId ? 'Editar ministério' : 'Novo ministério' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput fullWidth formControlName="nome" placeholder="Nome do ministério" />
-        <input nbInput fullWidth formControlName="descricao" placeholder="Descrição" />
+        <div class="form-field">
+          <label for="ministerio-nome">Nome do ministério</label>
+          <input id="ministerio-nome" nbInput fullWidth formControlName="nome" placeholder="Nome do ministério" />
+        </div>
+        <div class="form-field">
+          <label for="ministerio-descricao">Descrição</label>
+          <input id="ministerio-descricao" nbInput fullWidth formControlName="descricao" placeholder="Descrição (opcional)" />
+        </div>
         <nb-checkbox formControlName="ativo">Ministério ativo</nb-checkbox>
-        <nb-select fullWidth multiple formControlName="lideresIds" placeholder="Líderes">
-          <nb-option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ usuario.nome }}</nb-option>
-        </nb-select>
-        <nb-select fullWidth formControlName="liderPrincipalId" placeholder="Líder principal">
-          <nb-option [value]="null">Sem líder principal</nb-option>
-          <nb-option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ usuario.nome }}</nb-option>
-        </nb-select>
-        <nb-select fullWidth multiple formControlName="voluntarioIds" placeholder="Voluntários vinculados">
-          <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
-        </nb-select>
+        <div class="form-field">
+          <label for="ministerio-lideres">Líderes</label>
+          <nb-select id="ministerio-lideres" fullWidth multiple formControlName="lideresIds" placeholder="Selecione os líderes">
+            <nb-option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ usuario.nome }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="ministerio-lider-principal">Líder principal</label>
+          <nb-select id="ministerio-lider-principal" fullWidth formControlName="liderPrincipalId" placeholder="Selecione o líder principal">
+            <nb-option [value]="null">Sem líder principal</nb-option>
+            <nb-option *ngFor="let usuario of usuarios" [value]="usuario.id">{{ usuario.nome }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="ministerio-voluntarios">Voluntários vinculados</label>
+          <nb-select id="ministerio-voluntarios" fullWidth multiple formControlName="voluntarioIds" placeholder="Selecione os voluntários">
+            <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
+          </nb-select>
+        </div>
 
         <div class="funcoes-box">
           <label>Funções padrão da equipe</label>

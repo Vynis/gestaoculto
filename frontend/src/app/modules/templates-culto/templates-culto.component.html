@@ -33,30 +33,58 @@
     <nb-card-header>{{ templateEditandoId ? 'Editar template' : 'Novo template' }}</nb-card-header>
     <nb-card-body>
       <form id="template-form" class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput fullWidth formControlName="nome" placeholder="Nome do template" />
-        <input nbInput fullWidth formControlName="tipoCulto" placeholder="Tipo de culto" />
-        <input nbInput fullWidth formControlName="descricao" placeholder="Descrição" />
+        <div class="form-field">
+          <label for="template-nome">Nome do template</label>
+          <input id="template-nome" nbInput fullWidth formControlName="nome" placeholder="Nome do template" />
+        </div>
+        <div class="form-field">
+          <label for="template-tipo">Tipo de culto</label>
+          <input id="template-tipo" nbInput fullWidth formControlName="tipoCulto" placeholder="Ex.: Domingo" />
+        </div>
+        <div class="form-field">
+          <label for="template-descricao">Descrição</label>
+          <input id="template-descricao" nbInput fullWidth formControlName="descricao" placeholder="Descrição (opcional)" />
+        </div>
         <nb-checkbox formControlName="ativo">Template ativo</nb-checkbox>
       </form>
 
       <div class="etapas-box">
         <h4>{{ etapaEditandoIndex !== null ? 'Editar etapa do template' : 'Adicionar etapa ao template' }}</h4>
         <form class="form-grid" [formGroup]="etapaForm" (ngSubmit)="salvarEtapa()">
-          <input nbInput type="number" formControlName="sequencia" placeholder="Sequência" />
-          <input
-            nbInput
-            formControlName="blocoCronograma"
-            placeholder="Bloco do cronograma"
-            list="template-blocos"
-            autocomplete="off"
-          />
+          <div class="form-field">
+            <label for="template-etapa-seq">Sequência</label>
+            <input id="template-etapa-seq" nbInput type="number" formControlName="sequencia" placeholder="Sequência" />
+          </div>
+          <div class="form-field">
+            <label for="template-etapa-bloco">Bloco do cronograma</label>
+            <input
+              id="template-etapa-bloco"
+              nbInput
+              formControlName="blocoCronograma"
+              placeholder="Bloco do cronograma"
+              list="template-blocos"
+              autocomplete="off"
+            />
+          </div>
           <datalist id="template-blocos">
             <option *ngFor="let bloco of blocosCronogramaDisponiveis" [value]="bloco"></option>
           </datalist>
-          <input nbInput type="time" formControlName="horarioInicialPadrao" placeholder="Horário inicial (opcional)" />
-          <input nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração (min)" />
-          <input nbInput formControlName="atividade" placeholder="Atividade" />
-          <input nbInput formControlName="descricao" placeholder="Descrição" />
+          <div class="form-field">
+            <label for="template-etapa-horario">Horário inicial (opcional)</label>
+            <input id="template-etapa-horario" nbInput type="time" formControlName="horarioInicialPadrao" />
+          </div>
+          <div class="form-field">
+            <label for="template-etapa-duracao">Duração (min)</label>
+            <input id="template-etapa-duracao" nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração" />
+          </div>
+          <div class="form-field">
+            <label for="template-etapa-atividade">Atividade</label>
+            <input id="template-etapa-atividade" nbInput formControlName="atividade" placeholder="Atividade" />
+          </div>
+          <div class="form-field">
+            <label for="template-etapa-descricao">Descrição</label>
+            <input id="template-etapa-descricao" nbInput formControlName="descricao" placeholder="Descrição (opcional)" />
+          </div>
           <div class="actions">
             <button nbButton status="info" type="submit">{{ etapaEditandoIndex !== null ? 'Atualizar etapa' : 'Adicionar etapa' }}</button>
             <button *ngIf="etapaEditandoIndex !== null" nbButton status="basic" type="button" (click)="cancelarEdicaoEtapa()">
@@ -97,14 +125,26 @@
     <nb-card-header>Acoes por ministerio da etapa</nb-card-header>
     <nb-card-body>
       <div class="form-grid" [formGroup]="acaoEtapaForm">
-        <select class="gc-native-select" nbInput formControlName="ministerioId">
-          <option [ngValue]="null">Ministério</option>
-          <option *ngIf="!ministeriosOrdenados.length" [ngValue]="null" disabled>Nenhum ministério cadastrado</option>
-          <option *ngFor="let ministerio of ministeriosOrdenados" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
-        </select>
-        <input nbInput formControlName="descricaoAcao" placeholder="Descricao da acao" />
-        <input nbInput type="number" formControlName="ordem" placeholder="Ordem (opcional)" />
-        <input nbInput formControlName="observacao" placeholder="Observacao (opcional)" />
+        <div class="form-field">
+          <label for="template-acao-ministerio">Ministério</label>
+          <select id="template-acao-ministerio" class="gc-native-select" nbInput formControlName="ministerioId">
+            <option [ngValue]="null">Ministério</option>
+            <option *ngIf="!ministeriosOrdenados.length" [ngValue]="null" disabled>Nenhum ministério cadastrado</option>
+            <option *ngFor="let ministerio of ministeriosOrdenados" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="template-acao-descricao">Descrição da ação</label>
+          <input id="template-acao-descricao" nbInput formControlName="descricaoAcao" placeholder="Descrição da ação" />
+        </div>
+        <div class="form-field">
+          <label for="template-acao-ordem">Ordem (opcional)</label>
+          <input id="template-acao-ordem" nbInput type="number" formControlName="ordem" placeholder="Ordem" />
+        </div>
+        <div class="form-field">
+          <label for="template-acao-observacao">Observação (opcional)</label>
+          <input id="template-acao-observacao" nbInput formControlName="observacao" placeholder="Observação" />
+        </div>
         <nb-checkbox formControlName="ativo">Acao ativa</nb-checkbox>
         <div class="actions">
           <button nbButton status="info" type="button" (click)="salvarAcaoEtapa()">

@@ -1,0 +1,16 @@
+{
+  "name": "telegram-bot-poc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PoC minimo de bot Telegram via webhook",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

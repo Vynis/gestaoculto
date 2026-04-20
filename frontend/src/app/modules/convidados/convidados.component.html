@@ -33,18 +33,36 @@
     <nb-card-header>{{ convidadoEditandoId ? 'Editar convidado' : 'Cadastro rápido de convidados' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <nb-select formControlName="cultoId" placeholder="Culto">
-          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }}</nb-option>
-        </nb-select>
-        <input nbInput formControlName="nome" placeholder="Nome" />
-        <input nbInput formControlName="telefone" placeholder="Telefone" />
-        <input nbInput formControlName="quemConvidou" placeholder="Quem convidou" />
-        <nb-select formControlName="statusAcompanhamento" placeholder="Status de acompanhamento">
-          <nb-option value="PENDENTE">Pendente</nb-option>
-          <nb-option value="EM_ANDAMENTO">Em andamento</nb-option>
-          <nb-option value="CONCLUIDO">Concluído</nb-option>
-        </nb-select>
-        <input nbInput formControlName="observacoes" placeholder="Observações" />
+        <div class="form-field">
+          <label for="convidado-culto">Culto</label>
+          <nb-select id="convidado-culto" formControlName="cultoId" placeholder="Selecione o culto">
+            <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="convidado-nome">Nome</label>
+          <input id="convidado-nome" nbInput formControlName="nome" placeholder="Nome completo" />
+        </div>
+        <div class="form-field">
+          <label for="convidado-telefone">Telefone</label>
+          <input id="convidado-telefone" nbInput formControlName="telefone" placeholder="Telefone (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="convidado-quem">Quem convidou</label>
+          <input id="convidado-quem" nbInput formControlName="quemConvidou" placeholder="Nome de quem convidou (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="convidado-status">Status de acompanhamento</label>
+          <nb-select id="convidado-status" formControlName="statusAcompanhamento" placeholder="Selecione o status">
+            <nb-option value="PENDENTE">Pendente</nb-option>
+            <nb-option value="EM_ANDAMENTO">Em andamento</nb-option>
+            <nb-option value="CONCLUIDO">Concluído</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="convidado-observacoes">Observações</label>
+          <input id="convidado-observacoes" nbInput formControlName="observacoes" placeholder="Observações (opcional)" />
+        </div>
         <nb-checkbox formControlName="primeiraVezIgreja">Primeira vez na igreja</nb-checkbox>
         <div class="actions">
           <button nbButton status="primary">{{ convidadoEditandoId ? 'Atualizar' : 'Salvar em segundos' }}</button>
