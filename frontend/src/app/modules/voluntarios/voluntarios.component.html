@@ -28,20 +28,41 @@
     <nb-card-header>{{ voluntarioEditandoId ? 'Editar voluntário' : 'Novo voluntário' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
-        <nb-select fullWidth formControlName="usuarioId" placeholder="Usuário de acesso (opcional)">
-          <nb-option [value]="null">Sem vínculo</nb-option>
-          <nb-option *ngFor="let usuario of usuariosDisponiveis()" [value]="usuario.id">
-            {{ usuario.nome }} ({{ usuario.email }})
-          </nb-option>
-        </nb-select>
-        <input nbInput fullWidth formControlName="telefone" placeholder="Telefone" />
-        <input nbInput fullWidth formControlName="email" placeholder="E-mail" />
-        <nb-select fullWidth multiple formControlName="ministerioIds" placeholder="Ministérios de atuação">
-          <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
-        </nb-select>
-        <input nbInput fullWidth formControlName="observacoes" placeholder="Observações" />
-        <input nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Restrições de disponibilidade" />
+        <div class="form-field">
+          <label for="vol-nome">Nome completo</label>
+          <input id="vol-nome" nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
+        </div>
+        <div class="form-field">
+          <label for="vol-usuario">Usuário de acesso (opcional)</label>
+          <nb-select id="vol-usuario" fullWidth formControlName="usuarioId" placeholder="Selecione um usuário">
+            <nb-option [value]="null">Sem vínculo</nb-option>
+            <nb-option *ngFor="let usuario of usuariosDisponiveis()" [value]="usuario.id">
+              {{ usuario.nome }} ({{ usuario.email }})
+            </nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="vol-telefone">Telefone</label>
+          <input id="vol-telefone" nbInput fullWidth formControlName="telefone" placeholder="Telefone (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="vol-email">E-mail</label>
+          <input id="vol-email" nbInput fullWidth formControlName="email" placeholder="E-mail (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="vol-ministerios">Ministérios de atuação</label>
+          <nb-select id="vol-ministerios" fullWidth multiple formControlName="ministerioIds" placeholder="Selecione os ministérios">
+            <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="vol-observacoes">Observações</label>
+          <input id="vol-observacoes" nbInput fullWidth formControlName="observacoes" placeholder="Observações (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="vol-restricoes">Restrições de disponibilidade</label>
+          <input id="vol-restricoes" nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Ex.: Não pode aos sábados" />
+        </div>
         <nb-checkbox formControlName="ativo">Voluntário ativo</nb-checkbox>
         <div class="actions">
           <button nbButton status="primary" [disabled]="carregando">

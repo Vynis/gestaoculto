@@ -4,32 +4,50 @@
     <nb-card-header>{{ escalaEditando ? 'Editar escala' : 'Nova escala' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <nb-select formControlName="cultoId" placeholder="Culto">
-          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }}</nb-option>
-        </nb-select>
+        <div class="form-field">
+          <label for="escala-culto">Culto</label>
+          <nb-select id="escala-culto" formControlName="cultoId" placeholder="Selecione o culto">
+            <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }}</nb-option>
+          </nb-select>
+        </div>
 
-        <select class="gc-native-select" nbInput formControlName="etapaCultoId">
-          <option [ngValue]="null">Etapa do cronograma (opcional)</option>
-          <option *ngIf="carregandoEtapas" [ngValue]="null" disabled>Carregando etapas...</option>
-          <option *ngIf="erroEtapas && !carregandoEtapas" [ngValue]="null" disabled>{{ erroEtapas }}</option>
-          <option *ngFor="let etapa of etapasCulto" [ngValue]="etapa.id">{{ descricaoEtapa(etapa) }}</option>
-        </select>
+        <div class="form-field">
+          <label for="escala-etapa">Etapa do cronograma (opcional)</label>
+          <select id="escala-etapa" class="gc-native-select" nbInput formControlName="etapaCultoId">
+            <option [ngValue]="null">Etapa do cronograma (opcional)</option>
+            <option *ngIf="carregandoEtapas" [ngValue]="null" disabled>Carregando etapas...</option>
+            <option *ngIf="erroEtapas && !carregandoEtapas" [ngValue]="null" disabled>{{ erroEtapas }}</option>
+            <option *ngFor="let etapa of etapasCulto" [ngValue]="etapa.id">{{ descricaoEtapa(etapa) }}</option>
+          </select>
+        </div>
 
-        <select class="gc-native-select" nbInput formControlName="tipoVoluntario">
-          <option [ngValue]="'CADASTRADO'">Voluntário cadastrado</option>
-          <option [ngValue]="'AVULSO'">Voluntário avulso</option>
-        </select>
+        <div class="form-field">
+          <label for="escala-tipo-vol">Tipo de voluntário</label>
+          <select id="escala-tipo-vol" class="gc-native-select" nbInput formControlName="tipoVoluntario">
+            <option [ngValue]="'CADASTRADO'">Voluntário cadastrado</option>
+            <option [ngValue]="'AVULSO'">Voluntário avulso</option>
+          </select>
+        </div>
 
-        <select *ngIf="!modoVoluntarioAvulso" class="gc-native-select" nbInput formControlName="voluntarioId">
-          <option [ngValue]="null">Selecione um voluntário</option>
-          <option *ngIf="carregandoVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Carregando voluntários...</option>
-          <option *ngIf="erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>{{ erroVoluntariosEfetivo }}</option>
-          <option *ngIf="!carregandoVoluntariosEfetivo && !erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Nenhum voluntário cadastrado</option>
-          <option *ngFor="let voluntario of voluntarios" [ngValue]="voluntario.id">{{ voluntario.nome || ('Voluntário #' + voluntario.id) }}</option>
-        </select>
+        <div class="form-field" *ngIf="!modoVoluntarioAvulso">
+          <label for="escala-voluntario">Voluntário</label>
+          <select id="escala-voluntario" class="gc-native-select" nbInput formControlName="voluntarioId">
+            <option [ngValue]="null">Selecione um voluntário</option>
+            <option *ngIf="carregandoVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Carregando voluntários...</option>
+            <option *ngIf="erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>{{ erroVoluntariosEfetivo }}</option>
+            <option *ngIf="!carregandoVoluntariosEfetivo && !erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Nenhum voluntário cadastrado</option>
+            <option *ngFor="let voluntario of voluntarios" [ngValue]="voluntario.id">{{ voluntario.nome || ('Voluntário #' + voluntario.id) }}</option>
+          </select>
+        </div>
 
-        <input *ngIf="modoVoluntarioAvulso" nbInput formControlName="voluntarioAvulsoNome" placeholder="Nome do voluntário avulso" />
-        <input *ngIf="modoVoluntarioAvulso" nbInput formControlName="voluntarioAvulsoTelefone" placeholder="Telefone do voluntário avulso (opcional)" />
+        <div class="form-field" *ngIf="modoVoluntarioAvulso">
+          <label for="escala-avulso-nome">Nome do voluntário avulso</label>
+          <input id="escala-avulso-nome" nbInput formControlName="voluntarioAvulsoNome" placeholder="Nome do voluntário avulso" />
+        </div>
+        <div class="form-field" *ngIf="modoVoluntarioAvulso">
+          <label for="escala-avulso-fone">Telefone do voluntário avulso (opcional)</label>
+          <input id="escala-avulso-fone" nbInput formControlName="voluntarioAvulsoTelefone" placeholder="Telefone do voluntário avulso (opcional)" />
+        </div>
 
         <div class="voluntario-feedback" *ngIf="!modoVoluntarioAvulso && erroVoluntariosEfetivo && !voluntarios.length">
           <button nbButton status="basic" size="tiny" type="button" (click)="tentarNovamenteCarregarVoluntarios()">
@@ -46,12 +64,24 @@
         <div class="cadastro-voluntario" *ngIf="!modoVoluntarioAvulso && cadastroVoluntarioAberto" [formGroup]="novoVoluntarioForm">
           <h5>Novo voluntário</h5>
           <div class="form-grid interno">
-            <input nbInput formControlName="nome" placeholder="Nome completo" />
-            <input nbInput formControlName="telefone" placeholder="Telefone (opcional)" />
-            <input nbInput formControlName="email" placeholder="E-mail (opcional)" />
-            <select class="gc-native-select gc-native-select-multiple" nbInput multiple formControlName="ministerioIds">
-              <option *ngFor="let ministerio of ministerios" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
-            </select>
+            <div class="form-field">
+              <label for="novo-vol-nome">Nome completo</label>
+              <input id="novo-vol-nome" nbInput formControlName="nome" placeholder="Nome completo" />
+            </div>
+            <div class="form-field">
+              <label for="novo-vol-telefone">Telefone (opcional)</label>
+              <input id="novo-vol-telefone" nbInput formControlName="telefone" placeholder="Telefone (opcional)" />
+            </div>
+            <div class="form-field">
+              <label for="novo-vol-email">E-mail (opcional)</label>
+              <input id="novo-vol-email" nbInput formControlName="email" placeholder="E-mail (opcional)" />
+            </div>
+            <div class="form-field">
+              <label for="novo-vol-ministerios">Ministérios</label>
+              <select id="novo-vol-ministerios" class="gc-native-select gc-native-select-multiple" nbInput multiple formControlName="ministerioIds">
+                <option *ngFor="let ministerio of ministerios" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+              </select>
+            </div>
             <div class="modal-actions">
               <button nbButton status="success" type="button" (click)="salvarNovoVoluntario()">Salvar voluntário</button>
               <button nbButton status="basic" type="button" (click)="cancelarCadastroVoluntarioRapido()">Cancelar</button>
@@ -59,18 +89,27 @@
           </div>
         </div>
 
-        <select class="gc-native-select" nbInput formControlName="ministerioId">
-          <option [ngValue]="null">Sem equipe</option>
-          <option *ngFor="let ministerio of ministeriosDisponiveis" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
-        </select>
+        <div class="form-field">
+          <label for="escala-ministerio">Equipe</label>
+          <select id="escala-ministerio" class="gc-native-select" nbInput formControlName="ministerioId">
+            <option [ngValue]="null">Sem equipe</option>
+            <option *ngFor="let ministerio of ministeriosDisponiveis" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+          </select>
+        </div>
 
-        <select *ngIf="usarComboFuncao" class="gc-native-select" nbInput formControlName="funcao">
-          <option [ngValue]="null" disabled>Selecione a função</option>
-          <option *ngFor="let funcao of funcoesPadraoDisponiveis" [ngValue]="funcao">{{ funcao }}</option>
-          <option *ngIf="funcaoAtualNaoCatalogada" [ngValue]="funcaoAtualNaoCatalogada">Função legada: {{ funcaoAtualNaoCatalogada }}</option>
-        </select>
+        <div class="form-field" *ngIf="usarComboFuncao">
+          <label for="escala-funcao-select">Função</label>
+          <select id="escala-funcao-select" class="gc-native-select" nbInput formControlName="funcao">
+            <option [ngValue]="null" disabled>Selecione a função</option>
+            <option *ngFor="let funcao of funcoesPadraoDisponiveis" [ngValue]="funcao">{{ funcao }}</option>
+            <option *ngIf="funcaoAtualNaoCatalogada" [ngValue]="funcaoAtualNaoCatalogada">Função legada: {{ funcaoAtualNaoCatalogada }}</option>
+          </select>
+        </div>
 
-        <input *ngIf="!usarComboFuncao" nbInput formControlName="funcao" placeholder="Função" />
+        <div class="form-field" *ngIf="!usarComboFuncao">
+          <label for="escala-funcao-input">Função</label>
+          <input id="escala-funcao-input" nbInput formControlName="funcao" placeholder="Função" />
+        </div>
         <small *ngIf="!usarComboFuncao">Equipe sem funções cadastradas. Digite a função livremente.</small>
 
         <div class="modal-actions">
