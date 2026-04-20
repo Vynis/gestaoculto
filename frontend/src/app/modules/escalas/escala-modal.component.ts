@@ -52,7 +52,10 @@ export class EscalaModalComponent implements OnChanges {
   readonly form = this.fb.group({
     cultoId: [0, Validators.required],
     etapaCultoId: [null as number | null],
-    voluntarioId: [null as number | null, Validators.required],
+    tipoVoluntario: ['CADASTRADO' as 'CADASTRADO' | 'AVULSO'],
+    voluntarioId: [null as number | null],
+    voluntarioAvulsoNome: [''],
+    voluntarioAvulsoTelefone: [''],
     ministerioId: [{ value: null as number | null, disabled: true }],
     funcao: ['', Validators.required],
     presencaStatusId: [1, Validators.required],
@@ -85,7 +88,14 @@ export class EscalaModalComponent implements OnChanges {
       this.atualizarFuncoesPorMinisterio(Number(ministerioId) || 0);
     });
 
+    this.form.controls.tipoVoluntario.valueChanges.subscribe(() => {
+      this.aplicarModoVoluntario();
+    });
+
     this.form.controls.voluntarioId.valueChanges.subscribe((voluntarioId) => {
+      if (this.modoVoluntarioAvulso) {
+        return;
+      }
       this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
       this.atualizarEstadoControles();
       this.sugerirMinisterioDaEtapa(Number(this.form.controls.etapaCultoId.value) || 0);
@@ -132,10 +142,28 @@ export class EscalaModalComponent implements OnChanges {
     }
 
     const raw = this.form.getRawValue();
+    const nomeAvulso = (raw.voluntarioAvulsoNome || '').trim();
+    const tipoVoluntario = raw.tipoVoluntario || 'CADASTRADO';
+    const voluntarioId = tipoVoluntario === 'CADASTRADO'
+      ? (raw.voluntarioId ?? null)
+      : null;
+
+    if (tipoVoluntario === 'CADASTRADO' && !(Number(voluntarioId) > 0)) {
+      this.toastr.warning('Selecione um voluntário cadastrado.', 'Escalas');
+      return;
+    }
+
+    if (tipoVoluntario === 'AVULSO' && !nomeAvulso) {
+      this.toastr.warning('Informe o nome do voluntário avulso.', 'Escalas');
+      return;
+    }
+
     const payload = {
       cultoId: raw.cultoId ?? 0,
       etapaCultoId: raw.etapaCultoId ?? null,
-      voluntarioId: raw.voluntarioId ?? 0,
+      voluntarioId,
+      voluntarioAvulsoNome: tipoVoluntario === 'AVULSO' ? nomeAvulso : null,
+      voluntarioAvulsoTelefone: tipoVoluntario === 'AVULSO' ? ((raw.voluntarioAvulsoTelefone || '').trim() || null) : null,
       ministerioId: raw.ministerioId ?? null,
       funcao: raw.funcao ?? '',
       presencaStatusId: raw.presencaStatusId ?? 1,
@@ -252,13 +280,17 @@ export class EscalaModalComponent implements OnChanges {
       this.form.reset({
         cultoId: this.escalaEditando.cultoId,
         etapaCultoId: this.escalaEditando.etapaCultoId,
+        tipoVoluntario: this.escalaEditando.voluntarioId ? 'CADASTRADO' : 'AVULSO',
         voluntarioId,
+        voluntarioAvulsoNome: this.escalaEditando.voluntarioAvulsoNome || '',
+        voluntarioAvulsoTelefone: this.escalaEditando.voluntarioAvulsoTelefone || '',
         ministerioId: this.escalaEditando.ministerioId,
         funcao: this.escalaEditando.funcao,
         presencaStatusId: this.escalaEditando.presencaStatusId,
         observacoes: this.escalaEditando.observacoes || ''
       });
 
+      this.aplicarModoVoluntario();
       this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
       this.atualizarEstadoControles();
       this.carregarEtapasDoCulto(this.escalaEditando.cultoId, this.escalaEditando.etapaCultoId);
@@ -276,16 +308,24 @@ export class EscalaModalComponent implements OnChanges {
     this.form.reset({
       cultoId,
       etapaCultoId: this.prefill?.etapaCultoId ?? null,
+      tipoVoluntario: 'CADASTRADO',
       voluntarioId,
+      voluntarioAvulsoNome: '',
+      voluntarioAvulsoTelefone: '',
       ministerioId: this.prefill?.ministerioId ?? null,
       funcao: (this.prefill?.funcao || '').trim(),
       presencaStatusId: 1,
       observacoes: this.prefill?.observacoes || ''
     });
 
+    this.aplicarModoVoluntario();
     this.atualizarMinisteriosDisponiveis(Number(voluntarioId) || 0);
     this.atualizarEstadoControles();
     this.carregarEtapasDoCulto(cultoId, this.prefill?.etapaCultoId ?? null);
+  }
+
+  get modoVoluntarioAvulso(): boolean {
+    return this.form.controls.tipoVoluntario.value === 'AVULSO';
   }
 
   private carregarEtapasDoCulto(cultoId: number, etapaPreferencial: number | null = null): void {
@@ -385,6 +425,13 @@ export class EscalaModalComponent implements OnChanges {
   }
 
   private atualizarMinisteriosDisponiveis(voluntarioId: number): void {
+    if (this.modoVoluntarioAvulso) {
+      this.ministeriosDisponiveis = (this.ministerios || [])
+        .slice()
+        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+      return;
+    }
+
     const voluntario = this.voluntarios.find((item) => Number(item.id) === Number(voluntarioId));
     if (!voluntario) {
       this.ministeriosDisponiveis = [];
@@ -413,6 +460,28 @@ export class EscalaModalComponent implements OnChanges {
     }
 
     this.atualizarFuncoesPorMinisterio(Number(this.form.controls.ministerioId.value) || 0);
+  }
+
+  private aplicarModoVoluntario(): void {
+    if (this.modoVoluntarioAvulso) {
+      this.cadastroVoluntarioAberto = false;
+      this.form.controls.voluntarioId.patchValue(null, { emitEvent: false });
+      this.ministeriosDisponiveis = (this.ministerios || [])
+        .slice()
+        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+
+      const ministerioControl = this.form.controls.ministerioId;
+      if (ministerioControl.disabled) {
+        ministerioControl.enable({ emitEvent: false });
+      }
+      this.atualizarFuncoesPorMinisterio(Number(ministerioControl.value) || 0);
+      return;
+    }
+
+    this.form.controls.voluntarioAvulsoNome.patchValue('', { emitEvent: false });
+    this.form.controls.voluntarioAvulsoTelefone.patchValue('', { emitEvent: false });
+    this.atualizarMinisteriosDisponiveis(Number(this.form.controls.voluntarioId.value) || 0);
+    this.atualizarEstadoControles();
   }
 
   private atualizarFuncoesPorMinisterio(ministerioId: number): void {
@@ -450,6 +519,13 @@ export class EscalaModalComponent implements OnChanges {
   private atualizarEstadoControles(): void {
     const voluntarioControl = this.form.controls.voluntarioId;
     const ministerioControl = this.form.controls.ministerioId;
+
+    if (this.modoVoluntarioAvulso) {
+      if (ministerioControl.disabled) {
+        ministerioControl.enable({ emitEvent: false });
+      }
+      return;
+    }
 
     const voluntarioSelecionado = Number(voluntarioControl.value) || 0;
     if (!this.existeVoluntario(voluntarioSelecionado)) {

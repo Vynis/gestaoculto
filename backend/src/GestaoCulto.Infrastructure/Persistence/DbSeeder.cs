@@ -387,6 +387,30 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            if (await TabelaExisteAsync("escala"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE escala
+                    MODIFY COLUMN voluntario_id BIGINT UNSIGNED NULL;
+                ");
+
+                if (!await ColunaExisteAsync("escala", "voluntario_avulso_nome"))
+                {
+                    await _db.Database.ExecuteSqlRawAsync(@"
+                        ALTER TABLE escala
+                        ADD COLUMN voluntario_avulso_nome VARCHAR(160) NULL AFTER voluntario_id;
+                    ");
+                }
+
+                if (!await ColunaExisteAsync("escala", "voluntario_avulso_telefone"))
+                {
+                    await _db.Database.ExecuteSqlRawAsync(@"
+                        ALTER TABLE escala
+                        ADD COLUMN voluntario_avulso_telefone VARCHAR(40) NULL AFTER voluntario_avulso_nome;
+                    ");
+                }
+            }
+
             await SanearEtapasCronogramaDuplicadasAsync();
 
             await _db.Database.ExecuteSqlRawAsync(@"

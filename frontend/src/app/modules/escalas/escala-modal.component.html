@@ -15,7 +15,12 @@
           <option *ngFor="let etapa of etapasCulto" [ngValue]="etapa.id">{{ descricaoEtapa(etapa) }}</option>
         </select>
 
-        <select class="gc-native-select" nbInput formControlName="voluntarioId">
+        <select class="gc-native-select" nbInput formControlName="tipoVoluntario">
+          <option [ngValue]="'CADASTRADO'">Voluntário cadastrado</option>
+          <option [ngValue]="'AVULSO'">Voluntário avulso</option>
+        </select>
+
+        <select *ngIf="!modoVoluntarioAvulso" class="gc-native-select" nbInput formControlName="voluntarioId">
           <option [ngValue]="null">Selecione um voluntário</option>
           <option *ngIf="carregandoVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>Carregando voluntários...</option>
           <option *ngIf="erroVoluntariosEfetivo && !voluntarios.length" [ngValue]="null" disabled>{{ erroVoluntariosEfetivo }}</option>
@@ -23,19 +28,22 @@
           <option *ngFor="let voluntario of voluntarios" [ngValue]="voluntario.id">{{ voluntario.nome || ('Voluntário #' + voluntario.id) }}</option>
         </select>
 
-        <div class="voluntario-feedback" *ngIf="erroVoluntariosEfetivo && !voluntarios.length">
+        <input *ngIf="modoVoluntarioAvulso" nbInput formControlName="voluntarioAvulsoNome" placeholder="Nome do voluntário avulso" />
+        <input *ngIf="modoVoluntarioAvulso" nbInput formControlName="voluntarioAvulsoTelefone" placeholder="Telefone do voluntário avulso (opcional)" />
+
+        <div class="voluntario-feedback" *ngIf="!modoVoluntarioAvulso && erroVoluntariosEfetivo && !voluntarios.length">
           <button nbButton status="basic" size="tiny" type="button" (click)="tentarNovamenteCarregarVoluntarios()">
             Tentar novamente
           </button>
         </div>
 
-        <div class="voluntario-acao">
+        <div class="voluntario-acao" *ngIf="!modoVoluntarioAvulso">
           <button *ngIf="!cadastroVoluntarioAberto" nbButton status="info" size="small" type="button" (click)="abrirCadastroVoluntarioRapido()">
             Cadastrar voluntário
           </button>
         </div>
 
-        <div class="cadastro-voluntario" *ngIf="cadastroVoluntarioAberto" [formGroup]="novoVoluntarioForm">
+        <div class="cadastro-voluntario" *ngIf="!modoVoluntarioAvulso && cadastroVoluntarioAberto" [formGroup]="novoVoluntarioForm">
           <h5>Novo voluntário</h5>
           <div class="form-grid interno">
             <input nbInput formControlName="nome" placeholder="Nome completo" />

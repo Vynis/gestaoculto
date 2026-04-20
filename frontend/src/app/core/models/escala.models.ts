@@ -2,8 +2,10 @@ export interface Escala {
   id: number;
   cultoId: number;
   etapaCultoId: number | null;
-  voluntarioId: number;
+  voluntarioId: number | null;
   voluntarioNome?: string | null;
+  voluntarioAvulsoNome?: string | null;
+  voluntarioAvulsoTelefone?: string | null;
   ministerioId: number | null;
   ministerioNome?: string | null;
   funcao: string;

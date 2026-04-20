@@ -489,6 +489,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.CultoId).HasColumnName("culto_id");
                 entity.Property(x => x.EtapaCultoId).HasColumnName("etapa_culto_id");
                 entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.VoluntarioAvulsoNome).HasColumnName("voluntario_avulso_nome").HasMaxLength(160);
+                entity.Property(x => x.VoluntarioAvulsoTelefone).HasColumnName("voluntario_avulso_telefone").HasMaxLength(40);
                 entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
                 entity.Property(x => x.Funcao).HasColumnName("funcao").HasMaxLength(120).IsRequired();
                 entity.Property(x => x.HorarioPrevisto).HasColumnName("horario_previsto");

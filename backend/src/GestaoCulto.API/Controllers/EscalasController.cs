@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -14,7 +15,10 @@ namespace GestaoCulto.API.Controllers
     {
         public long CultoId { get; set; }
         public long? EtapaCultoId { get; set; }
-        public long VoluntarioId { get; set; }
+        public List<long>? EtapaCultoIds { get; set; }
+        public long? VoluntarioId { get; set; }
+        public string? VoluntarioAvulsoNome { get; set; }
+        public string? VoluntarioAvulsoTelefone { get; set; }
         public long? MinisterioId { get; set; }
         public string Funcao { get; set; } = string.Empty;
         public long PresencaStatusId { get; set; }
@@ -46,7 +50,11 @@ namespace GestaoCulto.API.Controllers
                     e.CultoId,
                     e.EtapaCultoId,
                     e.VoluntarioId,
-                    VoluntarioNome = _db.Voluntarios.Where(v => v.Id == e.VoluntarioId).Select(v => v.Nome).FirstOrDefault(),
+                    VoluntarioAvulsoNome = e.VoluntarioAvulsoNome,
+                    VoluntarioAvulsoTelefone = e.VoluntarioAvulsoTelefone,
+                    VoluntarioNome = e.VoluntarioId.HasValue
+                        ? _db.Voluntarios.Where(v => v.Id == e.VoluntarioId.Value).Select(v => v.Nome).FirstOrDefault()
+                        : e.VoluntarioAvulsoNome,
                     e.MinisterioId,
                     MinisterioNome = _db.Ministerios.Where(m => m.Id == e.MinisterioId).Select(m => m.Nome).FirstOrDefault(),
                     e.Funcao,
@@ -77,22 +85,66 @@ namespace GestaoCulto.API.Controllers
                 return BadRequest(new { mensagem = erroFuncao });
             }
 
-            var entity = new Escala
+            var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
+                ? dto.VoluntarioId
+                : null;
+            var voluntarioAvulsoNome = (dto.VoluntarioAvulsoNome ?? string.Empty).Trim();
+            var voluntarioAvulsoTelefone = (dto.VoluntarioAvulsoTelefone ?? string.Empty).Trim();
+
+            if (!voluntarioIdNormalizado.HasValue && string.IsNullOrWhiteSpace(voluntarioAvulsoNome))
+            {
+                return BadRequest(new { mensagem = "Selecione um voluntário cadastrado ou informe o nome do voluntário avulso." });
+            }
+
+            if (voluntarioIdNormalizado.HasValue)
+            {
+                voluntarioAvulsoNome = string.Empty;
+                voluntarioAvulsoTelefone = string.Empty;
+            }
+
+            var etapaIds = (dto.EtapaCultoIds ?? new List<long>())
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
+            if (!etapaIds.Any() && dto.EtapaCultoId.HasValue && dto.EtapaCultoId.Value > 0)
+            {
+                etapaIds.Add(dto.EtapaCultoId.Value);
+            }
+
+            if (!etapaIds.Any())
+            {
+                etapaIds.Add(0);
+            }
+
+            var entities = etapaIds.Select(etapaId => new Escala
             {
                 CultoId = dto.CultoId,
-                EtapaCultoId = dto.EtapaCultoId,
-                VoluntarioId = dto.VoluntarioId,
+                EtapaCultoId = etapaId > 0 ? etapaId : (long?)null,
+                VoluntarioId = voluntarioIdNormalizado,
+                VoluntarioAvulsoNome = string.IsNullOrWhiteSpace(voluntarioAvulsoNome) ? null : voluntarioAvulsoNome,
+                VoluntarioAvulsoTelefone = string.IsNullOrWhiteSpace(voluntarioAvulsoTelefone) ? null : voluntarioAvulsoTelefone,
                 MinisterioId = dto.MinisterioId,
                 Funcao = funcaoNormalizada,
                 HorarioPrevisto = null,
                 PresencaStatusId = dto.PresencaStatusId,
                 Observacoes = dto.Observacoes,
                 CriadoEm = DateTime.UtcNow
-            };
+            }).ToList();
 
-            _db.Escalas.Add(entity);
+            _db.Escalas.AddRange(entities);
             await _db.SaveChangesAsync();
-            return Ok(entity);
+
+            if (entities.Count == 1)
+            {
+                return Ok(entities[0]);
+            }
+
+            return Ok(new
+            {
+                mensagem = $"{entities.Count} escalas criadas com sucesso.",
+                quantidade = entities.Count
+            });
         }
 
         [HttpPut("{id:long}")]
@@ -117,9 +169,28 @@ namespace GestaoCulto.API.Controllers
                 return BadRequest(new { mensagem = erroFuncao });
             }
 
+            var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
+                ? dto.VoluntarioId
+                : null;
+            var voluntarioAvulsoNome = (dto.VoluntarioAvulsoNome ?? string.Empty).Trim();
+            var voluntarioAvulsoTelefone = (dto.VoluntarioAvulsoTelefone ?? string.Empty).Trim();
+
+            if (!voluntarioIdNormalizado.HasValue && string.IsNullOrWhiteSpace(voluntarioAvulsoNome))
+            {
+                return BadRequest(new { mensagem = "Selecione um voluntário cadastrado ou informe o nome do voluntário avulso." });
+            }
+
+            if (voluntarioIdNormalizado.HasValue)
+            {
+                voluntarioAvulsoNome = string.Empty;
+                voluntarioAvulsoTelefone = string.Empty;
+            }
+
             entity.CultoId = dto.CultoId;
             entity.EtapaCultoId = dto.EtapaCultoId;
-            entity.VoluntarioId = dto.VoluntarioId;
+            entity.VoluntarioId = voluntarioIdNormalizado;
+            entity.VoluntarioAvulsoNome = string.IsNullOrWhiteSpace(voluntarioAvulsoNome) ? null : voluntarioAvulsoNome;
+            entity.VoluntarioAvulsoTelefone = string.IsNullOrWhiteSpace(voluntarioAvulsoTelefone) ? null : voluntarioAvulsoTelefone;
             entity.MinisterioId = dto.MinisterioId;
             entity.Funcao = funcaoNormalizada;
             entity.PresencaStatusId = dto.PresencaStatusId;
