@@ -21,3 +21,4 @@ frontend/dist/
 publish/
 backend/**/bin/
 backend/**/obj/
+run.ps1

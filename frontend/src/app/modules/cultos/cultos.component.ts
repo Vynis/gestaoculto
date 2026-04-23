@@ -481,4 +481,5 @@ export class CultosComponent implements OnInit {
   statusLabel(statusId: number): string {
     return this.statusOptions.find((x) => x.id === statusId)?.label ?? 'Sem status';
   }
+
 }

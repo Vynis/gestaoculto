@@ -1,6 +1,10 @@
 param(
     [string]$Version,
-    [switch]$SkipZip
+    [switch]$SkipZip,
+    [string]$SentryDsn,
+    [string]$SentryEnvironment = 'Production',
+    [bool]$DebugEnableErrorTestEndpoint = $false,
+    [string]$DebugErrorTestToken
 )
 
 Set-StrictMode -Version Latest
@@ -35,6 +39,39 @@ function Invoke-Step {
     }
 }
 
+function Set-WebConfigAspNetCoreEnvVar {
+    param(
+        [Parameter(Mandatory = $true)][xml]$Xml,
+        [Parameter(Mandatory = $true)]$EnvironmentVariablesNode,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+
+    $targetNode = $null
+    foreach ($childNode in @($EnvironmentVariablesNode.ChildNodes)) {
+        if ($childNode.NodeType -ne [System.Xml.XmlNodeType]::Element) {
+            continue
+        }
+
+        if ($childNode.Name -ne 'environmentVariable' -and $childNode.Name -ne 'add') {
+            continue
+        }
+
+        if ($childNode.GetAttribute('name') -eq $Name) {
+            $targetNode = $childNode
+            break
+        }
+    }
+
+    if ($null -eq $targetNode) {
+        $targetNode = $Xml.CreateElement('environmentVariable')
+        $targetNode.SetAttribute('name', $Name)
+        [void]$EnvironmentVariablesNode.AppendChild($targetNode)
+    }
+
+    $targetNode.SetAttribute('value', $Value)
+}
+
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $frontendDir = Join-Path $root 'frontend'
 $backendProject = Join-Path $root 'backend/src/GestaoCulto.API/GestaoCulto.API.csproj'
@@ -61,6 +98,10 @@ if ([string]::IsNullOrWhiteSpace($currentVersion)) {
     throw 'VERSION file is empty.'
 }
 
+if ([string]::IsNullOrWhiteSpace($SentryDsn) -and -not [string]::IsNullOrWhiteSpace($env:SENTRY_DSN)) {
+    $SentryDsn = $env:SENTRY_DSN
+}
+
 Write-Step "Preparing folders"
 New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
 if (Test-Path $publishFrontendDir) { Remove-Item $publishFrontendDir -Recurse -Force }
@@ -81,16 +122,39 @@ Write-Step 'Normalizing backend web.config for KingHost'
 $backendWebConfigPath = Join-Path $publishBackendDir 'web.config'
 if (Test-Path $backendWebConfigPath) {
     [xml]$webConfigXml = Get-Content -Path $backendWebConfigPath -Raw
-    $systemWebServer = $webConfigXml.configuration.location.'system.webServer'
+    $systemWebServer = $webConfigXml.SelectSingleNode('/configuration/location/system.webServer')
     if ($null -ne $systemWebServer) {
         $aspNetCoreHandler = $systemWebServer.handlers.add | Where-Object { $_.name -eq 'aspNetCore' } | Select-Object -First 1
         if ($null -ne $aspNetCoreHandler) {
             $aspNetCoreHandler.modules = 'AspNetCoreModule'
         }
 
-        $aspNetCoreConfig = $systemWebServer.aspNetCore
-        if ($null -ne $aspNetCoreConfig -and $aspNetCoreConfig.HasAttribute('hostingModel')) {
-            $aspNetCoreConfig.RemoveAttribute('hostingModel')
+        $aspNetCoreConfig = $systemWebServer.SelectSingleNode('aspNetCore')
+        if ($null -ne $aspNetCoreConfig -and $aspNetCoreConfig.Attributes['hostingModel']) {
+            [void]$aspNetCoreConfig.Attributes.RemoveNamedItem('hostingModel')
+        }
+
+        $shouldInjectDebugVars = $DebugEnableErrorTestEndpoint -or -not [string]::IsNullOrWhiteSpace($DebugErrorTestToken)
+        $shouldInjectSentryVars = -not [string]::IsNullOrWhiteSpace($SentryDsn)
+        if ($null -ne $aspNetCoreConfig -and ($shouldInjectSentryVars -or $shouldInjectDebugVars)) {
+            $environmentVariablesNode = $aspNetCoreConfig.SelectSingleNode('environmentVariables')
+            if ($null -eq $environmentVariablesNode) {
+                $environmentVariablesNode = $webConfigXml.CreateElement('environmentVariables')
+                [void]$aspNetCoreConfig.AppendChild($environmentVariablesNode)
+            }
+
+            if ($shouldInjectSentryVars) {
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Sentry__Dsn' -Value $SentryDsn
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Sentry__Environment' -Value $SentryEnvironment
+            }
+
+            if ($shouldInjectDebugVars) {
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Debug__EnableErrorTestEndpoint' -Value $DebugEnableErrorTestEndpoint.ToString().ToLowerInvariant()
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($DebugErrorTestToken)) {
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Debug__ErrorTestToken' -Value $DebugErrorTestToken
+            }
         }
     }
 
@@ -132,6 +196,18 @@ Write-Step 'Done'
 Write-Host "Version: $currentVersion"
 Write-Host "Frontend publish: $publishFrontendDir"
 Write-Host "Backend publish:  $publishBackendDir"
+if (-not [string]::IsNullOrWhiteSpace($SentryDsn)) {
+    Write-Host "Sentry web.config: enabled ($SentryEnvironment)"
+}
+else {
+    Write-Host 'Sentry web.config: skipped (set -SentryDsn or SENTRY_DSN env var)'
+}
+if ($DebugEnableErrorTestEndpoint -or -not [string]::IsNullOrWhiteSpace($DebugErrorTestToken)) {
+    Write-Host "Debug endpoint web.config: enabled=$($DebugEnableErrorTestEndpoint.ToString().ToLowerInvariant())"
+}
+else {
+    Write-Host 'Debug endpoint web.config: skipped'
+}
 if (-not $SkipZip) {
     Write-Host "Frontend ZIP:    $(Join-Path $publishDir 'frontend.zip')"
     Write-Host "Backend ZIP:     $(Join-Path $publishDir 'backend.zip')"

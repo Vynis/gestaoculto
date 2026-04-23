@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Sentry.AspNetCore;
 
 namespace GestaoCulto.API
 {
@@ -122,6 +123,7 @@ namespace GestaoCulto.API
             });
 
             app.UseRouting();
+            app.UseSentryTracing();
             app.UseCors("DefaultCors");
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseAuthentication();
