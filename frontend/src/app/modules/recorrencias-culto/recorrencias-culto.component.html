@@ -1,0 +1,91 @@
+<div class="page-header">
+  <div>
+    <h2>Recorrências de culto</h2>
+    <p>Configure cultos que acontecem semanalmente e gere os próximos encontros automaticamente.</p>
+  </div>
+</div>
+
+<div class="feedback sucesso" *ngIf="mensagemSucesso">{{ mensagemSucesso }}</div>
+<div class="feedback erro" *ngIf="mensagemErro">{{ mensagemErro }}</div>
+
+<nb-card>
+  <nb-card-header>{{ recorrenciaEditandoId ? 'Editar recorrência' : 'Nova recorrência' }}</nb-card-header>
+  <nb-card-body>
+    <form class="recorrencia-form" [formGroup]="recorrenciaForm" (ngSubmit)="salvarRecorrencia()">
+      <div class="form-field">
+        <label for="rec-nome">Nome</label>
+        <input id="rec-nome" nbInput fullWidth formControlName="nome" placeholder="Ex.: Culto de Celebração" />
+      </div>
+      <div class="form-field">
+        <label for="rec-tipo">Tipo</label>
+        <input id="rec-tipo" nbInput fullWidth formControlName="tipoCulto" placeholder="Ex.: Domingo" />
+      </div>
+      <div class="form-field">
+        <label for="rec-dia">Dia</label>
+        <nb-select id="rec-dia" fullWidth formControlName="diaSemana">
+          <nb-option *ngFor="let dia of diasSemana" [value]="dia.id">{{ dia.label }}</nb-option>
+        </nb-select>
+      </div>
+      <div class="form-field">
+        <label for="rec-horario">Horário</label>
+        <input id="rec-horario" nbInput fullWidth type="time" formControlName="horarioInicio" />
+      </div>
+      <div class="form-field">
+        <label for="rec-status">Status do culto gerado</label>
+        <nb-select id="rec-status" fullWidth formControlName="statusCultoId">
+          <nb-option *ngFor="let status of statusOptions" [value]="status.id">{{ status.label }}</nb-option>
+        </nb-select>
+      </div>
+      <div class="form-field">
+        <label for="rec-template">Template do cronograma</label>
+        <nb-select id="rec-template" fullWidth formControlName="templateCultoId" placeholder="Sem template">
+          <nb-option [value]="null">Sem template</nb-option>
+          <nb-option *ngFor="let template of templates" [value]="template.id">{{ template.nome }}</nb-option>
+        </nb-select>
+      </div>
+      <div class="form-field">
+        <label for="rec-semanas">Gerar próximas semanas</label>
+        <input id="rec-semanas" nbInput fullWidth type="number" min="1" max="52" formControlName="quantidadeSemanasAntecedencia" />
+      </div>
+      <div class="form-field recorrencia-check">
+        <nb-checkbox formControlName="ativo">Recorrência ativa</nb-checkbox>
+      </div>
+      <div class="form-field recorrencia-observacoes">
+        <label for="rec-observacoes">Observações</label>
+        <input id="rec-observacoes" nbInput fullWidth formControlName="observacoesGerais" placeholder="Observações gerais (opcional)" />
+      </div>
+      <div class="actions recorrencia-actions">
+        <button nbButton status="primary" type="submit" [disabled]="carregando">
+          {{ recorrenciaEditandoId ? 'Atualizar recorrência' : 'Salvar recorrência' }}
+        </button>
+        <button nbButton status="basic" type="button" [disabled]="carregando" (click)="limparFormulario()">Limpar</button>
+      </div>
+    </form>
+  </nb-card-body>
+</nb-card>
+
+<nb-card>
+  <nb-card-header>Recorrências cadastradas</nb-card-header>
+  <nb-card-body>
+    <div class="recorrencias-lista" *ngIf="recorrencias.length; else semRecorrencias">
+      <article class="recorrencia-card" *ngFor="let recorrencia of recorrencias" [class.inativa]="!recorrencia.ativo">
+        <div>
+          <strong>{{ recorrencia.nome }}</strong>
+          <small>{{ diaSemanaLabel(recorrencia.diaSemana) }} às {{ paraHorarioInput(recorrencia.horarioInicio) }}</small>
+          <small>Antecedência: {{ recorrencia.quantidadeSemanasAntecedencia }} semana(s)</small>
+          <small>Template: {{ recorrencia.templateCultoNome || 'Sem template' }}</small>
+          <small>Status: {{ recorrencia.ativo ? 'Ativa' : 'Inativa' }}</small>
+          <small *ngIf="recorrencia.ultimaGeracaoEm">Última geração: {{ recorrencia.ultimaGeracaoEm | date: 'dd/MM/yyyy HH:mm' }}</small>
+        </div>
+        <div class="recorrencia-card-actions">
+          <button nbButton size="tiny" status="success" type="button" [disabled]="carregando || !recorrencia.ativo" (click)="gerarCultosRecorrencia(recorrencia)">Gerar cultos</button>
+          <button nbButton size="tiny" status="info" type="button" [disabled]="carregando" (click)="editarRecorrencia(recorrencia)">Editar</button>
+          <button nbButton size="tiny" status="danger" type="button" [disabled]="carregando" (click)="excluirRecorrencia(recorrencia)">Excluir</button>
+        </div>
+      </article>
+    </div>
+    <ng-template #semRecorrencias>
+      <p>Nenhuma recorrência cadastrada.</p>
+    </ng-template>
+  </nb-card-body>
+</nb-card>

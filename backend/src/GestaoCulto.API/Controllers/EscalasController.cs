@@ -85,6 +85,12 @@ namespace GestaoCulto.API.Controllers
                 return BadRequest(new { mensagem = erroFuncao });
             }
 
+            var erroMinisterio = await ValidarMinisterioPermitidoParaLider(dto.MinisterioId);
+            if (!string.IsNullOrWhiteSpace(erroMinisterio))
+            {
+                return Forbid();
+            }
+
             var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
                 ? dto.VoluntarioId
                 : null;
@@ -167,6 +173,12 @@ namespace GestaoCulto.API.Controllers
             if (!string.IsNullOrWhiteSpace(erroFuncao))
             {
                 return BadRequest(new { mensagem = erroFuncao });
+            }
+
+            var erroMinisterio = await ValidarMinisterioPermitidoParaLider(dto.MinisterioId);
+            if (!string.IsNullOrWhiteSpace(erroMinisterio))
+            {
+                return Forbid();
             }
 
             var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
@@ -308,6 +320,31 @@ namespace GestaoCulto.API.Controllers
             return existe
                 ? null
                 : "A função informada não está cadastrada para a equipe selecionada.";
+        }
+
+        private async Task<string?> ValidarMinisterioPermitidoParaLider(long? ministerioId)
+        {
+            if (User.IsInRole("ADMIN") || User.IsInRole("GESTAO_CULTO") || !User.IsInRole("LIDER_MINISTERIO"))
+            {
+                return null;
+            }
+
+            if (!ministerioId.HasValue || ministerioId.Value <= 0)
+            {
+                return "Informe o ministério da escala.";
+            }
+
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            if (!long.TryParse(sub, out var usuarioId))
+            {
+                return "Usuário inválido.";
+            }
+
+            var permitido = await _db.MinisteriosLideres
+                .AsNoTracking()
+                .AnyAsync(x => x.UsuarioId == usuarioId && x.MinisterioId == ministerioId.Value);
+
+            return permitido ? null : "Você não pode lançar escala para este ministério.";
         }
     }
 }

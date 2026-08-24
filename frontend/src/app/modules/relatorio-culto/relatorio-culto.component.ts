@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Culto } from '../../core/models/culto.models';
 import { MinisterioCompleto } from '../../core/models/ministerio.models';
 import { RelatorioCultoDiaResponse, RelatorioCultoEtapa, RelatorioCultoRepertorioItem } from '../../core/models/relatorio-culto.models';
 import { MinisterioService } from '../../core/services/ministerio.service';
+import { CultoService } from '../../core/services/culto.service';
 import { RelatorioService } from '../../core/services/relatorio.service';
 
 type ColunaOperacional = 'pulpito' | 'iluminacao' | 'telao' | 'som' | 'atmosfera';
@@ -71,6 +72,7 @@ export class RelatorioCultoComponent implements OnInit {
   relatorio: RelatorioCultoDiaResponse | null = null;
   cultos: Culto[] = [];
   modoPublico = false;
+  mostrarFiltro = true;
   ministeriosAtivos: MinisterioCompleto[] = [];
 
   linhasCronograma: LinhaCronogramaModelo[] = [];
@@ -81,22 +83,96 @@ export class RelatorioCultoComponent implements OnInit {
   private logoPdfDataUrl: string | null = null;
 
   readonly filtro = this.fb.group({
-    cultoId: [null as number | null, Validators.required]
+    cultoId: [null as number | null, Validators.required],
+    visualizacao: ['tabela' as 'tabela' | 'cards']
   });
+
+  get visualizacaoSelecionada(): 'tabela' | 'cards' {
+    return (this.filtro.value.visualizacao as 'tabela' | 'cards') || 'tabela';
+  }
+
+  get ehVisualizacaoTabela(): boolean {
+    return this.visualizacaoSelecionada === 'tabela';
+  }
+
+  get ehVisualizacaoCards(): boolean {
+    return this.visualizacaoSelecionada === 'cards';
+  }
+
+  get textoBotaoPdf(): string {
+    return this.ehVisualizacaoCards ? 'Exportar PDF em cards' : 'Exportar PDF em tabela';
+  }
+
+  get temDadosRelatorio(): boolean {
+    return !!(
+      this.linhasCronograma.length ||
+      this.cronogramasAdicionais.length ||
+      this.secoesVoluntariosMinisterio.length ||
+      this.linhasLideresEquipe.length ||
+      this.linhasRepertorio.length
+    );
+  }
+
+  get intervaloCronograma(): string {
+    if (!this.linhasCronograma.length) {
+      return '--:--';
+    }
+
+    const inicio = this.linhasCronograma[0]?.horario || '--:--';
+    const fim = this.linhasCronograma[this.linhasCronograma.length - 1]?.horario || '--:--';
+    return `${inicio} - ${fim}`;
+  }
+
+  get cultoNomeCards(): string {
+    return this.relatorio?.cultos?.[0]?.culto?.nome || 'Culto';
+  }
+
+  categoriaLinhaClasse(linha: LinhaCronogramaModelo): string {
+    const texto = `${linha.atividade} ${linha.observacao}`.toLowerCase();
+    if (texto.includes('encerr')) {
+      return 'cat-fim';
+    }
+    if (texto.includes('palavra') || texto.includes('prega')) {
+      return 'cat-pal';
+    }
+    if (texto.includes('louvor') || texto.includes('music') || texto.includes('repert')) {
+      return 'cat-lou';
+    }
+    if (texto.includes('oferta') || texto.includes('gratidao') || texto.includes('especial') || texto.includes('video')) {
+      return 'cat-esp';
+    }
+    if (texto.includes('entrada') || texto.includes('fila') || texto.includes('recepc')) {
+      return 'cat-ent';
+    }
+    return 'cat-org';
+  }
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly relatorioService: RelatorioService,
     private readonly ministerioService: MinisterioService,
     private readonly toastr: NbToastrService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.modoPublico = this.router.url.includes('relatorio-culto-publico');
+    this.mostrarFiltro = !this.modoPublico;
+
+    if (this.modoPublico) {
+      this.filtro.patchValue({ visualizacao: 'cards' });
+      this.route.queryParamMap.subscribe((params) => {
+        const dataParam = String(params.get('data') || '').trim();
+        if (!dataParam) {
+          return;
+        }
+        this.gerarPorDataPublica(dataParam);
+      });
+    }
 
     this.relatorioService.listarCultosParaRelatorio().subscribe((data) => {
-      this.cultos = data.slice().sort((a, b) => this.compararCultosDesc(a, b));
+      this.cultos = CultoService.ordenarPorProximidade(data);
       const primeiro = this.cultos[0]?.id ?? null;
       this.filtro.patchValue({ cultoId: primeiro });
     });
@@ -139,6 +215,79 @@ export class RelatorioCultoComponent implements OnInit {
         this.carregando = false;
       }
     });
+  }
+
+  alternarFiltro(): void {
+    this.mostrarFiltro = !this.mostrarFiltro;
+  }
+
+  private gerarPorDataPublica(data: string): void {
+    const dataNormalizada = this.normalizarDataParametroPublico(data);
+    if (!dataNormalizada) {
+      this.toastr.warning('Use a data no formato DD/MM/YYYY (ou YYYY-MM-DD) para abrir o relatório público.', 'Relatório');
+      return;
+    }
+
+    this.carregando = true;
+    this.relatorioService.obterRelatorioCultoDia(dataNormalizada).subscribe({
+      next: (response) => {
+        this.relatorio = response;
+        this.montarModeloVisual(response);
+
+        const cultoId = response.cultos?.[0]?.culto?.id;
+        if (cultoId) {
+          this.filtro.patchValue({ cultoId });
+        }
+
+        if (!response.cultos.length) {
+          this.toastr.warning('Nenhum culto encontrado para a data informada.', 'Relatório');
+        }
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível gerar o relatório pela data informada.', 'Erro');
+      },
+      complete: () => {
+        this.carregando = false;
+      }
+    });
+  }
+
+  private normalizarDataParametroPublico(valor: string): string | null {
+    const texto = String(valor || '').trim();
+    if (!texto) {
+      return null;
+    }
+
+    const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) {
+      const ano = Number(iso[1]);
+      const mes = Number(iso[2]);
+      const dia = Number(iso[3]);
+      return this.dataValida(ano, mes, dia) ? `${iso[1]}-${iso[2]}-${iso[3]}` : null;
+    }
+
+    const br = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!br) {
+      return null;
+    }
+
+    const dia = Number(br[1]);
+    const mes = Number(br[2]);
+    const ano = Number(br[3]);
+    if (!this.dataValida(ano, mes, dia)) {
+      return null;
+    }
+
+    return `${br[3]}-${br[2]}-${br[1]}`;
+  }
+
+  private dataValida(ano: number, mes: number, dia: number): boolean {
+    if (!Number.isFinite(ano) || !Number.isFinite(mes) || !Number.isFinite(dia)) {
+      return false;
+    }
+
+    const data = new Date(ano, mes - 1, dia);
+    return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
   }
 
   async exportarXlsx(): Promise<void> {
@@ -236,6 +385,12 @@ export class RelatorioCultoComponent implements OnInit {
     const pdfMake = await this.carregarPdfMake();
     const logoDataUrl = await this.carregarLogoPdfDataUrl();
     const dataArquivo = this.dataCultoParaNomeArquivo();
+
+    if (this.ehVisualizacaoCards) {
+      pdfMake.createPdf(this.montarDocumentoPdfCards(logoDataUrl)).download(`RELATORIO_CULTO_CARDS_${dataArquivo}.pdf`);
+      return;
+    }
+
     pdfMake.createPdf(this.montarDocumentoPdf(logoDataUrl)).download(`CRONOGRAMA_CULTO_${dataArquivo}.pdf`);
   }
 
@@ -655,6 +810,217 @@ export class RelatorioCultoComponent implements OnInit {
         fontSize: 7
       }
     };
+  }
+
+  private montarDocumentoPdfCards(logoDataUrl?: string | null): any {
+    const content: any[] = [
+      this.montarCabecalhoPdfCards(logoDataUrl),
+      {
+        columns: [
+          this.montarResumoPdfCards('Data', this.dataTitulo, '#1D4ED8'),
+          this.montarResumoPdfCards('Horario', this.intervaloCronograma, '#7C3AED'),
+          this.montarResumoPdfCards('Etapas', String(this.linhasCronograma.length), '#059669')
+        ],
+        columnGap: 8,
+        margin: [0, 0, 0, 12]
+      }
+    ];
+
+    if (this.linhasCronograma.length) {
+      content.push({ text: 'Timeline do culto', style: 'secaoCards' });
+      for (const linha of this.linhasCronograma) {
+        const cor = this.corPdfLinhaCard(linha);
+        content.push(this.montarCardPdf([
+          {
+            columns: [
+              { text: linha.horario, width: 52, style: 'horaCard', color: cor },
+              {
+                width: '*',
+                stack: [
+                  {
+                    columns: [
+                      { text: linha.atividade, style: 'tituloCard' },
+                      { text: linha.duracao, width: 58, alignment: 'right', style: 'tagCard', color: cor }
+                    ]
+                  },
+                  this.montarDetalhesOperacionaisPdfCards(linha),
+                  ...(linha.observacao && linha.observacao !== '-' ? [{ text: linha.observacao, style: 'obsCard' }] : [])
+                ]
+              }
+            ],
+            columnGap: 8
+          }
+        ], cor));
+      }
+    }
+
+    if (this.cronogramasAdicionais.length) {
+      content.push({ text: 'Cronogramas adicionais', style: 'secaoCards' });
+      this.adicionarCardsEmGridPdf(content, this.cronogramasAdicionais.map((secao) => this.montarCardPdf([
+        { text: secao.titulo, style: 'tituloCard' },
+        ...secao.linhas.map((linha) => ({
+          stack: [
+            { text: `${linha.horario} - ${linha.atividade}`, bold: true, margin: [0, 4, 0, 1] },
+            { text: linha.voluntarios.join(' | ') || '-', color: '#475569' }
+          ]
+        }))
+      ], '#2563EB')));
+    }
+
+    if (this.secoesVoluntariosMinisterio.length || this.linhasLideresEquipe.length) {
+      content.push({ text: 'Ministerios e lideranca', style: 'secaoCards' });
+      const cardsMinisterios = this.secoesVoluntariosMinisterio.map((secao, index) => this.montarCardPdf([
+        { text: secao.titulo, style: 'tituloCard' },
+        ...secao.voluntarios.map((voluntario) => ({
+          columns: [
+            { text: voluntario.nome, width: '*', margin: [0, 4, 0, 0] },
+            { text: voluntario.funcao, width: 120, alignment: 'right', bold: true, color: '#334155', margin: [0, 4, 0, 0] }
+          ]
+        }))
+      ], this.corPdfMinisterio(index)));
+
+      if (this.linhasLideresEquipe.length) {
+        cardsMinisterios.push(this.montarCardPdf([
+          { text: 'Lideres por equipe', style: 'tituloCard' },
+          ...this.linhasLideresEquipe.map((linha) => ({
+            columns: [
+              { text: linha.equipe, width: '*', margin: [0, 4, 0, 0] },
+              { text: linha.lideres, width: 130, alignment: 'right', bold: true, color: '#334155', margin: [0, 4, 0, 0] }
+            ]
+          }))
+        ], '#0F766E'));
+      }
+
+      this.adicionarCardsEmGridPdf(content, cardsMinisterios);
+    }
+
+    if (this.linhasRepertorio.length) {
+      content.push({ text: 'Repertorio', style: 'secaoCards' });
+      this.adicionarCardsEmGridPdf(content, this.linhasRepertorio.map((linha) => this.montarCardPdf([
+        {
+          columns: [
+            { text: String(linha.ordem), width: 28, style: 'numeroMusica' },
+            {
+              width: '*',
+              stack: [
+                { text: linha.musica, style: 'tituloCard' },
+                { text: `${linha.etapa} - Tom: ${linha.tom} - ${linha.responsavel}`, color: '#475569', margin: [0, 2, 0, 0] },
+                ...(linha.observacoes && linha.observacoes !== '-' ? [{ text: linha.observacoes, style: 'obsCard' }] : [])
+              ]
+            }
+          ],
+          columnGap: 8
+        }
+      ], '#16A34A')));
+    }
+
+    return {
+      pageSize: 'A4',
+      pageOrientation: 'portrait',
+      pageMargins: [24, 22, 24, 22],
+      content,
+      styles: {
+        tituloCards: { fontSize: 20, bold: true, color: '#0F172A', margin: [0, 0, 0, 2] },
+        subtituloCards: { fontSize: 10, color: '#64748B' },
+        secaoCards: { fontSize: 13, bold: true, color: '#0F172A', margin: [0, 10, 0, 6] },
+        tituloCard: { fontSize: 10, bold: true, color: '#0F172A' },
+        horaCard: { fontSize: 11, bold: true },
+        tagCard: { fontSize: 8, bold: true },
+        obsCard: { fontSize: 8, color: '#64748B', italics: true, margin: [0, 5, 0, 0] },
+        numeroMusica: { fontSize: 14, bold: true, color: '#16A34A', alignment: 'center' }
+      },
+      defaultStyle: {
+        fontSize: 8,
+        color: '#1E293B'
+      }
+    };
+  }
+
+  private montarCabecalhoPdfCards(logoDataUrl?: string | null): any {
+    const texto = {
+      width: '*',
+      stack: [
+        { text: this.cultoNomeCards, style: 'tituloCards' },
+        { text: `Cronograma completo - ${this.dataTitulo}`, style: 'subtituloCards' }
+      ]
+    };
+
+    return logoDataUrl
+      ? { columns: [{ image: logoDataUrl, width: 48 }, texto], columnGap: 10, margin: [0, 0, 0, 12] }
+      : { stack: [texto], margin: [0, 0, 0, 12] };
+  }
+
+  private montarResumoPdfCards(rotulo: string, valor: string, cor: string): any {
+    return this.montarCardPdf([
+      { text: rotulo.toUpperCase(), fontSize: 7, bold: true, color: '#64748B' },
+      { text: valor, fontSize: 12, bold: true, color: cor, margin: [0, 3, 0, 0] }
+    ], cor, [7, 6, 7, 6]);
+  }
+
+  private montarDetalhesOperacionaisPdfCards(linha: LinhaCronogramaModelo): any {
+    const itens = [
+      ['Pulpito/Microfone', linha.pulpitoMicrofone],
+      ['Iluminacao', linha.iluminacaoSalao],
+      ['Telao', linha.telao],
+      ['Som', linha.som]
+    ];
+
+    return {
+      columns: itens.map(([rotulo, valor]) => ({
+        width: '*',
+        stack: [
+          { text: rotulo, fontSize: 6, bold: true, color: '#64748B', margin: [0, 5, 0, 1] },
+          { text: valor || '-', fontSize: 7, color: '#334155' }
+        ]
+      })),
+      columnGap: 6
+    };
+  }
+
+  private montarCardPdf(stack: any[], cor: string, marginConteudo: [number, number, number, number] = [8, 7, 8, 7]): any {
+    return {
+      table: {
+        widths: ['*'],
+        body: [[{ stack, margin: marginConteudo }]]
+      },
+      layout: {
+        hLineWidth: () => 0.8,
+        vLineWidth: () => 0.8,
+        hLineColor: () => cor,
+        vLineColor: () => cor,
+        fillColor: () => '#FFFFFF'
+      },
+      margin: [0, 0, 0, 8]
+    };
+  }
+
+  private adicionarCardsEmGridPdf(content: any[], cards: any[]): void {
+    for (let index = 0; index < cards.length; index += 2) {
+      const esquerda = cards[index];
+      const direita = cards[index + 1];
+      content.push({
+        columns: direita ? [esquerda, direita] : [esquerda],
+        columnGap: 10
+      });
+    }
+  }
+
+  private corPdfLinhaCard(linha: LinhaCronogramaModelo): string {
+    const classe = this.categoriaLinhaClasse(linha);
+    const cores: Record<string, string> = {
+      'cat-fim': '#64748B',
+      'cat-pal': '#7C3AED',
+      'cat-lou': '#2563EB',
+      'cat-esp': '#EA580C',
+      'cat-ent': '#0891B2',
+      'cat-org': '#16A34A'
+    };
+    return cores[classe] || '#2563EB';
+  }
+
+  private corPdfMinisterio(index: number): string {
+    const cores = ['#EF6C00', '#00897B', '#6D4C41'];
+    return cores[Math.abs(Number(index) || 0) % cores.length];
   }
 
   private bordaPadrao(): any {

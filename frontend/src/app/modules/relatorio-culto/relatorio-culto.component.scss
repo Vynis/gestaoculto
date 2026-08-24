@@ -30,6 +30,30 @@
   flex-wrap: wrap;
 }
 
+.filtro-flutuante {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 15;
+  margin-left: auto;
+  margin-bottom: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #c7d6ec;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1f48b6;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(17, 37, 120, 0.08);
+}
+
+.filtro-flutuante:hover {
+  background: #f4f8ff;
+}
+
 .modelo-topo {
   margin-bottom: 0.35rem;
 }
@@ -111,11 +135,6 @@
   color: #ffffff;
 }
 
-.secao-adicional .planilha-lideres thead th {
-  background: #2f75e8;
-  color: #ffffff;
-}
-
 .secao-ministerio.variante-a .planilha-lideres thead th {
   background: #ef6c00;
   color: #ffffff;
@@ -128,16 +147,6 @@
 
 .secao-ministerio.variante-c .planilha-lideres thead th {
   background: #6d4c41;
-  color: #ffffff;
-}
-
-.secao-lideres .planilha-lideres thead th {
-  background: #1565c0;
-  color: #ffffff;
-}
-
-.secao-repertorio .planilha-repertorio thead th {
-  background: #2e7d32;
   color: #ffffff;
 }
 
@@ -189,6 +198,16 @@
 
 @media (max-width: 900px) {
   .tabelas-menores-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filtro-flutuante {
+    width: 100%;
+    position: static;
+    margin-left: 0;
+  }
+
+  .timeline-card dl {
     grid-template-columns: 1fr;
   }
 }

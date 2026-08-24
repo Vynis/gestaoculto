@@ -35,6 +35,7 @@ namespace GestaoCulto.Infrastructure.Persistence
         public DbSet<TemplateEtapaCultoMinisterioAcao> TemplatesEtapasCultoMinisteriosAcoes => Set<TemplateEtapaCultoMinisterioAcao>();
         public DbSet<Musica> Musicas => Set<Musica>();
         public DbSet<Culto> Cultos => Set<Culto>();
+        public DbSet<CultoRecorrencia> CultosRecorrencias => Set<CultoRecorrencia>();
         public DbSet<RepertorioCulto> RepertoriosCulto => Set<RepertorioCulto>();
         public DbSet<RepertorioCultoItem> RepertoriosCultoItens => Set<RepertorioCultoItem>();
         public DbSet<EtapaCulto> EtapasCulto => Set<EtapaCulto>();
@@ -395,6 +396,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.TemplateCultoId).HasColumnName("template_culto_id");
+                entity.Property(x => x.RecorrenciaId).HasColumnName("recorrencia_id");
                 entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(150).IsRequired();
                 entity.Property(x => x.TipoCulto).HasColumnName("tipo_culto").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.DataCulto).HasColumnName("data_culto");
@@ -407,6 +409,29 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
                 entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
                 entity.HasOne(x => x.StatusCulto).WithMany().HasForeignKey(x => x.StatusCultoId);
+                entity.HasOne(x => x.Recorrencia).WithMany().HasForeignKey(x => x.RecorrenciaId);
+            });
+
+            modelBuilder.Entity<CultoRecorrencia>(entity =>
+            {
+                entity.ToTable("culto_recorrencia");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.TipoCulto).HasColumnName("tipo_culto").HasMaxLength(80).IsRequired();
+                entity.Property(x => x.DiaSemana).HasColumnName("dia_semana");
+                entity.Property(x => x.HorarioInicio).HasColumnName("horario_inicio");
+                entity.Property(x => x.HorarioFimPrevisto).HasColumnName("horario_fim_previsto");
+                entity.Property(x => x.StatusCultoId).HasColumnName("status_culto_id");
+                entity.Property(x => x.ObservacoesGerais).HasColumnName("observacoes_gerais").HasMaxLength(800);
+                entity.Property(x => x.TemplateCultoId).HasColumnName("template_culto_id");
+                entity.Property(x => x.QuantidadeSemanasAntecedencia).HasColumnName("quantidade_semanas_antecedencia");
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.UltimaGeracaoEm).HasColumnName("ultima_geracao_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.StatusCulto).WithMany().HasForeignKey(x => x.StatusCultoId);
+                entity.HasOne(x => x.TemplateCulto).WithMany().HasForeignKey(x => x.TemplateCultoId);
             });
 
             modelBuilder.Entity<RepertorioCulto>(entity =>

@@ -23,6 +23,7 @@ interface VoluntarioGridRow {
 export class VoluntariosComponent implements OnInit {
   voluntarios: Voluntario[] = [];
   rowData: VoluntarioGridRow[] = [];
+  filtroGrid = '';
   ministerios: Ministerio[] = [];
   usuarios: UsuarioOpcaoVoluntario[] = [];
   carregando = false;

@@ -17,6 +17,20 @@
   height: 480px;
 }
 
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.grid-search {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: min(420px, 100%);
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -108,5 +122,14 @@ small {
   .page-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .grid-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grid-search {
+    min-width: 0;
   }
 }

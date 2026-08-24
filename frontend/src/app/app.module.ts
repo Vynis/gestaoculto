@@ -35,6 +35,7 @@ import { MainLayoutComponent } from './layout/main-layout.component';
 import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
 import { CultosComponent } from './modules/cultos/cultos.component';
+import { RecorrenciasCultoComponent } from './modules/recorrencias-culto/recorrencias-culto.component';
 import { CronogramaComponent } from './modules/cronograma/cronograma.component';
 import { EscalasComponent } from './modules/escalas/escalas.component';
 import { ConvidadosComponent } from './modules/convidados/convidados.component';
@@ -47,6 +48,7 @@ import { UsuariosComponent } from './modules/usuarios/usuarios.component';
 import { RelatorioCultoComponent } from './modules/relatorio-culto/relatorio-culto.component';
 import { RelatorioCultoPublicoPageComponent } from './modules/relatorio-culto/relatorio-culto-publico-page.component';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { LoadingInterceptor } from './core/interceptors/loading.interceptor';
 import { LoginVoluntarioComponent } from './modules/voluntario-auth/login-voluntario.component';
 import { PrimeiroAcessoVoluntarioComponent } from './modules/voluntario-auth/primeiro-acesso-voluntario.component';
 import { RecuperarAcessoVoluntarioComponent } from './modules/voluntario-auth/recuperar-acesso-voluntario.component';
@@ -71,6 +73,7 @@ import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.compon
     VoluntarioLayoutComponent,
     DashboardComponent,
     CultosComponent,
+    RecorrenciasCultoComponent,
     CronogramaComponent,
     EscalasComponent,
     ConvidadosComponent,
@@ -144,6 +147,11 @@ import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.compon
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: LoadingInterceptor,
       multi: true
     }
   ],

@@ -197,6 +197,39 @@ namespace GestaoCulto.Infrastructure.Persistence
             ");
 
             await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS culto_recorrencia (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  nome VARCHAR(150) NOT NULL,
+                  tipo_culto VARCHAR(80) NOT NULL,
+                  dia_semana INT NOT NULL,
+                  horario_inicio TIME NOT NULL,
+                  horario_fim_previsto TIME NULL,
+                  status_culto_id BIGINT UNSIGNED NOT NULL,
+                  observacoes_gerais VARCHAR(800) NULL,
+                  template_culto_id BIGINT UNSIGNED NULL,
+                  quantidade_semanas_antecedencia INT NOT NULL DEFAULT 12,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  ultima_geracao_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  KEY ix_culto_recorrencia_ativo (ativo),
+                  KEY ix_culto_recorrencia_dia_horario (dia_semana, horario_inicio),
+                  KEY ix_culto_recorrencia_template (template_culto_id),
+                  CONSTRAINT fk_culto_recorrencia_status FOREIGN KEY (status_culto_id) REFERENCES status_culto(id) ON DELETE RESTRICT,
+                  CONSTRAINT fk_culto_recorrencia_template FOREIGN KEY (template_culto_id) REFERENCES template_culto(id) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            if (!await ColunaExisteAsync("culto", "recorrencia_id"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE culto
+                    ADD COLUMN recorrencia_id BIGINT UNSIGNED NULL AFTER template_culto_id;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS repertorio_culto (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                   culto_id BIGINT UNSIGNED NOT NULL,

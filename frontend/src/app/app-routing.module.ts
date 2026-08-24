@@ -9,6 +9,7 @@ import { GestaoGuard } from './core/guards/gestao.guard';
 import { VoluntarioGuard } from './core/guards/voluntario.guard';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
 import { CultosComponent } from './modules/cultos/cultos.component';
+import { RecorrenciasCultoComponent } from './modules/recorrencias-culto/recorrencias-culto.component';
 import { CronogramaComponent } from './modules/cronograma/cronograma.component';
 import { EscalasComponent } from './modules/escalas/escalas.component';
 import { ConvidadosComponent } from './modules/convidados/convidados.component';
@@ -52,6 +53,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'cultos', component: CultosComponent },
+      { path: 'recorrencias-culto', component: RecorrenciasCultoComponent },
       { path: 'templates', component: TemplatesCultoComponent },
       { path: 'ministerios', component: MinisteriosComponent },
       { path: 'cronograma', component: CronogramaComponent },

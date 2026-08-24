@@ -36,6 +36,7 @@ export class MainLayoutComponent implements OnInit {
         expanded: true,
         children: [
           { title: 'Cultos', link: '/cultos' },
+          { title: 'Recorrências', link: '/recorrencias-culto' },
           { title: 'Templates', link: '/templates' },
           { title: 'Cronograma', link: '/cronograma' },
           { title: 'Escalas', link: '/escalas' },

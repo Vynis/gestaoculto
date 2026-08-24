@@ -112,7 +112,7 @@ export class DisponibilidadesComponent implements OnInit {
 
   lancarNaEscala(item: DisponibilidadeGestaoItem): void {
     this.carregarVoluntarios();
-    const ministerioId = item.ministerios?.[0]?.ministerioId ?? null;
+    const ministerioId = item.ministerios?.[0]?.ministerioId ?? this.filtro.value.ministerioId ?? null;
     this.prefillEscala = {
       cultoId: item.cultoId,
       voluntarioId: item.voluntarioId,

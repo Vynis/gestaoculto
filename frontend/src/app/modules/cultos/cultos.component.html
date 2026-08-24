@@ -12,6 +12,10 @@
 <nb-card>
   <nb-card-header class="grid-header">
     <span>Cultos cadastrados</span>
+    <div class="grid-search">
+      <input nbInput fullWidth type="search" placeholder="Buscar culto..." [(ngModel)]="filtroGrid" [ngModelOptions]="{ standalone: true }" />
+      <button nbButton size="small" status="basic" type="button" *ngIf="filtroGrid" (click)="filtroGrid = ''">Limpar</button>
+    </div>
   </nb-card-header>
   <nb-card-body>
     <ag-grid-angular
@@ -22,6 +26,7 @@
       [pagination]="true"
       [paginationPageSize]="paginationPageSize"
       [localeText]="localeText"
+      [quickFilterText]="filtroGrid"
       (cellClicked)="onGridCellClicked($event)"
     ></ag-grid-angular>
   </nb-card-body>
@@ -37,7 +42,7 @@
         placeholder="Selecione o culto"
         (selectedChange)="carregarRepertorio()"
       >
-        <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }}</nb-option>
+        <nb-option *ngFor="let culto of cultosSelecao" [value]="culto.id">{{ culto.nome }}</nb-option>
       </nb-select>
     </div>
 
