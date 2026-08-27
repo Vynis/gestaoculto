@@ -36,6 +36,24 @@ namespace GestaoCulto.Infrastructure.Services
             _telegramOptions = telegramOptions.Value;
         }
 
+        public async Task<RelatorioCompartilhadoLinkDto> GerarLinkAsync(long cultoId)
+        {
+            var voluntarioId = await _db.Escalas
+                .AsNoTracking()
+                .Where(x => x.CultoId == cultoId && x.VoluntarioId.HasValue)
+                .Select(x => x.VoluntarioId!.Value)
+                .Where(x => _db.Voluntarios.Any(v => v.Id == x && v.Ativo))
+                .OrderBy(x => x)
+                .FirstOrDefaultAsync();
+
+            if (voluntarioId <= 0)
+            {
+                throw new InvalidOperationException("Não há um voluntário ativo escalado para este culto.");
+            }
+
+            return await GerarLinkAsync(cultoId, voluntarioId);
+        }
+
         public async Task<RelatorioCompartilhadoLinkDto> GerarLinkAsync(long cultoId, long voluntarioId)
         {
             var culto = await _db.Cultos

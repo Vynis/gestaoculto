@@ -20,6 +20,9 @@
           <nb-option value="cards">HTML em cards</nb-option>
         </nb-select>
         <button nbButton status="primary" type="submit" [disabled]="carregando">Gerar relatório</button>
+        <button nbButton status="success" type="button" (click)="abrirModalCompartilhamento()" [disabled]="!cultos.length">
+          Gerar link público
+        </button>
       </form>
 
       <div class="acoes-impressao no-print" *ngIf="linhasCronograma.length">
@@ -27,6 +30,49 @@
       </div>
     </nb-card-body>
   </nb-card>
+
+  <div class="modal-overlay" *ngIf="modalCompartilhamentoAberto" (click)="fecharModalCompartilhamento()">
+    <div
+      class="modal-compartilhamento"
+      (click)="$event.stopPropagation()"
+      style="width:min(640px,100%);background:#fff;border-radius:16px;padding:1rem;box-shadow:0 20px 60px rgba(15,23,42,.25)"
+    >
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem">
+        <h3>Gerar link público</h3>
+        <button nbButton ghost size="tiny" type="button" (click)="fecharModalCompartilhamento()">Fechar</button>
+      </div>
+
+      <p style="margin:0 0 .75rem;color:#4b5563">Escolha o culto e gere um link público para visualização do relatório.</p>
+
+      <nb-select
+        fullWidth
+        placeholder="Selecione o culto"
+        [(ngModel)]="cultoCompartilhamentoId"
+        [ngModelOptions]="{ standalone: true }"
+      >
+        <nb-option *ngFor="let culto of cultos" [value]="culto.id">
+          {{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }}
+        </nb-option>
+      </nb-select>
+
+      <div style="margin-top:.75rem;display:flex;justify-content:flex-end">
+        <button nbButton status="primary" type="button" (click)="gerarLinkCompartilhado()" [disabled]="gerandoLinkCompartilhado">
+          {{ gerandoLinkCompartilhado ? 'Gerando...' : 'Gerar link' }}
+        </button>
+      </div>
+
+      <div *ngIf="linkCompartilhado" style="margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb">
+        <label style="display:block;margin-bottom:.4rem;font-size:.85rem;font-weight:700;color:#374151">Link gerado</label>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <input nbInput fullWidth readonly [value]="linkCompartilhado.url" />
+          <button nbButton status="info" type="button" (click)="copiarLinkCompartilhado()" [disabled]="copiandoLinkCompartilhado">
+            {{ copiandoLinkCompartilhado ? 'Copiando...' : 'Copiar' }}
+          </button>
+        </div>
+        <small style="display:block;margin-top:.45rem;color:#6b7280">Expira em {{ linkCompartilhado.expiraEm | date: 'dd/MM/yyyy HH:mm' }}</small>
+      </div>
+    </div>
+  </div>
 
   <nb-card *ngIf="modoPublico && (carregando || mensagemPublica)">
     <nb-card-body>

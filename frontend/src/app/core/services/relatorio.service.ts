@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { RelatorioCultoDiaResponse } from '../models/relatorio-culto.models';
+import { RelatorioCompartilhadoLinkDto, RelatorioCultoDiaResponse } from '../models/relatorio-culto.models';
 import { Culto } from '../models/culto.models';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,10 @@ export class RelatorioService {
 
   obterRelatorioCultoPorId(cultoId: number): Observable<RelatorioCultoDiaResponse> {
     return this.http.get<RelatorioCultoDiaResponse>(`${this.apiUrl}/culto/${cultoId}`);
+  }
+
+  gerarLinkRelatorioCompartilhado(cultoId: number): Observable<RelatorioCompartilhadoLinkDto> {
+    return this.http.post<RelatorioCompartilhadoLinkDto>(`${this.apiUrl}/compartilhar/${cultoId}`, {});
   }
 
   obterRelatorioCompartilhado(token: string): Observable<RelatorioCultoDiaResponse> {

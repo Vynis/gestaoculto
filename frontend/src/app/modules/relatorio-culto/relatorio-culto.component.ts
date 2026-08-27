@@ -4,7 +4,7 @@ import { NbToastrService } from '@nebular/theme';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Culto } from '../../core/models/culto.models';
 import { MinisterioCompleto } from '../../core/models/ministerio.models';
-import { RelatorioCultoDiaResponse, RelatorioCultoEtapa, RelatorioCultoRepertorioItem } from '../../core/models/relatorio-culto.models';
+import { RelatorioCompartilhadoLinkDto, RelatorioCultoDiaResponse, RelatorioCultoEtapa, RelatorioCultoRepertorioItem } from '../../core/models/relatorio-culto.models';
 import { MinisterioService } from '../../core/services/ministerio.service';
 import { CultoService } from '../../core/services/culto.service';
 import { RelatorioService } from '../../core/services/relatorio.service';
@@ -72,6 +72,11 @@ export class RelatorioCultoComponent implements OnInit {
   modoPublico = false;
   mensagemPublica = '';
   ministeriosAtivos: MinisterioCompleto[] = [];
+  modalCompartilhamentoAberto = false;
+  cultoCompartilhamentoId: number | null = null;
+  gerandoLinkCompartilhado = false;
+  linkCompartilhado: RelatorioCompartilhadoLinkDto | null = null;
+  copiandoLinkCompartilhado = false;
 
   linhasCronograma: LinhaCronogramaModelo[] = [];
   cronogramasAdicionais: SecaoCronogramaAdicional[] = [];
@@ -214,6 +219,62 @@ export class RelatorioCultoComponent implements OnInit {
         this.carregando = false;
       }
     });
+  }
+
+  abrirModalCompartilhamento(): void {
+    const cultoIdAtual = Number(this.filtro.value.cultoId || 0);
+    this.cultoCompartilhamentoId = cultoIdAtual || this.cultos[0]?.id || null;
+    this.linkCompartilhado = null;
+    this.modalCompartilhamentoAberto = true;
+  }
+
+  fecharModalCompartilhamento(): void {
+    if (this.gerandoLinkCompartilhado) {
+      return;
+    }
+
+    this.modalCompartilhamentoAberto = false;
+    this.cultoCompartilhamentoId = null;
+    this.linkCompartilhado = null;
+    this.copiandoLinkCompartilhado = false;
+  }
+
+  gerarLinkCompartilhado(): void {
+    const cultoId = Number(this.cultoCompartilhamentoId || 0);
+    if (!cultoId) {
+      this.toastr.warning('Selecione um culto para gerar o link público.', 'Relatório');
+      return;
+    }
+
+    this.gerandoLinkCompartilhado = true;
+    this.relatorioService.gerarLinkRelatorioCompartilhado(cultoId).subscribe({
+      next: (response) => {
+        this.linkCompartilhado = response;
+        this.toastr.success('Link público gerado com sucesso.', 'Relatório');
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível gerar o link público.', 'Erro');
+      },
+      complete: () => {
+        this.gerandoLinkCompartilhado = false;
+      }
+    });
+  }
+
+  async copiarLinkCompartilhado(): Promise<void> {
+    if (!this.linkCompartilhado?.url) {
+      return;
+    }
+
+    this.copiandoLinkCompartilhado = true;
+    try {
+      await navigator.clipboard.writeText(this.linkCompartilhado.url);
+      this.toastr.success('Link copiado para a área de transferência.', 'Relatório');
+    } catch {
+      this.toastr.warning('Não foi possível copiar automaticamente. Selecione e copie o link.', 'Relatório');
+    } finally {
+      this.copiandoLinkCompartilhado = false;
+    }
   }
 
   private gerarPorToken(token: string): void {

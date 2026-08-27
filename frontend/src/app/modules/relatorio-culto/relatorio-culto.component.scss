@@ -30,6 +30,17 @@
   flex-wrap: wrap;
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
 .filtro-flutuante {
   position: sticky;
   top: 0.75rem;
@@ -209,5 +220,80 @@
 
   .timeline-card dl {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  :host ::ng-deep .relatorio-page.publico nb-card {
+    margin: 0 0 0.65rem;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  :host ::ng-deep .relatorio-page.publico nb-card-header,
+  :host ::ng-deep .relatorio-page.publico nb-card-body {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  .relatorio-page.publico {
+    padding: 0.25rem 0 1rem;
+  }
+
+  .relatorio-page.publico .cards-visualizacao {
+    border: 0;
+    border-radius: 0;
+    padding: 0.5rem 0.35rem 1rem;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .relatorio-page.publico .cv-hero {
+    text-align: left;
+    margin-bottom: 0.75rem;
+  }
+
+  .relatorio-page.publico .cv-hero h3 {
+    font-size: 1.5rem;
+    line-height: 1.1;
+  }
+
+  .relatorio-page.publico .cv-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio-page.publico .cv-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio-page.publico .cv-box,
+  .relatorio-page.publico .cv-meta div,
+  .relatorio-page.publico .cv-card,
+  .relatorio-page.publico .cv-musica {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .relatorio-page.publico .cv-card {
+    padding: 0.65rem 0.5rem;
+  }
+
+  .relatorio-page.publico .cv-detalhes {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio-page.publico .cv-timeline {
+    padding-left: 1.05rem;
+  }
+
+  .relatorio-page.publico .cv-ponto {
+    left: -0.95rem;
+  }
+
+  .relatorio-page.publico .cv-item .cv-card h5,
+  .relatorio-page.publico .cv-musica h5 {
+    font-size: 0.95rem;
   }
 }

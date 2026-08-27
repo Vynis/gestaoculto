@@ -110,3 +110,8 @@ export interface RelatorioCultoDiaResponse {
   quantidadeCultos: number;
   cultos: RelatorioCultoItem[];
 }
+
+export interface RelatorioCompartilhadoLinkDto {
+  url: string;
+  expiraEm: string;
+}

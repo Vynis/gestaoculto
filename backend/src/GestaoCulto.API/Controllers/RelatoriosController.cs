@@ -165,6 +165,19 @@ namespace GestaoCulto.API.Controllers
             return Ok(await MontarRelatorio(cultos, dataRef));
         }
 
+        [HttpPost("compartilhar/{cultoId:long}")]
+        public async Task<IActionResult> GerarLinkCompartilhado(long cultoId)
+        {
+            try
+            {
+                return Ok(await _compartilhamentoService.GerarLinkAsync(cultoId));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpGet("compartilhado")]
         [AllowAnonymous]
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
+import { NbToastrService } from '@nebular/theme';
 import { CultoService } from '../../core/services/culto.service';
 import { CadastroService } from '../../core/services/cadastro.service';
 import { PortalVoluntarioService } from '../../core/services/portal-voluntario.service';
@@ -36,7 +37,8 @@ export class DisponibilidadesComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly cultoService: CultoService,
     private readonly cadastroService: CadastroService,
-    private readonly portalVoluntarioService: PortalVoluntarioService
+    private readonly portalVoluntarioService: PortalVoluntarioService,
+    private readonly toastr: NbToastrService
   ) {}
 
   ngOnInit(): void {
@@ -111,6 +113,13 @@ export class DisponibilidadesComponent implements OnInit {
   }
 
   lancarNaEscala(item: DisponibilidadeGestaoItem): void {
+    if (this.ehVoluntarioIndisponivel(item)) {
+      this.toastr.warning(
+        'Este voluntário está com status indisponível, mas você pode continuar o lançamento na escala.',
+        'Atenção'
+      );
+    }
+
     this.carregarVoluntarios();
     const ministerioId = item.ministerios?.[0]?.ministerioId ?? this.filtro.value.ministerioId ?? null;
     this.prefillEscala = {
@@ -121,6 +130,12 @@ export class DisponibilidadesComponent implements OnInit {
       observacoes: 'Lançado a partir da disponibilidade do voluntário.'
     };
     this.modalEscalaAberto = true;
+  }
+
+  private ehVoluntarioIndisponivel(item: DisponibilidadeGestaoItem): boolean {
+    const statusSelecionado = this.status.find((status) => Number(status.id) === Number(item.statusDisponibilidadeId));
+    const codigo = String(statusSelecionado?.codigo || '').trim().toUpperCase();
+    return codigo === 'INDISPONIVEL' || String(item.statusNome || '').trim().toLowerCase().includes('indispon');
   }
 
   fecharModalEscala(): void {
