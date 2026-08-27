@@ -2,8 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
 import { CellClickedEvent, ColDef } from 'ag-grid-community';
-import { Ministerio, UsuarioOpcaoVoluntario, Voluntario } from '../../core/models/cadastro.models';
+import {
+  Ministerio,
+  TelegramConexaoStatus,
+  TelegramVinculo,
+  UsuarioOpcaoVoluntario,
+  Voluntario
+} from '../../core/models/cadastro.models';
 import { CadastroService } from '../../core/services/cadastro.service';
+import { AuthService } from '../../core/services/auth.service';
 import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 
 interface VoluntarioGridRow {
@@ -29,6 +36,11 @@ export class VoluntariosComponent implements OnInit {
   carregando = false;
   modalAberto = false;
   voluntarioEditandoId: number | null = null;
+  telegramStatus: TelegramConexaoStatus | null = null;
+  telegramVinculo: TelegramVinculo | null = null;
+  telegramCarregando = false;
+  podeGerenciarTelegram = false;
+  private telegramRequestGeneration = 0;
 
   readonly form = this.fb.group({
     nome: ['', Validators.required],
@@ -76,10 +88,12 @@ export class VoluntariosComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly cadastroService: CadastroService,
+    private readonly authService: AuthService,
     private readonly toastr: NbToastrService
   ) {}
 
   ngOnInit(): void {
+    this.podeGerenciarTelegram = this.authService.possuiAlgumPerfil(['ADMIN', 'GESTAO_CULTO']);
     this.carregarUsuarios();
 
     this.cadastroService.listarMinisterios().subscribe((data) => {
@@ -180,6 +194,7 @@ export class VoluntariosComponent implements OnInit {
   }
 
   editar(voluntario: Voluntario): void {
+    this.telegramRequestGeneration++;
     this.modalAberto = true;
     this.voluntarioEditandoId = voluntario.id;
     this.form.patchValue({
@@ -191,6 +206,98 @@ export class VoluntariosComponent implements OnInit {
       observacoes: voluntario.observacoes || '',
       restricoesIndisponibilidade: voluntario.restricoesIndisponibilidade || '',
       ativo: voluntario.ativo
+    });
+    if (this.podeGerenciarTelegram) {
+      this.carregarStatusTelegram(voluntario.id);
+    }
+  }
+
+  gerarVinculoTelegram(): void {
+    if (!this.voluntarioEditandoId) {
+      return;
+    }
+
+    const voluntarioId = this.voluntarioEditandoId;
+    const requestGeneration = this.telegramRequestGeneration;
+    this.telegramCarregando = true;
+    this.cadastroService.gerarVinculoTelegram(voluntarioId).subscribe({
+      next: (vinculo) => {
+        if (this.voluntarioEditandoId !== voluntarioId || this.telegramRequestGeneration !== requestGeneration) {
+          return;
+        }
+        this.telegramVinculo = vinculo;
+        this.toastr.success('Link do Telegram gerado.', 'Telegram');
+      },
+      error: (error) => {
+        if (this.voluntarioEditandoId !== voluntarioId || this.telegramRequestGeneration !== requestGeneration) {
+          return;
+        }
+        this.telegramCarregando = false;
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível gerar o link.', 'Telegram');
+      },
+      complete: () => {
+        if (this.voluntarioEditandoId === voluntarioId && this.telegramRequestGeneration === requestGeneration) {
+          this.telegramCarregando = false;
+        }
+      }
+    });
+  }
+
+  async copiarVinculoTelegram(): Promise<void> {
+    if (!this.telegramVinculo?.url) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(this.telegramVinculo.url);
+      this.toastr.success('Link copiado para a área de transferência.', 'Telegram');
+    } catch {
+      this.toastr.warning('Não foi possível copiar automaticamente. Selecione o link e copie.', 'Telegram');
+    }
+  }
+
+  async desvincularTelegram(): Promise<void> {
+    if (!this.voluntarioEditandoId) {
+      return;
+    }
+
+    const voluntarioId = this.voluntarioEditandoId;
+    const requestGeneration = this.telegramRequestGeneration;
+    const confirmou = await confirmarExclusao('Deseja desvincular a conta do Telegram deste voluntário?');
+    if (!confirmou
+      || this.voluntarioEditandoId !== voluntarioId
+      || this.telegramRequestGeneration !== requestGeneration) {
+      return;
+    }
+
+    this.telegramCarregando = true;
+    this.cadastroService.desvincularTelegram(voluntarioId).subscribe({
+      next: () => {
+        if (this.voluntarioEditandoId !== voluntarioId || this.telegramRequestGeneration !== requestGeneration) {
+          return;
+        }
+        this.telegramStatus = {
+          vinculado: true,
+          ativo: false,
+          username: this.telegramStatus?.username ?? null,
+          vinculadoEm: this.telegramStatus?.vinculadoEm ?? null,
+          ultimaInteracaoEm: this.telegramStatus?.ultimaInteracaoEm ?? null
+        };
+        this.telegramVinculo = null;
+        this.toastr.success('Conta do Telegram desvinculada.', 'Telegram');
+      },
+      error: (error) => {
+        if (this.voluntarioEditandoId !== voluntarioId || this.telegramRequestGeneration !== requestGeneration) {
+          return;
+        }
+        this.telegramCarregando = false;
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível desvincular a conta.', 'Telegram');
+      },
+      complete: () => {
+        if (this.voluntarioEditandoId === voluntarioId && this.telegramRequestGeneration === requestGeneration) {
+          this.telegramCarregando = false;
+        }
+      }
     });
   }
 
@@ -234,7 +341,11 @@ export class VoluntariosComponent implements OnInit {
   }
 
   private limparFormulario(): void {
+    this.telegramRequestGeneration++;
     this.voluntarioEditandoId = null;
+    this.telegramStatus = null;
+    this.telegramVinculo = null;
+    this.telegramCarregando = false;
     this.form.reset({
       nome: '',
       usuarioId: null,
@@ -261,6 +372,32 @@ export class VoluntariosComponent implements OnInit {
   private carregarUsuarios(): void {
     this.cadastroService.listarUsuariosParaVoluntario().subscribe((data) => {
       this.usuarios = data.usuarios || [];
+    });
+  }
+
+  private carregarStatusTelegram(voluntarioId: number): void {
+    const requestGeneration = this.telegramRequestGeneration;
+    this.telegramStatus = null;
+    this.telegramVinculo = null;
+    this.telegramCarregando = true;
+    this.cadastroService.obterStatusTelegram(voluntarioId).subscribe({
+      next: (status) => {
+        if (this.voluntarioEditandoId === voluntarioId && this.telegramRequestGeneration === requestGeneration) {
+          this.telegramStatus = status;
+        }
+      },
+      error: () => {
+        if (this.voluntarioEditandoId !== voluntarioId || this.telegramRequestGeneration !== requestGeneration) {
+          return;
+        }
+        this.telegramCarregando = false;
+        this.toastr.danger('Não foi possível consultar o vínculo do Telegram.', 'Telegram');
+      },
+      complete: () => {
+        if (this.voluntarioEditandoId === voluntarioId && this.telegramRequestGeneration === requestGeneration) {
+          this.telegramCarregando = false;
+        }
+      }
     });
   }
 

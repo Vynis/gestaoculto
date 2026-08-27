@@ -2,22 +2,11 @@
   <div class="page-header">
     <div>
       <h2>Relatório do culto</h2>
-      <p>Modelo operacional em tabela com cronograma, equipes, ações e repertório.</p>
+      <p>{{ modoPublico ? 'Cronograma, equipes e repertório do culto.' : 'Modelo operacional em tabela com cronograma, equipes, ações e repertório.' }}</p>
     </div>
   </div>
 
-  <button
-    *ngIf="modoPublico"
-    class="filtro-flutuante no-print"
-    type="button"
-    (click)="alternarFiltro()"
-    [attr.aria-expanded]="mostrarFiltro"
-    [attr.aria-label]="mostrarFiltro ? 'Ocultar filtro' : 'Mostrar filtro'"
-  >
-    {{ mostrarFiltro ? 'Ocultar filtros' : 'Mostrar filtros' }}
-  </button>
-
-  <nb-card *ngIf="!modoPublico || mostrarFiltro">
+  <nb-card *ngIf="!modoPublico">
     <nb-card-header>Filtro de geração</nb-card-header>
     <nb-card-body>
       <form class="filtro" [formGroup]="filtro" (ngSubmit)="gerar()">
@@ -36,6 +25,12 @@
       <div class="acoes-impressao no-print" *ngIf="linhasCronograma.length">
         <button nbButton status="info" type="button" (click)="gerarPdf()">{{ textoBotaoPdf }}</button>
       </div>
+    </nb-card-body>
+  </nb-card>
+
+  <nb-card *ngIf="modoPublico && (carregando || mensagemPublica)">
+    <nb-card-body>
+      {{ carregando ? 'Carregando relatório...' : mensagemPublica }}
     </nb-card-body>
   </nb-card>
 

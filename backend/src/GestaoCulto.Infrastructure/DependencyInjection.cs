@@ -4,6 +4,7 @@ using GestaoCulto.Infrastructure.ExternalAuth;
 using GestaoCulto.Infrastructure.Persistence;
 using GestaoCulto.Infrastructure.Security;
 using GestaoCulto.Infrastructure.Services;
+using GestaoCulto.Infrastructure.Telegram;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +28,13 @@ namespace GestaoCulto.Infrastructure
             services.AddScoped<IPasswordHasher, SimplePasswordHasher>();
             services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
             services.AddScoped<IEmailSender, SmtpEmailSender>();
+            services.AddScoped<IDisponibilidadeVoluntarioService, DisponibilidadeVoluntarioService>();
+            services.Configure<RelatorioCompartilhamentoOptions>(configuration.GetSection("RelatorioCompartilhamento"));
+            services.AddScoped<IRelatorioCompartilhamentoService, RelatorioCompartilhamentoService>();
+            services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
+            services.AddHttpClient<ITelegramBotClient, TelegramBotClient>(client =>
+                client.BaseAddress = new System.Uri("https://api.telegram.org/"));
+            services.AddScoped<ITelegramService, TelegramService>();
             services.AddScoped<DbSeeder>();
 
             var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]);

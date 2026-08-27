@@ -5,6 +5,8 @@ param(
     [string]$SentryEnvironment = 'Production',
     [bool]$DebugEnableErrorTestEndpoint = $false,
     [string]$DebugErrorTestToken,
+    [string]$TelegramBotToken,
+    [string]$TelegramWebhookSecret,
     [ValidateSet('Overwrite', 'Mirror')]
     [string]$SyncMode = 'Overwrite',
     [string]$FrontendHost = 'ftp.igrejadecristobrasil.com.br',
@@ -45,6 +47,14 @@ if ([string]::IsNullOrWhiteSpace($SentryDsn) -and -not [string]::IsNullOrWhiteSp
     $SentryDsn = $env:SENTRY_DSN
 }
 
+if ([string]::IsNullOrWhiteSpace($TelegramBotToken) -and -not [string]::IsNullOrWhiteSpace($env:TELEGRAM_BOT_TOKEN)) {
+    $TelegramBotToken = $env:TELEGRAM_BOT_TOKEN
+}
+
+if ([string]::IsNullOrWhiteSpace($TelegramWebhookSecret) -and -not [string]::IsNullOrWhiteSpace($env:TELEGRAM_WEBHOOK_SECRET)) {
+    $TelegramWebhookSecret = $env:TELEGRAM_WEBHOOK_SECRET
+}
+
 if ([string]::IsNullOrWhiteSpace($FrontendPass)) {
     throw 'Senha FTP do frontend ausente. Use -FrontendPass ou variável FTP_FRONT_PASS.'
 }
@@ -77,6 +87,14 @@ try {
 
     if (-not [string]::IsNullOrWhiteSpace($DebugErrorTestToken)) {
         $releaseParams['DebugErrorTestToken'] = $DebugErrorTestToken
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($TelegramBotToken)) {
+        $releaseParams['TelegramBotToken'] = $TelegramBotToken
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($TelegramWebhookSecret)) {
+        $releaseParams['TelegramWebhookSecret'] = $TelegramWebhookSecret
     }
 
     Write-DeployLog 'Executando release.ps1...'

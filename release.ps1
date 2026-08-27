@@ -4,7 +4,9 @@ param(
     [string]$SentryDsn,
     [string]$SentryEnvironment = 'Production',
     [bool]$DebugEnableErrorTestEndpoint = $false,
-    [string]$DebugErrorTestToken
+    [string]$DebugErrorTestToken,
+    [string]$TelegramBotToken,
+    [string]$TelegramWebhookSecret
 )
 
 Set-StrictMode -Version Latest
@@ -102,6 +104,19 @@ if ([string]::IsNullOrWhiteSpace($SentryDsn) -and -not [string]::IsNullOrWhiteSp
     $SentryDsn = $env:SENTRY_DSN
 }
 
+if ([string]::IsNullOrWhiteSpace($TelegramBotToken) -and -not [string]::IsNullOrWhiteSpace($env:TELEGRAM_BOT_TOKEN)) {
+    $TelegramBotToken = $env:TELEGRAM_BOT_TOKEN
+}
+
+if ([string]::IsNullOrWhiteSpace($TelegramWebhookSecret) -and -not [string]::IsNullOrWhiteSpace($env:TELEGRAM_WEBHOOK_SECRET)) {
+    $TelegramWebhookSecret = $env:TELEGRAM_WEBHOOK_SECRET
+}
+
+$telegramConfigParcial = [string]::IsNullOrWhiteSpace($TelegramBotToken) -xor [string]::IsNullOrWhiteSpace($TelegramWebhookSecret)
+if ($telegramConfigParcial) {
+    throw 'Configure TELEGRAM_BOT_TOKEN e TELEGRAM_WEBHOOK_SECRET em conjunto.'
+}
+
 Write-Step "Preparing folders"
 New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
 if (Test-Path $publishFrontendDir) { Remove-Item $publishFrontendDir -Recurse -Force }
@@ -136,7 +151,8 @@ if (Test-Path $backendWebConfigPath) {
 
         $shouldInjectDebugVars = $DebugEnableErrorTestEndpoint -or -not [string]::IsNullOrWhiteSpace($DebugErrorTestToken)
         $shouldInjectSentryVars = -not [string]::IsNullOrWhiteSpace($SentryDsn)
-        if ($null -ne $aspNetCoreConfig -and ($shouldInjectSentryVars -or $shouldInjectDebugVars)) {
+        $shouldInjectTelegramVars = -not [string]::IsNullOrWhiteSpace($TelegramBotToken)
+        if ($null -ne $aspNetCoreConfig -and ($shouldInjectSentryVars -or $shouldInjectDebugVars -or $shouldInjectTelegramVars)) {
             $environmentVariablesNode = $aspNetCoreConfig.SelectSingleNode('environmentVariables')
             if ($null -eq $environmentVariablesNode) {
                 $environmentVariablesNode = $webConfigXml.CreateElement('environmentVariables')
@@ -154,6 +170,12 @@ if (Test-Path $backendWebConfigPath) {
 
             if (-not [string]::IsNullOrWhiteSpace($DebugErrorTestToken)) {
                 Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Debug__ErrorTestToken' -Value $DebugErrorTestToken
+            }
+
+            if ($shouldInjectTelegramVars) {
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Telegram__Enabled' -Value 'true'
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Telegram__BotToken' -Value $TelegramBotToken
+                Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Telegram__WebhookSecret' -Value $TelegramWebhookSecret
             }
         }
     }
@@ -207,6 +229,12 @@ if ($DebugEnableErrorTestEndpoint -or -not [string]::IsNullOrWhiteSpace($DebugEr
 }
 else {
     Write-Host 'Debug endpoint web.config: skipped'
+}
+if (-not [string]::IsNullOrWhiteSpace($TelegramBotToken)) {
+    Write-Host 'Telegram web.config: enabled'
+}
+else {
+    Write-Host 'Telegram web.config: skipped (set TELEGRAM_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET)'
 }
 if (-not $SkipZip) {
     Write-Host "Frontend ZIP:    $(Join-Path $publishDir 'frontend.zip')"

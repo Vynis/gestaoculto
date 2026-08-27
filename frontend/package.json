@@ -9,6 +9,7 @@
     "ng": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng",
     "start": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng serve",
     "build": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build",
+    "build:development": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build --configuration development",
     "build:kinghost": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build --configuration production",
     "watch": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng build --watch --configuration development",
     "test": "C:\\Progra~1\\nodejs\\node.exe ./node_modules/@angular/cli/bin/ng test"

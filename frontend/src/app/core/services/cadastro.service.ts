@@ -3,7 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Ministerio, UsuarioOpcaoVoluntario, Voluntario } from '../models/cadastro.models';
+import {
+  Ministerio,
+  TelegramConexaoStatus,
+  TelegramVinculo,
+  UsuarioOpcaoVoluntario,
+  Voluntario
+} from '../models/cadastro.models';
 
 @Injectable({ providedIn: 'root' })
 export class CadastroService {
@@ -86,5 +92,17 @@ export class CadastroService {
 
   excluirVoluntario(id: number): Observable<{ mensagem: string }> {
     return this.http.delete<{ mensagem: string }>(`${this.apiUrl}/voluntarios/${id}`);
+  }
+
+  gerarVinculoTelegram(voluntarioId: number): Observable<TelegramVinculo> {
+    return this.http.post<TelegramVinculo>(`${this.apiUrl}/voluntarios/${voluntarioId}/telegram/vinculo`, {});
+  }
+
+  obterStatusTelegram(voluntarioId: number): Observable<TelegramConexaoStatus> {
+    return this.http.get<TelegramConexaoStatus>(`${this.apiUrl}/voluntarios/${voluntarioId}/telegram/status`);
+  }
+
+  desvincularTelegram(voluntarioId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/voluntarios/${voluntarioId}/telegram/vinculo`);
   }
 }

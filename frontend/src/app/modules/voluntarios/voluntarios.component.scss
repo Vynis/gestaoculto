@@ -37,6 +37,36 @@
   flex-wrap: wrap;
 }
 
+.telegram-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #cfe2ef;
+  border-radius: 0.5rem;
+  background: #f3faff;
+}
+
+.telegram-panel p {
+  margin: 0.35rem 0 0;
+}
+
+.telegram-actions,
+.telegram-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.telegram-link input {
+  flex: 1 1 360px;
+}
+
+.telegram-link small {
+  flex-basis: 100%;
+}
+
 small {
   color: #5f6f86;
 }

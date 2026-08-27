@@ -10,6 +10,8 @@ using GestaoCulto.Infrastructure;
 using GestaoCulto.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,9 +99,25 @@ namespace GestaoCulto.API
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            string? frontendDevelopmentPath = null;
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                frontendDevelopmentPath = Path.GetFullPath(Path.Combine(
+                    env.ContentRootPath,
+                    "..",
+                    "..",
+                    "..",
+                    "frontend",
+                    "dist",
+                    "frontend"));
+
+                if (Directory.Exists(frontendDevelopmentPath))
+                {
+                    var frontendFiles = new PhysicalFileProvider(frontendDevelopmentPath);
+                    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = frontendFiles });
+                    app.UseStaticFiles(new StaticFileOptions { FileProvider = frontendFiles });
+                }
             }
 
             var basePath = Configuration["AppInfo:BasePath"];
@@ -138,6 +156,25 @@ namespace GestaoCulto.API
             }
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+
+            if (!string.IsNullOrWhiteSpace(frontendDevelopmentPath)
+                && File.Exists(Path.Combine(frontendDevelopmentPath, "index.html")))
+            {
+                var indexPath = Path.Combine(frontendDevelopmentPath, "index.html");
+                app.Run(async context =>
+                {
+                    if (HttpMethods.IsGet(context.Request.Method)
+                        && !context.Request.Path.StartsWithSegments("/api")
+                        && !context.Request.Path.StartsWithSegments("/docs"))
+                    {
+                        context.Response.ContentType = "text/html; charset=utf-8";
+                        await context.Response.SendFileAsync(indexPath);
+                        return;
+                    }
+
+                    context.Response.StatusCode = 404;
+                });
+            }
         }
     }
 }

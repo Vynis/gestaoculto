@@ -54,11 +54,16 @@ namespace GestaoCulto.API.Controllers
     {
         private readonly GestaoCultoDbContext _db;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IDisponibilidadeVoluntarioService _disponibilidadeService;
 
-        public PortalVoluntarioController(GestaoCultoDbContext db, IPasswordHasher passwordHasher)
+        public PortalVoluntarioController(
+            GestaoCultoDbContext db,
+            IPasswordHasher passwordHasher,
+            IDisponibilidadeVoluntarioService disponibilidadeService)
         {
             _db = db;
             _passwordHasher = passwordHasher;
+            _disponibilidadeService = disponibilidadeService;
         }
 
         [HttpGet("painel")]
@@ -305,98 +310,25 @@ namespace GestaoCulto.API.Controllers
                 return Unauthorized(new { mensagem = "Voluntário não vinculado ao usuário autenticado." });
             }
 
-            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
-            var culto = await _db.Cultos.FirstOrDefaultAsync(x => x.Id == cultoId && x.StatusCultoId == statusCultoAtivoId);
-            if (culto == null)
-            {
-                return NotFound(new { mensagem = "Culto não encontrado." });
-            }
-
-            if (culto.DataCulto.Date < DateTime.Today)
-            {
-                return BadRequest(new { mensagem = "Não é possível responder disponibilidade para culto passado." });
-            }
-
-            var ministerioIdsPermitidos = await _db.MinisteriosVoluntarios
-                .AsNoTracking()
-                .Where(x => x.VoluntarioId == voluntario.Id)
-                .Select(x => x.MinisterioId)
-                .ToListAsync();
-
             var ministerioIds = (request.MinisterioIds ?? new List<long>())
                 .Where(x => x > 0)
                 .Distinct()
                 .ToList();
-
-            if (request.Disponivel && !ministerioIds.Any())
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+            var cultoExiste = await _db.Cultos
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == cultoId && x.StatusCultoId == statusCultoAtivoId);
+            if (!cultoExiste)
             {
-                return BadRequest(new { mensagem = "Selecione ao menos um ministério para disponibilidade." });
+                return NotFound(new { mensagem = "Culto não encontrado." });
             }
 
-            if (ministerioIds.Any(x => !ministerioIdsPermitidos.Contains(x)))
-            {
-                return BadRequest(new { mensagem = "Foram informados ministérios inválidos para este voluntário." });
-            }
-
-            var statusCodigo = request.Disponivel ? "DISPONIVEL" : "INDISPONIVEL";
-            var statusId = await _db.StatusDisponibilidadeVoluntarios
-                .Where(x => x.Codigo == statusCodigo)
-                .Select(x => x.Id)
-                .FirstOrDefaultAsync();
-
-            if (statusId <= 0)
-            {
-                return BadRequest(new { mensagem = "Status de disponibilidade não encontrado." });
-            }
-
-            var entity = await _db.DisponibilidadesCultoVoluntarios
-                .FirstOrDefaultAsync(x => x.CultoId == cultoId && x.VoluntarioId == voluntario.Id);
-
-            var agora = DateTime.UtcNow;
-            if (entity == null)
-            {
-                entity = new DisponibilidadeCultoVoluntario
-                {
-                    CultoId = cultoId,
-                    VoluntarioId = voluntario.Id,
-                    StatusDisponibilidadeId = statusId,
-                    Observacao = LimparTexto(request.Observacao),
-                    RespondidoEm = agora,
-                    CriadoEm = agora
-                };
-                _db.DisponibilidadesCultoVoluntarios.Add(entity);
-                await _db.SaveChangesAsync();
-            }
-            else
-            {
-                entity.StatusDisponibilidadeId = statusId;
-                entity.Observacao = LimparTexto(request.Observacao);
-                entity.RespondidoEm = agora;
-                entity.AtualizadoEm = agora;
-                await _db.SaveChangesAsync();
-
-                var vinculosAntigos = await _db.DisponibilidadesCultoVoluntariosMinisterios
-                    .Where(x => x.DisponibilidadeCultoVoluntarioId == entity.Id)
-                    .ToListAsync();
-
-                if (vinculosAntigos.Any())
-                {
-                    _db.DisponibilidadesCultoVoluntariosMinisterios.RemoveRange(vinculosAntigos);
-                    await _db.SaveChangesAsync();
-                }
-            }
-
-            if (request.Disponivel && ministerioIds.Any())
-            {
-                var vinculos = ministerioIds.Select(id => new DisponibilidadeCultoVoluntarioMinisterio
-                {
-                    DisponibilidadeCultoVoluntarioId = entity.Id,
-                    MinisterioId = id
-                }).ToList();
-
-                _db.DisponibilidadesCultoVoluntariosMinisterios.AddRange(vinculos);
-                await _db.SaveChangesAsync();
-            }
+            await _disponibilidadeService.SalvarAsync(
+                voluntario.Id,
+                cultoId,
+                request.Disponivel,
+                ministerioIds,
+                request.Observacao);
 
             return Ok(new { mensagem = "Disponibilidade registrada com sucesso." });
         }

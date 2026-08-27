@@ -139,6 +139,141 @@ namespace GestaoCulto.Infrastructure.Persistence
             ");
 
             await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_telegram_conexao (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  telegram_user_id BIGINT NOT NULL,
+                  telegram_chat_id BIGINT NOT NULL,
+                  telegram_username VARCHAR(100) NULL,
+                  telegram_primeiro_nome VARCHAR(150) NULL,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  consentimento_em DATETIME NOT NULL,
+                  consentimento_versao VARCHAR(30) NOT NULL,
+                  vinculado_em DATETIME NOT NULL,
+                  ultima_interacao_em DATETIME NULL,
+                  desvinculado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_telegram_conexao_voluntario (voluntario_id),
+                  UNIQUE KEY uq_voluntario_telegram_conexao_usuario (telegram_user_id),
+                  UNIQUE KEY uq_voluntario_telegram_conexao_chat (telegram_chat_id),
+                  KEY ix_voluntario_telegram_conexao_ativo (ativo),
+                  CONSTRAINT fk_voluntario_telegram_conexao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_telegram_vinculo_token (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  token_hash VARCHAR(64) NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  usado_em DATETIME NULL,
+                  revogado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_telegram_vinculo_token_hash (token_hash),
+                  KEY ix_voluntario_telegram_vinculo_token_voluntario (voluntario_id),
+                  KEY ix_voluntario_telegram_vinculo_token_expira (expira_em),
+                  CONSTRAINT fk_voluntario_telegram_vinculo_token_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_update_processado (
+                  telegram_update_id BIGINT NOT NULL,
+                  recebido_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  status VARCHAR(20) NOT NULL DEFAULT 'PROCESSANDO',
+                  claim_id VARCHAR(36) NULL,
+                  iniciado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  concluido_em DATETIME NULL,
+                  PRIMARY KEY (telegram_update_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "status"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDO';
+                ");
+            }
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "claim_id"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN claim_id VARCHAR(36) NULL;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "iniciado_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN iniciado_em DATETIME NULL;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "concluido_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN concluido_em DATETIME NULL;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  culto_id BIGINT UNSIGNED NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_telegram_disp_rascunho_voluntario_culto (voluntario_id, culto_id),
+                  KEY ix_telegram_disp_rascunho_expira (expira_em),
+                  CONSTRAINT fk_telegram_disp_rascunho_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_telegram_disp_rascunho_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho_ministerio (
+                  telegram_disponibilidade_rascunho_id BIGINT UNSIGNED NOT NULL,
+                  ministerio_id BIGINT UNSIGNED NOT NULL,
+                  PRIMARY KEY (telegram_disponibilidade_rascunho_id, ministerio_id),
+                  KEY ix_telegram_disp_rascunho_ministerio (ministerio_id),
+                  CONSTRAINT fk_telegram_disp_rascunho_min_rascunho FOREIGN KEY (telegram_disponibilidade_rascunho_id) REFERENCES telegram_disponibilidade_rascunho(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_telegram_disp_rascunho_min_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS relatorio_culto_compartilhamento (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  culto_id BIGINT UNSIGNED NOT NULL,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  token_hash VARCHAR(64) NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  ultimo_acesso_em DATETIME NULL,
+                  revogado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_relatorio_culto_compartilhamento_token (token_hash),
+                  KEY ix_relatorio_culto_compartilhamento_culto (culto_id),
+                  KEY ix_relatorio_culto_compartilhamento_voluntario (voluntario_id),
+                  KEY ix_relatorio_culto_compartilhamento_expira (expira_em),
+                  CONSTRAINT fk_relatorio_compartilhamento_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_relatorio_compartilhamento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS voluntario_google_calendar_conexao (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                   voluntario_id BIGINT UNSIGNED NOT NULL,

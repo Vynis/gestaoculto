@@ -72,7 +72,7 @@ export class RelatorioCultoComponent implements OnInit {
   relatorio: RelatorioCultoDiaResponse | null = null;
   cultos: Culto[] = [];
   modoPublico = false;
-  mostrarFiltro = true;
+  mensagemPublica = '';
   ministeriosAtivos: MinisterioCompleto[] = [];
 
   linhasCronograma: LinhaCronogramaModelo[] = [];
@@ -158,17 +158,18 @@ export class RelatorioCultoComponent implements OnInit {
 
   ngOnInit(): void {
     this.modoPublico = this.router.url.includes('relatorio-culto-publico');
-    this.mostrarFiltro = !this.modoPublico;
 
     if (this.modoPublico) {
       this.filtro.patchValue({ visualizacao: 'cards' });
       this.route.queryParamMap.subscribe((params) => {
-        const dataParam = String(params.get('data') || '').trim();
-        if (!dataParam) {
+        const token = String(params.get('t') || '').trim();
+        if (!token) {
+          this.mensagemPublica = 'O link do relatório é inválido ou está incompleto.';
           return;
         }
-        this.gerarPorDataPublica(dataParam);
+        this.gerarPorToken(token);
       });
+      return;
     }
 
     this.relatorioService.listarCultosParaRelatorio().subscribe((data) => {
@@ -217,77 +218,26 @@ export class RelatorioCultoComponent implements OnInit {
     });
   }
 
-  alternarFiltro(): void {
-    this.mostrarFiltro = !this.mostrarFiltro;
-  }
-
-  private gerarPorDataPublica(data: string): void {
-    const dataNormalizada = this.normalizarDataParametroPublico(data);
-    if (!dataNormalizada) {
-      this.toastr.warning('Use a data no formato DD/MM/YYYY (ou YYYY-MM-DD) para abrir o relatório público.', 'Relatório');
-      return;
-    }
-
+  private gerarPorToken(token: string): void {
     this.carregando = true;
-    this.relatorioService.obterRelatorioCultoDia(dataNormalizada).subscribe({
+    this.mensagemPublica = '';
+    this.relatorioService.obterRelatorioCompartilhado(token).subscribe({
       next: (response) => {
         this.relatorio = response;
         this.montarModeloVisual(response);
-
-        const cultoId = response.cultos?.[0]?.culto?.id;
-        if (cultoId) {
-          this.filtro.patchValue({ cultoId });
-        }
-
         if (!response.cultos.length) {
-          this.toastr.warning('Nenhum culto encontrado para a data informada.', 'Relatório');
+          this.mensagemPublica = 'O relatório deste culto não está disponível.';
         }
       },
       error: (error) => {
-        this.toastr.danger(error?.error?.mensagem || 'Não foi possível gerar o relatório pela data informada.', 'Erro');
+        this.relatorio = null;
+        this.mensagemPublica = error?.error?.mensagem || 'O link do relatório é inválido ou expirou.';
+        this.carregando = false;
       },
       complete: () => {
         this.carregando = false;
       }
     });
-  }
-
-  private normalizarDataParametroPublico(valor: string): string | null {
-    const texto = String(valor || '').trim();
-    if (!texto) {
-      return null;
-    }
-
-    const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (iso) {
-      const ano = Number(iso[1]);
-      const mes = Number(iso[2]);
-      const dia = Number(iso[3]);
-      return this.dataValida(ano, mes, dia) ? `${iso[1]}-${iso[2]}-${iso[3]}` : null;
-    }
-
-    const br = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!br) {
-      return null;
-    }
-
-    const dia = Number(br[1]);
-    const mes = Number(br[2]);
-    const ano = Number(br[3]);
-    if (!this.dataValida(ano, mes, dia)) {
-      return null;
-    }
-
-    return `${br[3]}-${br[2]}-${br[1]}`;
-  }
-
-  private dataValida(ano: number, mes: number, dia: number): boolean {
-    if (!Number.isFinite(ano) || !Number.isFinite(mes) || !Number.isFinite(dia)) {
-      return false;
-    }
-
-    const data = new Date(ano, mes - 1, dia);
-    return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
   }
 
   async exportarXlsx(): Promise<void> {

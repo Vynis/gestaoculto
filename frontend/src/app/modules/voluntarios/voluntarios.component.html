@@ -71,6 +71,46 @@
           <input id="vol-restricoes" nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Ex.: Não pode aos sábados" />
         </div>
         <nb-checkbox formControlName="ativo">Voluntário ativo</nb-checkbox>
+        <section class="telegram-panel" *ngIf="voluntarioEditandoId && podeGerenciarTelegram">
+          <div>
+            <strong>Telegram</strong>
+            <p *ngIf="telegramCarregando && !telegramStatus">Consultando vínculo...</p>
+            <p *ngIf="telegramStatus?.ativo">
+              Conta vinculada
+              <span *ngIf="telegramStatus?.username">a @{{ telegramStatus?.username }}</span>.
+            </p>
+            <p *ngIf="telegramStatus && !telegramStatus.ativo">Nenhuma conta ativa vinculada.</p>
+          </div>
+          <div class="telegram-actions">
+            <button
+              nbButton
+              size="small"
+              status="info"
+              type="button"
+              *ngIf="!telegramStatus?.ativo"
+              [disabled]="telegramCarregando"
+              (click)="gerarVinculoTelegram()"
+            >
+              Gerar link de ativação
+            </button>
+            <button
+              nbButton
+              size="small"
+              status="danger"
+              type="button"
+              *ngIf="telegramStatus?.ativo"
+              [disabled]="telegramCarregando"
+              (click)="desvincularTelegram()"
+            >
+              Desvincular
+            </button>
+          </div>
+          <div class="telegram-link" *ngIf="telegramVinculo">
+            <input nbInput fullWidth readonly [value]="telegramVinculo.url" />
+            <button nbButton size="small" status="basic" type="button" (click)="copiarVinculoTelegram()">Copiar</button>
+            <small>Válido até {{ telegramVinculo.expiraEm | date:'dd/MM/yyyy HH:mm' }}.</small>
+          </div>
+        </section>
         <div class="actions">
           <button nbButton status="primary" [disabled]="carregando">
             {{ voluntarioEditandoId ? 'Atualizar voluntário' : 'Salvar voluntário' }}
