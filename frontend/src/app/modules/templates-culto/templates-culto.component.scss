@@ -17,6 +17,40 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.gc-native-select {
+  width: 100%;
+  min-height: 2.5rem;
+  appearance: none;
+  border: 1px solid #dfe5f2;
+  border-radius: 0.5rem;
+  background-color: #edf1f7;
+  color: #222b45;
+  font: inherit;
+  line-height: 1.2;
+  padding: 0.65rem 2.1rem 0.65rem 0.8rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #8f9bb3 50%),
+    linear-gradient(135deg, #8f9bb3 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) calc(50% - 0.08rem),
+    calc(100% - 0.68rem) calc(50% - 0.08rem);
+  background-size: 0.42rem 0.42rem, 0.42rem 0.42rem;
+  background-repeat: no-repeat;
+}
+
+.gc-native-select:focus {
+  outline: none;
+  border-color: #598bff;
+  background-color: #fff;
+  box-shadow: 0 0 0 0.2rem rgba(51, 102, 255, 0.18);
+}
+
+.gc-native-select:disabled {
+  background-color: #f7f9fc;
+  color: #8f9bb3;
+  cursor: not-allowed;
+}
+
 .item {
   width: 100%;
   display: flex;

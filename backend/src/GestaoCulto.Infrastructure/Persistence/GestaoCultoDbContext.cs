@@ -11,16 +11,26 @@ namespace GestaoCulto.Infrastructure.Persistence
         }
 
         public DbSet<Usuario> Usuarios => Set<Usuario>();
+        public DbSet<UsuarioRecuperacaoSenha> UsuariosRecuperacaoSenha => Set<UsuarioRecuperacaoSenha>();
         public DbSet<Perfil> Perfis => Set<Perfil>();
         public DbSet<UsuarioPerfil> UsuariosPerfis => Set<UsuarioPerfil>();
         public DbSet<UsuarioGoogle> UsuariosGoogle => Set<UsuarioGoogle>();
         public DbSet<Ministerio> Ministerios => Set<Ministerio>();
+        public DbSet<MinisterioFuncaoPadrao> MinisteriosFuncoesPadrao => Set<MinisterioFuncaoPadrao>();
         public DbSet<MinisterioLider> MinisteriosLideres => Set<MinisterioLider>();
         public DbSet<MinisterioVoluntario> MinisteriosVoluntarios => Set<MinisterioVoluntario>();
         public DbSet<Voluntario> Voluntarios => Set<Voluntario>();
         public DbSet<VoluntarioMinisterio> VoluntariosMinisterios => Set<VoluntarioMinisterio>();
         public DbSet<VoluntarioAcessoAtivacao> VoluntariosAcessoAtivacao => Set<VoluntarioAcessoAtivacao>();
         public DbSet<VoluntarioAcessoRecuperacao> VoluntariosAcessoRecuperacao => Set<VoluntarioAcessoRecuperacao>();
+        public DbSet<VoluntarioGoogleCalendarConexao> VoluntariosGoogleCalendarConexoes => Set<VoluntarioGoogleCalendarConexao>();
+        public DbSet<VoluntarioGoogleCalendarEvento> VoluntariosGoogleCalendarEventos => Set<VoluntarioGoogleCalendarEvento>();
+        public DbSet<VoluntarioTelegramConexao> VoluntariosTelegramConexoes => Set<VoluntarioTelegramConexao>();
+        public DbSet<VoluntarioTelegramVinculoToken> VoluntariosTelegramVinculoTokens => Set<VoluntarioTelegramVinculoToken>();
+        public DbSet<TelegramUpdateProcessado> TelegramUpdatesProcessados => Set<TelegramUpdateProcessado>();
+        public DbSet<TelegramDisponibilidadeRascunho> TelegramDisponibilidadeRascunhos => Set<TelegramDisponibilidadeRascunho>();
+        public DbSet<TelegramDisponibilidadeRascunhoMinisterio> TelegramDisponibilidadeRascunhosMinisterios => Set<TelegramDisponibilidadeRascunhoMinisterio>();
+        public DbSet<RelatorioCultoCompartilhamento> RelatoriosCultoCompartilhamentos => Set<RelatorioCultoCompartilhamento>();
         public DbSet<StatusCulto> StatusCultos => Set<StatusCulto>();
         public DbSet<StatusEtapa> StatusEtapas => Set<StatusEtapa>();
         public DbSet<PresencaEscalaStatus> PresencaEscalaStatus => Set<PresencaEscalaStatus>();
@@ -31,6 +41,7 @@ namespace GestaoCulto.Infrastructure.Persistence
         public DbSet<TemplateEtapaCultoMinisterioAcao> TemplatesEtapasCultoMinisteriosAcoes => Set<TemplateEtapaCultoMinisterioAcao>();
         public DbSet<Musica> Musicas => Set<Musica>();
         public DbSet<Culto> Cultos => Set<Culto>();
+        public DbSet<CultoRecorrencia> CultosRecorrencias => Set<CultoRecorrencia>();
         public DbSet<RepertorioCulto> RepertoriosCulto => Set<RepertorioCulto>();
         public DbSet<RepertorioCultoItem> RepertoriosCultoItens => Set<RepertorioCultoItem>();
         public DbSet<EtapaCulto> EtapasCulto => Set<EtapaCulto>();
@@ -98,6 +109,21 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.HasOne(x => x.Usuario).WithOne(x => x.UsuarioGoogle).HasForeignKey<UsuarioGoogle>(x => x.UsuarioId);
             });
 
+            modelBuilder.Entity<UsuarioRecuperacaoSenha>(entity =>
+            {
+                entity.ToTable("usuario_recuperacao_senha");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.UsuarioId).HasColumnName("usuario_id");
+                entity.Property(x => x.TokenHash).HasColumnName("token_hash").HasMaxLength(128).IsRequired();
+                entity.Property(x => x.Contexto).HasColumnName("contexto").HasMaxLength(20).IsRequired();
+                entity.Property(x => x.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(x => x.UsadoEm).HasColumnName("usado_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Usuario).WithMany(x => x.RecuperacoesSenha).HasForeignKey(x => x.UsuarioId);
+            });
+
             modelBuilder.Entity<Ministerio>(entity =>
             {
                 entity.ToTable("ministerio");
@@ -109,6 +135,20 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Ativo).HasColumnName("ativo");
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
                 entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+            });
+
+            modelBuilder.Entity<MinisterioFuncaoPadrao>(entity =>
+            {
+                entity.ToTable("ministerio_funcao_padrao");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
+                entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Ministerio).WithMany().HasForeignKey(x => x.MinisterioId);
             });
 
             modelBuilder.Entity<MinisterioLider>(entity =>
@@ -192,6 +232,142 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
             });
 
+            modelBuilder.Entity<VoluntarioGoogleCalendarConexao>(entity =>
+            {
+                entity.ToTable("voluntario_google_calendar_conexao");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.GoogleEmail).HasColumnName("google_email").HasMaxLength(180).IsRequired();
+                entity.Property(x => x.GoogleSub).HasColumnName("google_sub").HasMaxLength(150);
+                entity.Property(x => x.AccessToken).HasColumnName("access_token").HasMaxLength(2048).IsRequired();
+                entity.Property(x => x.RefreshToken).HasColumnName("refresh_token").HasMaxLength(2048).IsRequired();
+                entity.Property(x => x.AccessTokenExpiraEm).HasColumnName("access_token_expira_em");
+                entity.Property(x => x.CalendarioGoogleId).HasColumnName("calendario_google_id").HasMaxLength(255);
+                entity.Property(x => x.CalendarioGoogleNome).HasColumnName("calendario_google_nome").HasMaxLength(255);
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.UltimoSyncEm).HasColumnName("ultimo_sync_em");
+                entity.Property(x => x.UltimoErroSync).HasColumnName("ultimo_erro_sync").HasMaxLength(1000);
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+            });
+
+            modelBuilder.Entity<VoluntarioGoogleCalendarEvento>(entity =>
+            {
+                entity.ToTable("voluntario_google_calendar_evento");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.EscalaId).HasColumnName("escala_id");
+                entity.Property(x => x.CalendarioGoogleId).HasColumnName("calendario_google_id").HasMaxLength(255).IsRequired();
+                entity.Property(x => x.EventoGoogleId).HasColumnName("evento_google_id").HasMaxLength(255).IsRequired();
+                entity.Property(x => x.UltimaSincronizacaoEm).HasColumnName("ultima_sincronizacao_em");
+                entity.Property(x => x.UltimoErroSync).HasColumnName("ultimo_erro_sync").HasMaxLength(1000);
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+                entity.HasOne(x => x.Escala).WithMany().HasForeignKey(x => x.EscalaId);
+            });
+
+            modelBuilder.Entity<VoluntarioTelegramConexao>(entity =>
+            {
+                entity.ToTable("voluntario_telegram_conexao");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.TelegramUserId).HasColumnName("telegram_user_id");
+                entity.Property(x => x.TelegramChatId).HasColumnName("telegram_chat_id");
+                entity.Property(x => x.TelegramUsername).HasColumnName("telegram_username").HasMaxLength(100);
+                entity.Property(x => x.TelegramPrimeiroNome).HasColumnName("telegram_primeiro_nome").HasMaxLength(150);
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.ConsentimentoEm).HasColumnName("consentimento_em");
+                entity.Property(x => x.ConsentimentoVersao).HasColumnName("consentimento_versao").HasMaxLength(30).IsRequired();
+                entity.Property(x => x.VinculadoEm).HasColumnName("vinculado_em");
+                entity.Property(x => x.UltimaInteracaoEm).HasColumnName("ultima_interacao_em");
+                entity.Property(x => x.DesvinculadoEm).HasColumnName("desvinculado_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasIndex(x => x.VoluntarioId).IsUnique();
+                entity.HasIndex(x => x.TelegramUserId).IsUnique();
+                entity.HasIndex(x => x.TelegramChatId).IsUnique();
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+            });
+
+            modelBuilder.Entity<VoluntarioTelegramVinculoToken>(entity =>
+            {
+                entity.ToTable("voluntario_telegram_vinculo_token");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.TokenHash).HasColumnName("token_hash").HasMaxLength(64).IsRequired();
+                entity.Property(x => x.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(x => x.UsadoEm).HasColumnName("usado_em");
+                entity.Property(x => x.RevogadoEm).HasColumnName("revogado_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasIndex(x => x.TokenHash).IsUnique();
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+            });
+
+            modelBuilder.Entity<TelegramUpdateProcessado>(entity =>
+            {
+                entity.ToTable("telegram_update_processado");
+                entity.HasKey(x => x.TelegramUpdateId);
+                entity.Property(x => x.TelegramUpdateId).HasColumnName("telegram_update_id").ValueGeneratedNever();
+                entity.Property(x => x.RecebidoEm).HasColumnName("recebido_em");
+                entity.Property(x => x.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+                entity.Property(x => x.ClaimId).HasColumnName("claim_id").HasMaxLength(36);
+                entity.Property(x => x.IniciadoEm).HasColumnName("iniciado_em");
+                entity.Property(x => x.ConcluidoEm).HasColumnName("concluido_em");
+            });
+
+            modelBuilder.Entity<TelegramDisponibilidadeRascunho>(entity =>
+            {
+                entity.ToTable("telegram_disponibilidade_rascunho");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.CultoId).HasColumnName("culto_id");
+                entity.Property(x => x.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasIndex(x => new { x.VoluntarioId, x.CultoId }).IsUnique();
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+                entity.HasOne(x => x.Culto).WithMany().HasForeignKey(x => x.CultoId);
+            });
+
+            modelBuilder.Entity<TelegramDisponibilidadeRascunhoMinisterio>(entity =>
+            {
+                entity.ToTable("telegram_disponibilidade_rascunho_ministerio");
+                entity.HasKey(x => new { x.TelegramDisponibilidadeRascunhoId, x.MinisterioId });
+                entity.Property(x => x.TelegramDisponibilidadeRascunhoId).HasColumnName("telegram_disponibilidade_rascunho_id");
+                entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
+                entity.HasOne(x => x.TelegramDisponibilidadeRascunho)
+                    .WithMany()
+                    .HasForeignKey(x => x.TelegramDisponibilidadeRascunhoId);
+                entity.HasOne(x => x.Ministerio).WithMany().HasForeignKey(x => x.MinisterioId);
+            });
+
+            modelBuilder.Entity<RelatorioCultoCompartilhamento>(entity =>
+            {
+                entity.ToTable("relatorio_culto_compartilhamento");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.CultoId).HasColumnName("culto_id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.TokenHash).HasColumnName("token_hash").HasMaxLength(64).IsRequired();
+                entity.Property(x => x.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(x => x.UltimoAcessoEm).HasColumnName("ultimo_acesso_em");
+                entity.Property(x => x.RevogadoEm).HasColumnName("revogado_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasIndex(x => x.TokenHash).IsUnique();
+                entity.HasIndex(x => x.ExpiraEm);
+                entity.HasOne(x => x.Culto).WithMany().HasForeignKey(x => x.CultoId);
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
+            });
+
             modelBuilder.Entity<StatusCulto>(entity =>
             {
                 entity.ToTable("status_culto");
@@ -201,6 +377,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Codigo).HasColumnName("codigo").HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CorHex).HasColumnName("cor_hex").HasMaxLength(7);
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Ignore(x => x.CriadoEm);
+                entity.Ignore(x => x.AtualizadoEm);
             });
 
             modelBuilder.Entity<StatusEtapa>(entity =>
@@ -212,6 +390,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Codigo).HasColumnName("codigo").HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CorHex).HasColumnName("cor_hex").HasMaxLength(7);
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Ignore(x => x.CriadoEm);
+                entity.Ignore(x => x.AtualizadoEm);
             });
 
             modelBuilder.Entity<PresencaEscalaStatus>(entity =>
@@ -223,6 +403,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Codigo).HasColumnName("codigo").HasMaxLength(50).IsRequired();
                 entity.Property(x => x.CorHex).HasColumnName("cor_hex").HasMaxLength(7);
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Ignore(x => x.CriadoEm);
+                entity.Ignore(x => x.AtualizadoEm);
             });
 
             modelBuilder.Entity<StatusDisponibilidadeVoluntario>(entity =>
@@ -259,6 +441,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.HorarioInicialPadrao).HasColumnName("horario_inicial_padrao");
                 entity.Property(x => x.DuracaoMinutos).HasColumnName("duracao_minutos");
                 entity.Property(x => x.Atividade).HasColumnName("atividade").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.Descricao).HasColumnName("descricao").HasMaxLength(500);
                 entity.Property(x => x.MinisterioResponsavelId).HasColumnName("ministerio_responsavel_id");
                 entity.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
@@ -317,6 +500,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.TemplateCultoId).HasColumnName("template_culto_id");
+                entity.Property(x => x.RecorrenciaId).HasColumnName("recorrencia_id");
                 entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(150).IsRequired();
                 entity.Property(x => x.TipoCulto).HasColumnName("tipo_culto").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.DataCulto).HasColumnName("data_culto");
@@ -329,6 +513,29 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
                 entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
                 entity.HasOne(x => x.StatusCulto).WithMany().HasForeignKey(x => x.StatusCultoId);
+                entity.HasOne(x => x.Recorrencia).WithMany().HasForeignKey(x => x.RecorrenciaId);
+            });
+
+            modelBuilder.Entity<CultoRecorrencia>(entity =>
+            {
+                entity.ToTable("culto_recorrencia");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.TipoCulto).HasColumnName("tipo_culto").HasMaxLength(80).IsRequired();
+                entity.Property(x => x.DiaSemana).HasColumnName("dia_semana");
+                entity.Property(x => x.HorarioInicio).HasColumnName("horario_inicio");
+                entity.Property(x => x.HorarioFimPrevisto).HasColumnName("horario_fim_previsto");
+                entity.Property(x => x.StatusCultoId).HasColumnName("status_culto_id");
+                entity.Property(x => x.ObservacoesGerais).HasColumnName("observacoes_gerais").HasMaxLength(800);
+                entity.Property(x => x.TemplateCultoId).HasColumnName("template_culto_id");
+                entity.Property(x => x.QuantidadeSemanasAntecedencia).HasColumnName("quantidade_semanas_antecedencia");
+                entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.UltimaGeracaoEm).HasColumnName("ultima_geracao_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.StatusCulto).WithMany().HasForeignKey(x => x.StatusCultoId);
+                entity.HasOne(x => x.TemplateCulto).WithMany().HasForeignKey(x => x.TemplateCultoId);
             });
 
             modelBuilder.Entity<RepertorioCulto>(entity =>
@@ -351,6 +558,12 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.MusicaId).HasColumnName("musica_id");
                 entity.Property(x => x.EtapaCultoId).HasColumnName("etapa_culto_id");
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
+                entity.Property(x => x.MusicaTitulo).HasColumnName("musica_titulo").HasMaxLength(180);
+                entity.Property(x => x.MusicaArtistaBanda).HasColumnName("musica_artista_banda").HasMaxLength(180);
+                entity.Property(x => x.MusicaTom).HasColumnName("musica_tom").HasMaxLength(20);
+                entity.Property(x => x.MusicaLinkCifra).HasColumnName("musica_link_cifra").HasMaxLength(500);
+                entity.Property(x => x.MusicaLinkVideo).HasColumnName("musica_link_video").HasMaxLength(500);
+                entity.Property(x => x.MusicaObservacoes).HasColumnName("musica_observacoes").HasMaxLength(500);
                 entity.Property(x => x.Responsavel).HasColumnName("responsavel").HasMaxLength(150);
                 entity.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
@@ -368,6 +581,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.DuracaoMinutos).HasColumnName("duracao_minutos");
                 entity.Property(x => x.HorarioFimCalculado).HasColumnName("horario_fim_calculado");
                 entity.Property(x => x.Atividade).HasColumnName("atividade").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.Descricao).HasColumnName("descricao").HasMaxLength(500);
                 entity.Property(x => x.ResponsavelPrincipalUsuarioId).HasColumnName("responsavel_principal_usuario_id");
                 entity.Property(x => x.MinisterioResponsavelId).HasColumnName("ministerio_responsavel_id");
@@ -404,6 +618,8 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.CultoId).HasColumnName("culto_id");
                 entity.Property(x => x.EtapaCultoId).HasColumnName("etapa_culto_id");
                 entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.VoluntarioAvulsoNome).HasColumnName("voluntario_avulso_nome").HasMaxLength(160);
+                entity.Property(x => x.VoluntarioAvulsoTelefone).HasColumnName("voluntario_avulso_telefone").HasMaxLength(40);
                 entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
                 entity.Property(x => x.Funcao).HasColumnName("funcao").HasMaxLength(120).IsRequired();
                 entity.Property(x => x.HorarioPrevisto).HasColumnName("horario_previsto");

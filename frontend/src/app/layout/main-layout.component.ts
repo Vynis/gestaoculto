@@ -1,20 +1,30 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NbMenuItem, NbSidebarService } from '@nebular/theme';
 import { AuthService } from '../core/services/auth.service';
+import { VersionDisplayInfo } from '../core/models/version.models';
+import { VersionService } from '../core/services/version.service';
 
 @Component({
   selector: 'app-main-layout',
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   readonly menu: NbMenuItem[];
+  versoes: VersionDisplayInfo | null = null;
 
   constructor(
     public readonly authService: AuthService,
-    private readonly sidebarService: NbSidebarService
+    private readonly sidebarService: NbSidebarService,
+    private readonly versionService: VersionService
   ) {
     this.menu = this.montarMenu();
+  }
+
+  ngOnInit(): void {
+    this.versionService.obterVersoes().subscribe((data) => {
+      this.versoes = data;
+    });
   }
 
   private montarMenu(): NbMenuItem[] {
@@ -26,6 +36,7 @@ export class MainLayoutComponent {
         expanded: true,
         children: [
           { title: 'Cultos', link: '/cultos' },
+          { title: 'Recorrências', link: '/recorrencias-culto' },
           { title: 'Templates', link: '/templates' },
           { title: 'Cronograma', link: '/cronograma' },
           { title: 'Escalas', link: '/escalas' },
@@ -68,5 +79,21 @@ export class MainLayoutComponent {
 
   sair(): void {
     this.authService.logout();
+  }
+
+  get versaoFrontendLabel(): string {
+    if (!this.versoes?.frontend) {
+      return '';
+    }
+
+    return `${this.versoes.frontend.version} (${this.versoes.frontend.commit})`;
+  }
+
+  get versaoBackendLabel(): string {
+    if (!this.versoes?.backend) {
+      return '';
+    }
+
+    return `${this.versoes.backend.version} (${this.versoes.backend.commit})`;
   }
 }

@@ -70,10 +70,23 @@ namespace GestaoCulto.API.Controllers
         [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
         public async Task<IActionResult> Criar([FromBody] MusicaRequest dto)
         {
+            var titulo = (dto.Titulo ?? string.Empty).Trim();
+            var artistaBanda = (dto.ArtistaBanda ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(titulo) || string.IsNullOrWhiteSpace(artistaBanda))
+            {
+                return BadRequest(new { mensagem = "Informe título e artista/banda da música." });
+            }
+
+            var duplicada = await ExisteMusicaDuplicada(titulo, artistaBanda, null);
+            if (duplicada)
+            {
+                return BadRequest(new { mensagem = "Já existe uma música cadastrada com o mesmo título e artista/banda." });
+            }
+
             var entity = new Musica
             {
-                Titulo = dto.Titulo,
-                ArtistaBanda = dto.ArtistaBanda,
+                Titulo = titulo,
+                ArtistaBanda = artistaBanda,
                 Tom = dto.Tom,
                 LinkCifra = dto.LinkCifra,
                 LinkVideo = dto.LinkVideo,
@@ -97,8 +110,21 @@ namespace GestaoCulto.API.Controllers
                 return NotFound(new { mensagem = "Música não encontrada." });
             }
 
-            entity.Titulo = dto.Titulo;
-            entity.ArtistaBanda = dto.ArtistaBanda;
+            var titulo = (dto.Titulo ?? string.Empty).Trim();
+            var artistaBanda = (dto.ArtistaBanda ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(titulo) || string.IsNullOrWhiteSpace(artistaBanda))
+            {
+                return BadRequest(new { mensagem = "Informe título e artista/banda da música." });
+            }
+
+            var duplicada = await ExisteMusicaDuplicada(titulo, artistaBanda, id);
+            if (duplicada)
+            {
+                return BadRequest(new { mensagem = "Já existe uma música cadastrada com o mesmo título e artista/banda." });
+            }
+
+            entity.Titulo = titulo;
+            entity.ArtistaBanda = artistaBanda;
             entity.Tom = dto.Tom;
             entity.LinkCifra = dto.LinkCifra;
             entity.LinkVideo = dto.LinkVideo;
@@ -123,6 +149,17 @@ namespace GestaoCulto.API.Controllers
             _db.Musicas.Remove(entity);
             await _db.SaveChangesAsync();
             return Ok(new { mensagem = "Música excluída com sucesso." });
+        }
+
+        private async Task<bool> ExisteMusicaDuplicada(string titulo, string artistaBanda, long? ignorarId)
+        {
+            var tituloNormalizado = titulo.Trim().ToLower();
+            var artistaNormalizado = artistaBanda.Trim().ToLower();
+
+            return await _db.Musicas.AnyAsync(x =>
+                (!ignorarId.HasValue || x.Id != ignorarId.Value)
+                && x.Titulo.ToLower() == tituloNormalizado
+                && x.ArtistaBanda.ToLower() == artistaNormalizado);
         }
     }
 }

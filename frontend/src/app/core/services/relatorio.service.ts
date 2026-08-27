@@ -20,6 +20,14 @@ export class RelatorioService {
     return this.http.get<RelatorioCultoDiaResponse>(`${this.apiUrl}/culto/${cultoId}`);
   }
 
+  obterRelatorioCompartilhado(token: string): Observable<RelatorioCultoDiaResponse> {
+    const params = new HttpParams().set('t', token);
+    const apiUrl = !environment.production && !['localhost', '127.0.0.1'].includes(window.location.hostname)
+      ? `${window.location.origin}/api/relatorios`
+      : this.apiUrl;
+    return this.http.get<RelatorioCultoDiaResponse>(`${apiUrl}/compartilhado`, { params });
+  }
+
   listarCultosParaRelatorio(): Observable<Culto[]> {
     return this.http.get<Culto[]>(`${this.apiUrl}/cultos`);
   }

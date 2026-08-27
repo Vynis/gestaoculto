@@ -50,6 +50,26 @@ namespace GestaoCulto.Infrastructure.Persistence
             }
 
             await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS usuario_recuperacao_senha (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  usuario_id BIGINT UNSIGNED NOT NULL,
+                  token_hash VARCHAR(128) NOT NULL,
+                  contexto VARCHAR(20) NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  usado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  KEY ix_usuario_recuperacao_usuario (usuario_id),
+                  KEY ix_usuario_recuperacao_token (token_hash),
+                  KEY ix_usuario_recuperacao_contexto (contexto),
+                  KEY ix_usuario_recuperacao_expira (expira_em),
+                  KEY ix_usuario_recuperacao_usado (usado_em),
+                  CONSTRAINT fk_usuario_recuperacao_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS ministerio_voluntario (
                   ministerio_id BIGINT UNSIGNED NOT NULL,
                   voluntario_id BIGINT UNSIGNED NOT NULL,
@@ -60,6 +80,25 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_ministerio_voluntario_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS ministerio_funcao_padrao (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  ministerio_id BIGINT UNSIGNED NOT NULL,
+                  nome VARCHAR(120) NOT NULL,
+                  ordem INT NOT NULL DEFAULT 0,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  KEY ix_ministerio_funcao_padrao_ministerio (ministerio_id),
+                  KEY ix_ministerio_funcao_padrao_ativo (ativo),
+                  UNIQUE KEY uq_ministerio_funcao_padrao_nome (ministerio_id, nome),
+                  CONSTRAINT fk_ministerio_funcao_padrao_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await SincronizarVinculosVoluntarioMinisterioAsync();
 
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS voluntario_acesso_ativacao (
@@ -100,6 +139,183 @@ namespace GestaoCulto.Infrastructure.Persistence
             ");
 
             await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_telegram_conexao (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  telegram_user_id BIGINT NOT NULL,
+                  telegram_chat_id BIGINT NOT NULL,
+                  telegram_username VARCHAR(100) NULL,
+                  telegram_primeiro_nome VARCHAR(150) NULL,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  consentimento_em DATETIME NOT NULL,
+                  consentimento_versao VARCHAR(30) NOT NULL,
+                  vinculado_em DATETIME NOT NULL,
+                  ultima_interacao_em DATETIME NULL,
+                  desvinculado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_telegram_conexao_voluntario (voluntario_id),
+                  UNIQUE KEY uq_voluntario_telegram_conexao_usuario (telegram_user_id),
+                  UNIQUE KEY uq_voluntario_telegram_conexao_chat (telegram_chat_id),
+                  KEY ix_voluntario_telegram_conexao_ativo (ativo),
+                  CONSTRAINT fk_voluntario_telegram_conexao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_telegram_vinculo_token (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  token_hash VARCHAR(64) NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  usado_em DATETIME NULL,
+                  revogado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_telegram_vinculo_token_hash (token_hash),
+                  KEY ix_voluntario_telegram_vinculo_token_voluntario (voluntario_id),
+                  KEY ix_voluntario_telegram_vinculo_token_expira (expira_em),
+                  CONSTRAINT fk_voluntario_telegram_vinculo_token_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_update_processado (
+                  telegram_update_id BIGINT NOT NULL,
+                  recebido_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  status VARCHAR(20) NOT NULL DEFAULT 'PROCESSANDO',
+                  claim_id VARCHAR(36) NULL,
+                  iniciado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  concluido_em DATETIME NULL,
+                  PRIMARY KEY (telegram_update_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "status"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDO';
+                ");
+            }
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "claim_id"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN claim_id VARCHAR(36) NULL;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "iniciado_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN iniciado_em DATETIME NULL;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("telegram_update_processado", "concluido_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE telegram_update_processado
+                    ADD COLUMN concluido_em DATETIME NULL;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  culto_id BIGINT UNSIGNED NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_telegram_disp_rascunho_voluntario_culto (voluntario_id, culto_id),
+                  KEY ix_telegram_disp_rascunho_expira (expira_em),
+                  CONSTRAINT fk_telegram_disp_rascunho_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_telegram_disp_rascunho_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho_ministerio (
+                  telegram_disponibilidade_rascunho_id BIGINT UNSIGNED NOT NULL,
+                  ministerio_id BIGINT UNSIGNED NOT NULL,
+                  PRIMARY KEY (telegram_disponibilidade_rascunho_id, ministerio_id),
+                  KEY ix_telegram_disp_rascunho_ministerio (ministerio_id),
+                  CONSTRAINT fk_telegram_disp_rascunho_min_rascunho FOREIGN KEY (telegram_disponibilidade_rascunho_id) REFERENCES telegram_disponibilidade_rascunho(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_telegram_disp_rascunho_min_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS relatorio_culto_compartilhamento (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  culto_id BIGINT UNSIGNED NOT NULL,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  token_hash VARCHAR(64) NOT NULL,
+                  expira_em DATETIME NOT NULL,
+                  ultimo_acesso_em DATETIME NULL,
+                  revogado_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_relatorio_culto_compartilhamento_token (token_hash),
+                  KEY ix_relatorio_culto_compartilhamento_culto (culto_id),
+                  KEY ix_relatorio_culto_compartilhamento_voluntario (voluntario_id),
+                  KEY ix_relatorio_culto_compartilhamento_expira (expira_em),
+                  CONSTRAINT fk_relatorio_compartilhamento_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_relatorio_compartilhamento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_google_calendar_conexao (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  google_email VARCHAR(180) NOT NULL,
+                  google_sub VARCHAR(150) NULL,
+                  access_token VARCHAR(2048) NOT NULL,
+                  refresh_token VARCHAR(2048) NOT NULL,
+                  access_token_expira_em DATETIME NULL,
+                  calendario_google_id VARCHAR(255) NULL,
+                  calendario_google_nome VARCHAR(255) NULL,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  ultimo_sync_em DATETIME NULL,
+                  ultimo_erro_sync VARCHAR(1000) NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_google_calendar_conexao_voluntario (voluntario_id),
+                  KEY ix_voluntario_google_calendar_conexao_ativo (ativo),
+                  CONSTRAINT fk_voluntario_google_calendar_conexao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS voluntario_google_calendar_evento (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  escala_id BIGINT UNSIGNED NOT NULL,
+                  calendario_google_id VARCHAR(255) NOT NULL,
+                  evento_google_id VARCHAR(255) NOT NULL,
+                  ultima_sincronizacao_em DATETIME NULL,
+                  ultimo_erro_sync VARCHAR(1000) NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_voluntario_google_calendar_evento_escala (escala_id),
+                  KEY ix_voluntario_google_calendar_evento_voluntario (voluntario_id),
+                  CONSTRAINT fk_voluntario_google_calendar_evento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_voluntario_google_calendar_evento_escala FOREIGN KEY (escala_id) REFERENCES escala(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS musica (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                   titulo VARCHAR(180) NOT NULL,
@@ -114,6 +330,39 @@ namespace GestaoCulto.Infrastructure.Persistence
                   PRIMARY KEY (id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS culto_recorrencia (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  nome VARCHAR(150) NOT NULL,
+                  tipo_culto VARCHAR(80) NOT NULL,
+                  dia_semana INT NOT NULL,
+                  horario_inicio TIME NOT NULL,
+                  horario_fim_previsto TIME NULL,
+                  status_culto_id BIGINT UNSIGNED NOT NULL,
+                  observacoes_gerais VARCHAR(800) NULL,
+                  template_culto_id BIGINT UNSIGNED NULL,
+                  quantidade_semanas_antecedencia INT NOT NULL DEFAULT 12,
+                  ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  ultima_geracao_em DATETIME NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  KEY ix_culto_recorrencia_ativo (ativo),
+                  KEY ix_culto_recorrencia_dia_horario (dia_semana, horario_inicio),
+                  KEY ix_culto_recorrencia_template (template_culto_id),
+                  CONSTRAINT fk_culto_recorrencia_status FOREIGN KEY (status_culto_id) REFERENCES status_culto(id) ON DELETE RESTRICT,
+                  CONSTRAINT fk_culto_recorrencia_template FOREIGN KEY (template_culto_id) REFERENCES template_culto(id) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            if (!await ColunaExisteAsync("culto", "recorrencia_id"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE culto
+                    ADD COLUMN recorrencia_id BIGINT UNSIGNED NULL AFTER template_culto_id;
+                ");
+            }
 
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS repertorio_culto (
@@ -135,6 +384,12 @@ namespace GestaoCulto.Infrastructure.Persistence
                   musica_id BIGINT UNSIGNED NOT NULL,
                   etapa_culto_id BIGINT UNSIGNED NULL,
                   ordem INT NOT NULL,
+                  musica_titulo VARCHAR(180) NULL,
+                  musica_artista_banda VARCHAR(180) NULL,
+                  musica_tom VARCHAR(20) NULL,
+                  musica_link_cifra VARCHAR(500) NULL,
+                  musica_link_video VARCHAR(500) NULL,
+                  musica_observacoes VARCHAR(500) NULL,
                   responsavel VARCHAR(150) NULL,
                   observacoes VARCHAR(500) NULL,
                   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -148,6 +403,54 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_titulo"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_titulo VARCHAR(180) NULL AFTER ordem;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_artista_banda"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_artista_banda VARCHAR(180) NULL AFTER musica_titulo;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_tom"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_tom VARCHAR(20) NULL AFTER musica_artista_banda;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_link_cifra"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_link_cifra VARCHAR(500) NULL AFTER musica_tom;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_link_video"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_link_video VARCHAR(500) NULL AFTER musica_link_cifra;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("repertorio_culto_item", "musica_observacoes"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE repertorio_culto_item
+                    ADD COLUMN musica_observacoes VARCHAR(500) NULL AFTER musica_link_video;
+                ");
+            }
+
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS template_etapa_culto (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -156,6 +459,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                   horario_inicial_padrao TIME NULL,
                   duracao_minutos INT NOT NULL,
                   atividade VARCHAR(150) NOT NULL,
+                  bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'PRINCIPAL',
                   descricao VARCHAR(500) NULL,
                   ministerio_responsavel_id BIGINT UNSIGNED NULL,
                   observacoes VARCHAR(500) NULL,
@@ -170,6 +474,34 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_template_etapa_ministerio FOREIGN KEY (ministerio_responsavel_id) REFERENCES ministerio(id) ON DELETE SET NULL,
                   CONSTRAINT fk_template_etapa_status FOREIGN KEY (status_etapa_id) REFERENCES status_etapa(id) ON DELETE SET NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            if (!await ColunaExisteAsync("etapa_culto", "bloco_cronograma"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE etapa_culto
+                    ADD COLUMN bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'PRINCIPAL' AFTER atividade;
+                ");
+            }
+
+            if (!await ColunaExisteAsync("template_etapa_culto", "bloco_cronograma"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE template_etapa_culto
+                    ADD COLUMN bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'PRINCIPAL' AFTER atividade;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                UPDATE etapa_culto
+                SET bloco_cronograma = 'PRINCIPAL'
+                WHERE bloco_cronograma IS NULL OR TRIM(bloco_cronograma) = '';
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                UPDATE template_etapa_culto
+                SET bloco_cronograma = 'PRINCIPAL'
+                WHERE bloco_cronograma IS NULL OR TRIM(bloco_cronograma) = '';
             ");
 
             await _db.Database.ExecuteSqlRawAsync(@"
@@ -223,6 +555,32 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            if (await TabelaExisteAsync("escala"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE escala
+                    MODIFY COLUMN voluntario_id BIGINT UNSIGNED NULL;
+                ");
+
+                if (!await ColunaExisteAsync("escala", "voluntario_avulso_nome"))
+                {
+                    await _db.Database.ExecuteSqlRawAsync(@"
+                        ALTER TABLE escala
+                        ADD COLUMN voluntario_avulso_nome VARCHAR(160) NULL AFTER voluntario_id;
+                    ");
+                }
+
+                if (!await ColunaExisteAsync("escala", "voluntario_avulso_telefone"))
+                {
+                    await _db.Database.ExecuteSqlRawAsync(@"
+                        ALTER TABLE escala
+                        ADD COLUMN voluntario_avulso_telefone VARCHAR(40) NULL AFTER voluntario_avulso_nome;
+                    ");
+                }
+            }
+
+            await SanearEtapasCronogramaDuplicadasAsync();
+
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS status_disponibilidade_voluntario (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -269,6 +627,10 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 
+            await GarantirColunasAuditoriaAsync("status_culto");
+            await GarantirColunasAuditoriaAsync("status_etapa");
+            await GarantirColunasAuditoriaAsync("presenca_escala_status");
+
             if (!_db.Perfis.Any())
             {
                 _db.Perfis.AddRange(
@@ -280,16 +642,58 @@ namespace GestaoCulto.Infrastructure.Persistence
                 );
             }
 
-            if (!_db.StatusCultos.Any())
+            var statusCultoAtivo = await _db.StatusCultos.FirstOrDefaultAsync(x => x.Codigo == "ATIVO")
+                ?? await _db.StatusCultos.FirstOrDefaultAsync(x => x.Id == 1);
+            if (statusCultoAtivo == null)
             {
-                _db.StatusCultos.AddRange(
-                    new StatusCulto { Nome = "Planejamento", Codigo = "PLANEJAMENTO", CorHex = "#6C757D", Ordem = 1 },
-                    new StatusCulto { Nome = "Fechado", Codigo = "FECHADO", CorHex = "#0D6EFD", Ordem = 2 },
-                    new StatusCulto { Nome = "Em andamento", Codigo = "EM_ANDAMENTO", CorHex = "#FD7E14", Ordem = 3 },
-                    new StatusCulto { Nome = "Finalizado", Codigo = "FINALIZADO", CorHex = "#198754", Ordem = 4 },
-                    new StatusCulto { Nome = "Cancelado", Codigo = "CANCELADO", CorHex = "#DC3545", Ordem = 5 }
-                );
+                statusCultoAtivo = new StatusCulto
+                {
+                    Nome = "Ativo",
+                    Codigo = "ATIVO",
+                    CorHex = "#198754",
+                    Ordem = 1,
+                    CriadoEm = DateTime.UtcNow
+                };
+                _db.StatusCultos.Add(statusCultoAtivo);
             }
+            else
+            {
+                statusCultoAtivo.Nome = "Ativo";
+                statusCultoAtivo.Codigo = "ATIVO";
+                statusCultoAtivo.CorHex = "#198754";
+                statusCultoAtivo.Ordem = 1;
+            }
+
+            var statusCultoInativo = await _db.StatusCultos.FirstOrDefaultAsync(x => x.Codigo == "INATIVO")
+                ?? await _db.StatusCultos.FirstOrDefaultAsync(x => x.Id == 2);
+            if (statusCultoInativo == null)
+            {
+                statusCultoInativo = new StatusCulto
+                {
+                    Nome = "Inativo",
+                    Codigo = "INATIVO",
+                    CorHex = "#6C757D",
+                    Ordem = 2,
+                    CriadoEm = DateTime.UtcNow
+                };
+                _db.StatusCultos.Add(statusCultoInativo);
+            }
+            else
+            {
+                statusCultoInativo.Nome = "Inativo";
+                statusCultoInativo.Codigo = "INATIVO";
+                statusCultoInativo.CorHex = "#6C757D";
+                statusCultoInativo.Ordem = 2;
+            }
+
+            await _db.SaveChangesAsync();
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                UPDATE culto
+                SET status_culto_id = {0}
+                WHERE status_culto_id <> {1}
+                  AND status_culto_id <> {0};
+            ", statusCultoInativo.Id, statusCultoAtivo.Id);
 
             if (!_db.StatusEtapas.Any())
             {
@@ -380,6 +784,136 @@ namespace GestaoCulto.Infrastructure.Persistence
             var result = await command.ExecuteScalarAsync();
             var total = Convert.ToInt32(result ?? 0);
             return total > 0;
+        }
+
+        private async Task<bool> TabelaExisteAsync(string tabela)
+        {
+            var connection = _db.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_name = @tabela";
+
+            var paramTabela = command.CreateParameter();
+            paramTabela.ParameterName = "@tabela";
+            paramTabela.Value = tabela;
+            command.Parameters.Add(paramTabela);
+
+            var result = await command.ExecuteScalarAsync();
+            var total = Convert.ToInt32(result ?? 0);
+            return total > 0;
+        }
+
+        private async Task SincronizarVinculosVoluntarioMinisterioAsync()
+        {
+            var tabelaLegadaExiste = await TabelaExisteAsync("voluntario_ministerio");
+            var tabelaAtualExiste = await TabelaExisteAsync("ministerio_voluntario");
+
+            if (!tabelaLegadaExiste || !tabelaAtualExiste)
+            {
+                return;
+            }
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                INSERT IGNORE INTO ministerio_voluntario (ministerio_id, voluntario_id, principal, criado_em)
+                SELECT vm.ministerio_id,
+                       vm.voluntario_id,
+                       vm.principal,
+                       COALESCE(vm.criado_em, UTC_TIMESTAMP())
+                FROM voluntario_ministerio vm;
+            ");
+        }
+
+        private async Task GarantirColunasAuditoriaAsync(string tabela)
+        {
+            if (!await ColunaExisteAsync(tabela, "criado_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    ALTER TABLE {tabela}
+                    ADD COLUMN criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+                ");
+            }
+
+            if (!await ColunaExisteAsync(tabela, "atualizado_em"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    ALTER TABLE {tabela}
+                    ADD COLUMN atualizado_em DATETIME NULL;
+                ");
+            }
+        }
+
+        private async Task SanearEtapasCronogramaDuplicadasAsync()
+        {
+            if (!await TabelaExisteAsync("etapa_culto"))
+            {
+                return;
+            }
+
+            var subqueryDuplicadas = @"
+                SELECT d.id AS duplicate_id,
+                       base.keep_id
+                FROM etapa_culto d
+                INNER JOIN (
+                    SELECT culto_id,
+                           sequencia,
+                           LOWER(TRIM(COALESCE(bloco_cronograma, 'PRINCIPAL'))) AS bloco_normalizado,
+                           MIN(id) AS keep_id,
+                           COUNT(*) AS total
+                    FROM etapa_culto
+                    GROUP BY culto_id,
+                             sequencia,
+                             LOWER(TRIM(COALESCE(bloco_cronograma, 'PRINCIPAL')))
+                    HAVING COUNT(*) > 1
+                ) base
+                    ON base.culto_id = d.culto_id
+                   AND base.sequencia = d.sequencia
+                   AND base.bloco_normalizado = LOWER(TRIM(COALESCE(d.bloco_cronograma, 'PRINCIPAL')))
+                WHERE d.id <> base.keep_id";
+
+            if (await TabelaExisteAsync("escala"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    UPDATE escala e
+                    INNER JOIN ({subqueryDuplicadas}) mapa
+                        ON mapa.duplicate_id = e.etapa_culto_id
+                    SET e.etapa_culto_id = mapa.keep_id;
+                ");
+            }
+
+            if (await TabelaExisteAsync("repertorio_culto_item"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    UPDATE repertorio_culto_item r
+                    INNER JOIN ({subqueryDuplicadas}) mapa
+                        ON mapa.duplicate_id = r.etapa_culto_id
+                    SET r.etapa_culto_id = mapa.keep_id;
+                ");
+            }
+
+            if (await TabelaExisteAsync("etapa_culto_ministerio_acao"))
+            {
+                await _db.Database.ExecuteSqlRawAsync($@"
+                    UPDATE etapa_culto_ministerio_acao a
+                    INNER JOIN ({subqueryDuplicadas}) mapa
+                        ON mapa.duplicate_id = a.etapa_culto_id
+                    SET a.etapa_culto_id = mapa.keep_id;
+                ");
+            }
+
+            await _db.Database.ExecuteSqlRawAsync($@"
+                DELETE d
+                FROM etapa_culto d
+                INNER JOIN ({subqueryDuplicadas}) mapa
+                    ON mapa.duplicate_id = d.id;
+            ");
         }
     }
 }

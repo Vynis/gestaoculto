@@ -49,6 +49,7 @@ export class CronogramaComponent implements OnInit {
     horarioInicio: ['', Validators.required],
     duracaoMinutos: [10, [Validators.required, Validators.min(1)]],
     atividade: ['', Validators.required],
+    blocoCronograma: ['', Validators.required],
     descricao: [''],
     ministerioResponsavelId: [null as number | null]
   });
@@ -111,7 +112,7 @@ export class CronogramaComponent implements OnInit {
       this.carregar();
     });
 
-    this.cultoService.listar().subscribe((data) => {
+    this.cultoService.listarAtivos().subscribe((data) => {
       this.cultos = data;
     });
 
@@ -175,6 +176,7 @@ export class CronogramaComponent implements OnInit {
       horarioInicio: this.normalizarHorarioInicio(raw.horarioInicio ?? ''),
       duracaoMinutos: raw.duracaoMinutos ?? 10,
       atividade: raw.atividade ?? '',
+      blocoCronograma: this.normalizarBlocoCronograma(raw.blocoCronograma ?? 'PRINCIPAL'),
       descricao: raw.descricao ?? null,
       ministerioResponsavelId: raw.ministerioResponsavelId ?? null,
       statusEtapaId: 1,
@@ -214,6 +216,7 @@ export class CronogramaComponent implements OnInit {
       horarioInicio: this.paraHoraInput(etapa.horarioInicio),
       duracaoMinutos: etapa.duracaoMinutos,
       atividade: etapa.atividade,
+      blocoCronograma: this.normalizarBlocoCronograma(etapa.blocoCronograma),
       descricao: etapa.descricao || '',
       ministerioResponsavelId: etapa.ministerioResponsavelId ?? null
     });
@@ -328,6 +331,7 @@ export class CronogramaComponent implements OnInit {
             horarioInicio: this.formatarDateTimeCompleto(inicioEtapa),
             duracaoMinutos: etapaTemplate.duracaoMinutos,
             atividade: etapaTemplate.atividade,
+            blocoCronograma: this.normalizarBlocoCronograma(etapaTemplate.blocoCronograma || 'PRINCIPAL'),
             descricao: etapaTemplate.descricao,
             ministerioResponsavelId: (etapaTemplate.ministerioIds || []).length
               ? etapaTemplate.ministerioIds[0]
@@ -390,9 +394,26 @@ export class CronogramaComponent implements OnInit {
       horarioInicio: '',
       duracaoMinutos: 10,
       atividade: '',
+      blocoCronograma: '',
       descricao: '',
       ministerioResponsavelId: null
     });
+  }
+
+  get blocosCronogramaDisponiveis(): string[] {
+    const base = ['PRINCIPAL', 'LOUNGE', 'ADICIONAL'];
+    const dinamicos = this.etapas
+      .map((item) => this.normalizarBlocoCronograma(item.blocoCronograma || 'PRINCIPAL'))
+      .filter((item) => !!item);
+
+    return Array.from(new Set([...base, ...dinamicos]))
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+
+  get ministeriosOrdenados(): Ministerio[] {
+    return (this.ministerios || [])
+      .slice()
+      .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
   }
 
   salvarAcaoMinisterio(): void {
@@ -594,8 +615,14 @@ export class CronogramaComponent implements OnInit {
 
   private assinaturaEtapa(item: EtapaCulto): string {
     const sequencia = Number(item.sequencia || 0);
+    const bloco = this.normalizarBlocoCronograma(item.blocoCronograma || 'PRINCIPAL').toLowerCase();
     const atividade = String(item.atividade || '').trim().toLowerCase();
-    return `${sequencia}|${atividade}`;
+    return `${bloco}|${sequencia}|${atividade}`;
+  }
+
+  private normalizarBlocoCronograma(valor: string | null | undefined): string {
+    const texto = String(valor || '').trim();
+    return texto ? texto.toUpperCase() : 'PRINCIPAL';
   }
 
   private extrairMensagemErro(error: any): string {

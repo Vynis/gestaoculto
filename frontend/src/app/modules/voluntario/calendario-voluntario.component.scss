@@ -117,6 +117,8 @@
 
 .modal-card {
   width: min(720px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
 }
 
 .form {
@@ -132,4 +134,57 @@
 .actions {
   display: flex;
   gap: 0.6rem;
+}
+
+.google-grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.google-select {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gc-native-select {
+  min-width: 260px;
+  min-height: 2.4rem;
+  appearance: none;
+  border: 1px solid #dfe5f2;
+  border-radius: 0.5rem;
+  background-color: #edf1f7;
+  color: #222b45;
+  padding: 0.6rem 2rem 0.6rem 0.8rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #8f9bb3 50%),
+    linear-gradient(135deg, #8f9bb3 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) calc(50% - 0.08rem),
+    calc(100% - 0.68rem) calc(50% - 0.08rem);
+  background-size: 0.42rem 0.42rem, 0.42rem 0.42rem;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    text-align: center;
+  }
+
+  .culto-item {
+    flex-direction: column;
+  }
+
+  .culto-item button {
+    width: 100%;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 }

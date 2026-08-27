@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using GestaoCulto.Application.Interfaces;
 using GestaoCulto.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,18 +49,24 @@ namespace GestaoCulto.API.Controllers
         }
 
         private readonly GestaoCultoDbContext _db;
+        private readonly IRelatorioCompartilhamentoService _compartilhamentoService;
 
-        public RelatoriosController(GestaoCultoDbContext db)
+        public RelatoriosController(
+            GestaoCultoDbContext db,
+            IRelatorioCompartilhamentoService compartilhamentoService)
         {
             _db = db;
+            _compartilhamentoService = compartilhamentoService;
         }
 
         [HttpGet("cultos")]
-        [AllowAnonymous]
         public async Task<IActionResult> ListarCultosParaRelatorio()
         {
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+
             var cultos = await _db.Cultos
                 .AsNoTracking()
+                .Where(x => x.StatusCultoId == statusCultoAtivoId)
                 .OrderByDescending(x => x.DataCulto)
                 .ThenByDescending(x => x.HorarioInicio)
                 .Select(x => new
@@ -81,7 +88,6 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpGet("culto-dia")]
-        [AllowAnonymous]
         public async Task<IActionResult> RelatorioCultoDia([FromQuery] string? data)
         {
             if (string.IsNullOrWhiteSpace(data) || !DateTime.TryParseExact(data, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dataCulto))
@@ -91,10 +97,11 @@ namespace GestaoCulto.API.Controllers
 
             var inicioDia = dataCulto.Date;
             var fimDia = inicioDia.AddDays(1);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
 
             var cultos = await _db.Cultos
                 .AsNoTracking()
-                .Where(c => c.DataCulto >= inicioDia && c.DataCulto < fimDia)
+                .Where(c => c.DataCulto >= inicioDia && c.DataCulto < fimDia && c.StatusCultoId == statusCultoAtivoId)
                 .OrderBy(c => c.HorarioInicio)
                 .Select(c => new CultoRelatorioItem
                 {
@@ -126,7 +133,6 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpGet("culto/{cultoId:long}")]
-        [AllowAnonymous]
         public async Task<IActionResult> RelatorioCultoPorId(long cultoId)
         {
             var cultos = await _db.Cultos
@@ -158,7 +164,61 @@ namespace GestaoCulto.API.Controllers
             return Ok(await MontarRelatorio(cultos, dataRef));
         }
 
-        private async Task<object> MontarRelatorio(List<CultoRelatorioItem> cultos, string dataRef)
+        [HttpGet("compartilhado")]
+        [AllowAnonymous]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> RelatorioCompartilhado([FromQuery] string? t)
+        {
+            var cultoId = await _compartilhamentoService.ObterCultoIdAsync(t ?? string.Empty);
+            if (!cultoId.HasValue)
+            {
+                return NotFound(new { mensagem = "Este relatório não está disponível ou o link expirou." });
+            }
+
+            var cultos = await _db.Cultos
+                .AsNoTracking()
+                .Where(c => c.Id == cultoId.Value
+                    && _db.StatusCultos.Any(s => s.Id == c.StatusCultoId && s.Codigo == "ATIVO"))
+                .Select(c => new CultoRelatorioItem
+                {
+                    Id = c.Id,
+                    Nome = c.Nome,
+                    TipoCulto = c.TipoCulto,
+                    DataCulto = c.DataCulto,
+                    HorarioInicio = c.HorarioInicio,
+                    HorarioFimPrevisto = c.HorarioFimPrevisto,
+                    StatusCultoId = c.StatusCultoId,
+                    StatusCultoNome = _db.StatusCultos.Where(s => s.Id == c.StatusCultoId).Select(s => s.Nome).FirstOrDefault()
+                })
+                .ToListAsync();
+
+            if (!cultos.Any())
+            {
+                return NotFound(new { mensagem = "Este relatório não está disponível ou o link expirou." });
+            }
+
+            return Ok(await MontarRelatorio(
+                cultos,
+                cultos[0].DataCulto.ToString("yyyy-MM-dd"),
+                publico: true));
+        }
+
+        private async Task<long> ObterStatusCultoAtivoId()
+        {
+            var statusAtivoId = await _db.StatusCultos
+                .Where(x => x.Codigo == "ATIVO")
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync();
+
+            return statusAtivoId > 0
+                ? statusAtivoId
+                : await _db.StatusCultos.OrderBy(x => x.Ordem).Select(x => x.Id).FirstOrDefaultAsync();
+        }
+
+        private async Task<object> MontarRelatorio(
+            List<CultoRelatorioItem> cultos,
+            string dataRef,
+            bool publico = false)
         {
 
             var cultoIds = cultos.Select(c => c.Id).ToList();
@@ -177,6 +237,7 @@ namespace GestaoCulto.API.Controllers
                     e.HorarioFimCalculado,
                     e.DuracaoMinutos,
                     e.Atividade,
+                    e.BlocoCronograma,
                     e.Descricao,
                     e.MinisterioResponsavelId,
                     MinisterioResponsavelNome = _db.Ministerios.Where(m => m.Id == e.MinisterioResponsavelId).Select(m => m.Nome).FirstOrDefault(),
@@ -191,6 +252,7 @@ namespace GestaoCulto.API.Controllers
                 {
                     x.CultoId,
                     x.Sequencia,
+                    BlocoCronograma = (x.BlocoCronograma ?? "PRINCIPAL").Trim().ToLower(),
                     Atividade = (x.Atividade ?? string.Empty).Trim().ToLower()
                 })
                 .Select(g => g.OrderBy(x => x.Id).First())
@@ -198,6 +260,35 @@ namespace GestaoCulto.API.Controllers
                 .ThenBy(x => x.Sequencia)
                 .ThenBy(x => x.Id)
                 .ToList();
+
+            var ministeriosResponsaveisIds = etapas
+                .Where(x => x.MinisterioResponsavelId.HasValue)
+                .Select(x => x.MinisterioResponsavelId!.Value)
+                .Distinct()
+                .ToList();
+
+            var lideresMinisterio = await _db.MinisteriosLideres
+                .AsNoTracking()
+                .Where(x => ministeriosResponsaveisIds.Contains(x.MinisterioId))
+                .Join(
+                    _db.Usuarios.AsNoTracking(),
+                    ml => ml.UsuarioId,
+                    u => u.Id,
+                    (ml, u) => new
+                    {
+                        ml.MinisterioId,
+                        UsuarioNome = u.Nome,
+                        ml.Principal
+                    })
+                .OrderByDescending(x => x.Principal)
+                .ThenBy(x => x.UsuarioNome)
+                .ToListAsync();
+
+            var mapaLideresPorMinisterio = lideresMinisterio
+                .GroupBy(x => x.MinisterioId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.Principal ? $"{x.UsuarioNome} (principal)" : x.UsuarioNome).ToList());
 
             var etapaIds = etapas.Select(x => (long)x.Id).ToList();
             var acoesEtapa = await _db.EtapasCultoMinisteriosAcoes
@@ -235,8 +326,10 @@ namespace GestaoCulto.API.Controllers
                     CultoId = e.CultoId,
                     EtapaCultoId = e.EtapaCultoId,
                     Funcao = e.Funcao,
-                    VoluntarioId = e.VoluntarioId,
-                    VoluntarioNome = _db.Voluntarios.Where(v => v.Id == e.VoluntarioId).Select(v => v.Nome).FirstOrDefault(),
+                    VoluntarioId = e.VoluntarioId ?? 0,
+                    VoluntarioNome = e.VoluntarioId.HasValue
+                        ? _db.Voluntarios.Where(v => v.Id == e.VoluntarioId.Value).Select(v => v.Nome).FirstOrDefault()
+                        : e.VoluntarioAvulsoNome,
                     MinisterioId = e.MinisterioId,
                     MinisterioNome = _db.Ministerios.Where(m => m.Id == e.MinisterioId).Select(m => m.Nome).FirstOrDefault(),
                     PresencaStatusId = e.PresencaStatusId,
@@ -269,12 +362,26 @@ namespace GestaoCulto.API.Controllers
                     x.Id,
                     x.RepertorioCultoId,
                     x.MusicaId,
-                    MusicaTitulo = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                    MusicaTitulo = !string.IsNullOrWhiteSpace(x.MusicaTitulo)
+                        ? x.MusicaTitulo
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                    MusicaTom = !string.IsNullOrWhiteSpace(x.MusicaTom)
+                        ? x.MusicaTom
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Tom).FirstOrDefault(),
+                    MusicaLinkCifra = publico ? null : !string.IsNullOrWhiteSpace(x.MusicaLinkCifra)
+                        ? x.MusicaLinkCifra
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkCifra).FirstOrDefault(),
+                    MusicaLinkVideo = publico ? null : !string.IsNullOrWhiteSpace(x.MusicaLinkVideo)
+                        ? x.MusicaLinkVideo
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkVideo).FirstOrDefault(),
+                    MusicaObservacoes = publico ? null : !string.IsNullOrWhiteSpace(x.MusicaObservacoes)
+                        ? x.MusicaObservacoes
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Observacoes).FirstOrDefault(),
                     x.EtapaCultoId,
                     EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
                     x.Ordem,
                     x.Responsavel,
-                    x.Observacoes
+                    Observacoes = publico ? null : x.Observacoes
                 })
                 .ToListAsync();
 
@@ -287,14 +394,40 @@ namespace GestaoCulto.API.Controllers
                 x.HorarioFimCalculado,
                 x.DuracaoMinutos,
                 x.Atividade,
-                x.Descricao,
+                x.BlocoCronograma,
+                Descricao = publico ? null : x.Descricao,
                 x.MinisterioResponsavelId,
                 x.MinisterioResponsavelNome,
-                x.StatusEtapaId,
-                x.StatusEtapaNome,
-                x.AtrasoMinutos,
-                AcoesMinisterio = mapaAcoesEtapa.ContainsKey(x.Id) ? mapaAcoesEtapa[x.Id] : Array.Empty<object>()
+                LideresResponsaveis = !publico && x.MinisterioResponsavelId.HasValue && mapaLideresPorMinisterio.ContainsKey(x.MinisterioResponsavelId.Value)
+                    ? mapaLideresPorMinisterio[x.MinisterioResponsavelId.Value]
+                    : new List<string>(),
+                StatusEtapaId = publico ? 0 : x.StatusEtapaId,
+                StatusEtapaNome = publico ? null : x.StatusEtapaNome,
+                AtrasoMinutos = publico ? 0 : x.AtrasoMinutos,
+                AcoesMinisterio = publico
+                    ? (object)Array.Empty<object>()
+                    : mapaAcoesEtapa.ContainsKey(x.Id) ? mapaAcoesEtapa[x.Id] : Array.Empty<object>()
             }).ToList();
+
+            if (publico)
+            {
+                foreach (var culto in cultos)
+                {
+                    culto.ObservacoesGerais = null;
+                    culto.TotalVisitantes = 0;
+                    culto.TotalNovosConvertidos = 0;
+                    culto.StatusCultoId = 0;
+                    culto.StatusCultoNome = null;
+                }
+
+                foreach (var escala in escalas)
+                {
+                    escala.PresencaStatusId = 0;
+                    escala.PresencaStatusNome = null;
+                    escala.ConfirmadoEm = null;
+                    escala.Observacoes = null;
+                }
+            }
 
             var etapasPorCulto = etapasComAcoes
                 .GroupBy(e => e.CultoId)
@@ -333,13 +466,13 @@ namespace GestaoCulto.API.Controllers
                     {
                         id = repertorio.Id,
                         cultoId = repertorio.CultoId,
-                        observacoes = repertorio.Observacoes,
+                        observacoes = publico ? null : repertorio.Observacoes,
                         itens = mapaRepertorioItens.ContainsKey(repertorio.Id) ? mapaRepertorioItens[repertorio.Id] : new List<object>()
                     };
 
                 var totalEscalados = escalasDoCulto.Count;
-                var totalConfirmados = escalasDoCulto.Count(x => x.PresencaStatusId == 2);
-                var totalPendentes = escalasDoCulto.Count(x => x.PresencaStatusId == 1);
+                var totalConfirmados = publico ? 0 : escalasDoCulto.Count(x => x.PresencaStatusId == 2);
+                var totalPendentes = publico ? 0 : escalasDoCulto.Count(x => x.PresencaStatusId == 1);
 
                 var equipes = escalasDoCulto
                     .GroupBy(x => string.IsNullOrWhiteSpace(x.MinisterioNome) ? "Sem equipe" : x.MinisterioNome)

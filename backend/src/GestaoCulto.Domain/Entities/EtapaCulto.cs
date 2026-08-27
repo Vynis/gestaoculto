@@ -13,6 +13,7 @@ namespace GestaoCulto.Domain.Entities
         public int DuracaoMinutos { get; set; }
         public DateTime? HorarioFimCalculado { get; set; }
         public string Atividade { get; set; } = string.Empty;
+        public string BlocoCronograma { get; set; } = "PRINCIPAL";
         public string? Descricao { get; set; }
         public long? ResponsavelPrincipalUsuarioId { get; set; }
         public Usuario? ResponsavelPrincipalUsuario { get; set; }

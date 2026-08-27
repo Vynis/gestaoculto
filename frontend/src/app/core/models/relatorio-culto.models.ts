@@ -33,9 +33,11 @@ export interface RelatorioCultoEtapa {
   horarioFimCalculado: string | null;
   duracaoMinutos: number;
   atividade: string;
+  blocoCronograma?: string | null;
   descricao: string | null;
   ministerioResponsavelId: number | null;
   ministerioResponsavelNome: string | null;
+  lideresResponsaveis?: string[];
   statusEtapaId: number;
   statusEtapaNome: string | null;
   atrasoMinutos: number;

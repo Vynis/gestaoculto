@@ -25,7 +25,9 @@ interface CultoGridRow {
 })
 export class CultosComponent implements OnInit {
   cultos: Culto[] = [];
+  cultosSelecao: Culto[] = [];
   rowData: CultoGridRow[] = [];
+  filtroGrid = '';
   repertorioCultoId = 0;
   repertorioCultoNome = '';
   repertorioItens: RepertorioItem[] = [];
@@ -35,11 +37,8 @@ export class CultosComponent implements OnInit {
   mensagemErro = '';
   cultoEditandoId: number | null = null;
   readonly statusOptions = [
-    { id: 1, label: 'Planejamento' },
-    { id: 2, label: 'Fechado' },
-    { id: 3, label: 'Em andamento' },
-    { id: 4, label: 'Finalizado' },
-    { id: 5, label: 'Cancelado' }
+    { id: 1, label: 'Ativo' },
+    { id: 2, label: 'Inativo' }
   ];
 
   readonly form = this.fb.group({
@@ -98,9 +97,10 @@ export class CultosComponent implements OnInit {
   carregar(): void {
     this.cultoService.listar().subscribe((data) => {
       this.cultos = data;
+      this.cultosSelecao = CultoService.ordenarPorProximidade(data);
       this.rowData = this.mapearParaGrid(data);
-      if (!this.repertorioCultoId && data.length > 0) {
-        this.repertorioCultoId = data[0].id;
+      if (!this.repertorioCultoId && this.cultosSelecao.length > 0) {
+        this.repertorioCultoId = this.cultosSelecao[0].id;
         this.carregarRepertorio();
       }
     });
@@ -415,7 +415,7 @@ export class CultosComponent implements OnInit {
     return this.formatarDataInput(data);
   }
 
-  private paraHorarioInput(valor: unknown): string {
+  paraHorarioInput(valor: unknown): string {
     if (!valor) {
       return '';
     }
@@ -484,4 +484,5 @@ export class CultosComponent implements OnInit {
   statusLabel(statusId: number): string {
     return this.statusOptions.find((x) => x.id === statusId)?.label ?? 'Sem status';
   }
+
 }

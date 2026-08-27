@@ -20,6 +20,8 @@ export class EscalasComponent implements OnInit {
   cultos: Culto[] = [];
   voluntarios: Voluntario[] = [];
   ministerios: Ministerio[] = [];
+  carregandoVoluntarios = false;
+  erroVoluntarios: string | null = null;
 
   modalAberto = false;
   escalaEditando: Escala | null = null;
@@ -41,7 +43,7 @@ export class EscalasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cultoService.listar().subscribe((data) => {
+    this.cultoService.listarAtivos().subscribe((data) => {
       this.cultos = data;
       const primeiro = data[0]?.id ?? 0;
       this.filtro.patchValue({ cultoId: primeiro });
@@ -50,13 +52,11 @@ export class EscalasComponent implements OnInit {
       }
     });
 
-    this.cadastroService.listarVoluntarios().subscribe((data) => {
-      this.voluntarios = data || [];
-    });
-
     this.cadastroService.listarMinisterios().subscribe((data) => {
       this.ministerios = data || [];
     });
+
+    this.carregarVoluntarios();
   }
 
   carregar(): void {
@@ -80,10 +80,11 @@ export class EscalasComponent implements OnInit {
   }
 
   abrirModalNovaEscala(prefill?: EscalaModalPrefill): void {
+    this.carregarVoluntarios(true);
     this.escalaEditando = null;
     this.prefillModal = prefill || {
       cultoId: Number(this.filtro.value.cultoId) || (this.cultos[0]?.id ?? 0),
-      voluntarioId: this.voluntarios[0]?.id ?? 0,
+      voluntarioId: null,
       ministerioId: null,
       funcao: '',
       observacoes: ''
@@ -92,6 +93,7 @@ export class EscalasComponent implements OnInit {
   }
 
   editarEscala(escala: Escala): void {
+    this.carregarVoluntarios(true);
     this.prefillModal = null;
     this.escalaEditando = escala;
     this.modalAberto = true;
@@ -200,5 +202,31 @@ export class EscalasComponent implements OnInit {
 
   get semRegistros(): boolean {
     return this.carregouConsulta && !this.carregando && this.escalasFiltradas.length === 0;
+  }
+
+  carregarVoluntarios(silencioso = false): void {
+    this.carregandoVoluntarios = true;
+    this.erroVoluntarios = null;
+
+    this.cadastroService.listarVoluntarios().subscribe({
+      next: (data) => {
+        this.voluntarios = (data || [])
+          .slice()
+          .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+        this.erroVoluntarios = null;
+      },
+      error: () => {
+        if (!this.voluntarios.length) {
+          this.erroVoluntarios = 'Falha ao carregar voluntários.';
+        }
+        if (!silencioso) {
+          this.toastr.danger('Não foi possível carregar a lista de voluntários.', 'Escalas');
+        }
+        this.carregandoVoluntarios = false;
+      },
+      complete: () => {
+        this.carregandoVoluntarios = false;
+      }
+    });
   }
 }

@@ -15,6 +15,7 @@ namespace GestaoCulto.Domain.Entities
         public string? OrigemConta { get; set; }
         public DateTime? UltimoLoginEm { get; set; }
         public ICollection<UsuarioPerfil> Perfis { get; set; } = new List<UsuarioPerfil>();
+        public ICollection<UsuarioRecuperacaoSenha> RecuperacoesSenha { get; set; } = new List<UsuarioRecuperacaoSenha>();
         public UsuarioGoogle? UsuarioGoogle { get; set; }
     }
 }

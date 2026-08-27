@@ -33,13 +33,28 @@
     <nb-card-header>{{ usuarioEditandoId ? 'Editar usuário' : 'Novo usuário' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
-        <input nbInput fullWidth formControlName="email" placeholder="E-mail" />
-        <input nbInput fullWidth formControlName="telefone" placeholder="Telefone" />
-        <input nbInput fullWidth formControlName="senha" type="password" placeholder="Senha (deixe em branco para manter)" />
-        <nb-select fullWidth multiple formControlName="perfilIds" placeholder="Perfis de acesso">
-          <nb-option *ngFor="let perfil of perfis" [value]="perfil.id">{{ perfil.nome }} ({{ perfil.codigo }})</nb-option>
-        </nb-select>
+        <div class="form-field">
+          <label for="usuario-nome">Nome completo</label>
+          <input id="usuario-nome" nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
+        </div>
+        <div class="form-field">
+          <label for="usuario-email">E-mail</label>
+          <input id="usuario-email" nbInput fullWidth formControlName="email" placeholder="email@dominio.com" />
+        </div>
+        <div class="form-field">
+          <label for="usuario-telefone">Telefone</label>
+          <input id="usuario-telefone" nbInput fullWidth formControlName="telefone" placeholder="Telefone (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="usuario-senha">Senha</label>
+          <input id="usuario-senha" nbInput fullWidth formControlName="senha" type="password" placeholder="Deixe em branco para manter" />
+        </div>
+        <div class="form-field">
+          <label for="usuario-perfis">Perfis de acesso</label>
+          <nb-select id="usuario-perfis" fullWidth multiple formControlName="perfilIds" placeholder="Selecione os perfis">
+            <nb-option *ngFor="let perfil of perfis" [value]="perfil.id">{{ perfil.nome }} ({{ perfil.codigo }})</nb-option>
+          </nb-select>
+        </div>
         <nb-checkbox formControlName="ativo">Usuário ativo</nb-checkbox>
         <div class="actions">
           <button nbButton status="primary" [disabled]="carregando">{{ usuarioEditandoId ? 'Atualizar' : 'Salvar' }}</button>

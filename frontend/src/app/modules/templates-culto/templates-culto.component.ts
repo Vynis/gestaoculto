@@ -20,6 +20,7 @@ interface TemplateAcaoGridRow {
 interface TemplateEtapaGridRow {
   index: number;
   sequencia: number;
+  blocoCronograma: string;
   horarioInicialPadrao: string;
   duracaoMinutos: number;
   atividade: string;
@@ -55,6 +56,7 @@ export class TemplatesCultoComponent implements OnInit {
 
   readonly etapaForm = this.fb.group({
     sequencia: [1, [Validators.required, Validators.min(1)]],
+    blocoCronograma: ['', Validators.required],
     horarioInicialPadrao: [''],
     duracaoMinutos: [10, [Validators.required, Validators.min(1)]],
     atividade: ['', Validators.required],
@@ -109,6 +111,7 @@ export class TemplatesCultoComponent implements OnInit {
 
   readonly etapasGridColumnDefs: ColDef<TemplateEtapaGridRow>[] = [
     { headerName: 'Seq', field: 'sequencia', maxWidth: 90, minWidth: 80 },
+    { headerName: 'Bloco', field: 'blocoCronograma', minWidth: 130, maxWidth: 160 },
     { headerName: 'Horário', field: 'horarioInicialPadrao', minWidth: 120, maxWidth: 140 },
     { headerName: 'Duração', field: 'duracaoMinutos', minWidth: 110, maxWidth: 130 },
     { headerName: 'Atividade', field: 'atividade', minWidth: 220 },
@@ -174,6 +177,7 @@ export class TemplatesCultoComponent implements OnInit {
       .map((etapa, etapaIndex) => ({
         id: etapa.id,
         sequencia: etapa.sequencia || etapaIndex + 1,
+        blocoCronograma: this.normalizarBlocoCronograma(etapa.blocoCronograma),
         horarioInicialPadrao: etapa.horarioInicialPadrao || null,
         duracaoMinutos: etapa.duracaoMinutos || 10,
         atividade: (etapa.atividade || '').trim(),
@@ -243,6 +247,7 @@ export class TemplatesCultoComponent implements OnInit {
     this.templateEditandoId = template.id;
     this.etapasTemplate = (template.etapas || []).map((etapa) => ({
       ...etapa,
+      blocoCronograma: this.normalizarBlocoCronograma(etapa.blocoCronograma),
       horarioInicialPadrao: etapa.horarioInicialPadrao || null,
       descricao: etapa.descricao || null,
       observacoes: etapa.observacoes || null,
@@ -291,6 +296,7 @@ export class TemplatesCultoComponent implements OnInit {
       : [];
     const etapa: TemplateEtapa = {
       sequencia: raw.sequencia || 1,
+      blocoCronograma: this.normalizarBlocoCronograma(raw.blocoCronograma),
       horarioInicialPadrao: raw.horarioInicialPadrao || null,
       duracaoMinutos: raw.duracaoMinutos || 10,
       atividade: raw.atividade || '',
@@ -341,6 +347,7 @@ export class TemplatesCultoComponent implements OnInit {
     this.cancelarEdicaoAcaoEtapa();
     this.etapaForm.patchValue({
       sequencia: etapa.sequencia,
+      blocoCronograma: this.normalizarBlocoCronograma(etapa.blocoCronograma),
       horarioInicialPadrao: etapa.horarioInicialPadrao || '',
       duracaoMinutos: etapa.duracaoMinutos,
       atividade: etapa.atividade,
@@ -534,6 +541,7 @@ export class TemplatesCultoComponent implements OnInit {
     return this.etapasTemplate.map((etapa, index) => ({
       index,
       sequencia: etapa.sequencia,
+      blocoCronograma: this.normalizarBlocoCronograma(etapa.blocoCronograma),
       horarioInicialPadrao: etapa.horarioInicialPadrao || '-',
       duracaoMinutos: etapa.duracaoMinutos,
       atividade: etapa.atividade,
@@ -573,6 +581,7 @@ export class TemplatesCultoComponent implements OnInit {
       ativo: template.ativo,
       etapas: (template.etapas || []).map((etapa, etapaIndex) => ({
         sequencia: etapaIndex + 1,
+        blocoCronograma: this.normalizarBlocoCronograma(etapa.blocoCronograma),
         horarioInicialPadrao: etapa.horarioInicialPadrao || null,
         duracaoMinutos: etapa.duracaoMinutos || 10,
         atividade: (etapa.atividade || '').trim(),
@@ -629,11 +638,28 @@ export class TemplatesCultoComponent implements OnInit {
     this.cancelarEdicaoAcaoEtapa();
     this.etapaForm.reset({
       sequencia: this.etapasTemplate.length + 1,
+      blocoCronograma: '',
       horarioInicialPadrao: '',
       duracaoMinutos: 10,
       atividade: '',
       descricao: ''
     });
+  }
+
+  get blocosCronogramaDisponiveis(): string[] {
+    const base = ['PRINCIPAL', 'LOUNGE', 'ADICIONAL'];
+    const dinamicos = this.etapasTemplate
+      .map((item) => this.normalizarBlocoCronograma(item.blocoCronograma))
+      .filter((item) => !!item);
+
+    return Array.from(new Set([...base, ...dinamicos]))
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+
+  get ministeriosOrdenados(): Ministerio[] {
+    return (this.ministerios || [])
+      .slice()
+      .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
   }
 
   private reordenarEtapas(): void {
@@ -652,5 +678,10 @@ export class TemplatesCultoComponent implements OnInit {
 
   nomeMinisterio(id: number): string {
     return this.ministerios.find((x) => x.id === id)?.nome || `Ministerio #${id}`;
+  }
+
+  private normalizarBlocoCronograma(valor: string | null | undefined): string {
+    const texto = String(valor || '').trim();
+    return texto ? texto.toUpperCase() : 'PRINCIPAL';
   }
 }

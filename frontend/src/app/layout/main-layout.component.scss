@@ -37,6 +37,17 @@
   border-right: 1px solid #d9e5f5;
 }
 
+.version-box {
+  margin: 1rem 0.75rem 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #d9e5f5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: #6b778c;
+  font-size: 0.7rem;
+}
+
 @media (max-width: 768px) {
   .brand-subtitle {
     display: none;

@@ -13,6 +13,12 @@ namespace GestaoCulto.API.Controllers
     public class RepertorioItemRequest
     {
         public long MusicaId { get; set; }
+        public string? MusicaTitulo { get; set; }
+        public string? MusicaArtistaBanda { get; set; }
+        public string? MusicaTom { get; set; }
+        public string? MusicaLinkCifra { get; set; }
+        public string? MusicaLinkVideo { get; set; }
+        public string? MusicaObservacoes { get; set; }
         public long? EtapaCultoId { get; set; }
         public int Ordem { get; set; }
         public string? Responsavel { get; set; }
@@ -65,7 +71,24 @@ namespace GestaoCulto.API.Controllers
                 {
                     x.Id,
                     x.MusicaId,
-                    MusicaTitulo = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                    MusicaTitulo = !string.IsNullOrWhiteSpace(x.MusicaTitulo)
+                        ? x.MusicaTitulo
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                    MusicaArtistaBanda = !string.IsNullOrWhiteSpace(x.MusicaArtistaBanda)
+                        ? x.MusicaArtistaBanda
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.ArtistaBanda).FirstOrDefault(),
+                    MusicaTom = !string.IsNullOrWhiteSpace(x.MusicaTom)
+                        ? x.MusicaTom
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Tom).FirstOrDefault(),
+                    MusicaLinkCifra = !string.IsNullOrWhiteSpace(x.MusicaLinkCifra)
+                        ? x.MusicaLinkCifra
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkCifra).FirstOrDefault(),
+                    MusicaLinkVideo = !string.IsNullOrWhiteSpace(x.MusicaLinkVideo)
+                        ? x.MusicaLinkVideo
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkVideo).FirstOrDefault(),
+                    MusicaObservacoes = !string.IsNullOrWhiteSpace(x.MusicaObservacoes)
+                        ? x.MusicaObservacoes
+                        : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Observacoes).FirstOrDefault(),
                     x.EtapaCultoId,
                     EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
                     x.Ordem,
@@ -123,6 +146,12 @@ namespace GestaoCulto.API.Controllers
                 {
                     RepertorioCultoId = repertorio.Id,
                     MusicaId = item.MusicaId,
+                    MusicaTitulo = item.MusicaTitulo,
+                    MusicaArtistaBanda = item.MusicaArtistaBanda,
+                    MusicaTom = item.MusicaTom,
+                    MusicaLinkCifra = item.MusicaLinkCifra,
+                    MusicaLinkVideo = item.MusicaLinkVideo,
+                    MusicaObservacoes = item.MusicaObservacoes,
                     EtapaCultoId = item.EtapaCultoId,
                     Ordem = i + 1,
                     Responsavel = item.Responsavel,
@@ -170,6 +199,12 @@ namespace GestaoCulto.API.Controllers
                 .Select(x => new RepertorioItemRequest
                 {
                     MusicaId = x.MusicaId,
+                    MusicaTitulo = x.MusicaTitulo,
+                    MusicaArtistaBanda = x.MusicaArtistaBanda,
+                    MusicaTom = x.MusicaTom,
+                    MusicaLinkCifra = x.MusicaLinkCifra,
+                    MusicaLinkVideo = x.MusicaLinkVideo,
+                    MusicaObservacoes = x.MusicaObservacoes,
                     EtapaCultoId = null,
                     Ordem = x.Ordem,
                     Responsavel = x.Responsavel,

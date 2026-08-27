@@ -24,6 +24,7 @@ export interface TemplateEtapa {
   horarioInicialPadrao: string | null;
   duracaoMinutos: number;
   atividade: string;
+  blocoCronograma?: string | null;
   descricao: string | null;
   ministerioResponsavelId: number | null;
   ministerioIds: number[];

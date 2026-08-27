@@ -7,7 +7,13 @@
 </div>
 
 <nb-card>
-  <nb-card-header>Voluntários cadastrados</nb-card-header>
+  <nb-card-header class="grid-header">
+    <span>Voluntários cadastrados</span>
+    <div class="grid-search">
+      <input nbInput fullWidth type="search" placeholder="Buscar voluntário..." [(ngModel)]="filtroGrid" [ngModelOptions]="{ standalone: true }" />
+      <button nbButton size="small" status="basic" type="button" *ngIf="filtroGrid" (click)="filtroGrid = ''">Limpar</button>
+    </div>
+  </nb-card-header>
   <nb-card-body>
     <ag-grid-angular
       class="ag-theme-alpine voluntarios-grid"
@@ -17,6 +23,7 @@
       [pagination]="true"
       [paginationPageSize]="paginationPageSize"
       [localeText]="localeText"
+      [quickFilterText]="filtroGrid"
       (cellClicked)="onGridCellClicked($event)"
     ></ag-grid-angular>
   </nb-card-body>
@@ -28,21 +35,82 @@
     <nb-card-header>{{ voluntarioEditandoId ? 'Editar voluntário' : 'Novo voluntário' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
-        <nb-select fullWidth formControlName="usuarioId" placeholder="Usuário de acesso (opcional)">
-          <nb-option [value]="null">Sem vínculo</nb-option>
-          <nb-option *ngFor="let usuario of usuariosDisponiveis()" [value]="usuario.id">
-            {{ usuario.nome }} ({{ usuario.email }})
-          </nb-option>
-        </nb-select>
-        <input nbInput fullWidth formControlName="telefone" placeholder="Telefone" />
-        <input nbInput fullWidth formControlName="email" placeholder="E-mail" />
-        <nb-select fullWidth multiple formControlName="ministerioIds" placeholder="Ministérios de atuação">
-          <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
-        </nb-select>
-        <input nbInput fullWidth formControlName="observacoes" placeholder="Observações" />
-        <input nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Restrições de disponibilidade" />
+        <div class="form-field">
+          <label for="vol-nome">Nome completo</label>
+          <input id="vol-nome" nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
+        </div>
+        <div class="form-field">
+          <label for="vol-usuario">Usuário de acesso (opcional)</label>
+          <nb-select id="vol-usuario" fullWidth formControlName="usuarioId" placeholder="Selecione um usuário">
+            <nb-option [value]="null">Sem vínculo</nb-option>
+            <nb-option *ngFor="let usuario of usuariosDisponiveis()" [value]="usuario.id">
+              {{ usuario.nome }} ({{ usuario.email }})
+            </nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="vol-telefone">Telefone</label>
+          <input id="vol-telefone" nbInput fullWidth formControlName="telefone" placeholder="Telefone (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="vol-email">E-mail</label>
+          <input id="vol-email" nbInput fullWidth formControlName="email" placeholder="E-mail (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="vol-ministerios">Ministérios de atuação</label>
+          <nb-select id="vol-ministerios" fullWidth multiple formControlName="ministerioIds" placeholder="Selecione os ministérios">
+            <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="vol-observacoes">Observações</label>
+          <input id="vol-observacoes" nbInput fullWidth formControlName="observacoes" placeholder="Observações (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="vol-restricoes">Restrições de disponibilidade</label>
+          <input id="vol-restricoes" nbInput fullWidth formControlName="restricoesIndisponibilidade" placeholder="Ex.: Não pode aos sábados" />
+        </div>
         <nb-checkbox formControlName="ativo">Voluntário ativo</nb-checkbox>
+        <section class="telegram-panel" *ngIf="voluntarioEditandoId && podeGerenciarTelegram">
+          <div>
+            <strong>Telegram</strong>
+            <p *ngIf="telegramCarregando && !telegramStatus">Consultando vínculo...</p>
+            <p *ngIf="telegramStatus?.ativo">
+              Conta vinculada
+              <span *ngIf="telegramStatus?.username">a @{{ telegramStatus?.username }}</span>.
+            </p>
+            <p *ngIf="telegramStatus && !telegramStatus.ativo">Nenhuma conta ativa vinculada.</p>
+          </div>
+          <div class="telegram-actions">
+            <button
+              nbButton
+              size="small"
+              status="info"
+              type="button"
+              *ngIf="!telegramStatus?.ativo"
+              [disabled]="telegramCarregando"
+              (click)="gerarVinculoTelegram()"
+            >
+              Gerar link de ativação
+            </button>
+            <button
+              nbButton
+              size="small"
+              status="danger"
+              type="button"
+              *ngIf="telegramStatus?.ativo"
+              [disabled]="telegramCarregando"
+              (click)="desvincularTelegram()"
+            >
+              Desvincular
+            </button>
+          </div>
+          <div class="telegram-link" *ngIf="telegramVinculo">
+            <input nbInput fullWidth readonly [value]="telegramVinculo.url" />
+            <button nbButton size="small" status="basic" type="button" (click)="copiarVinculoTelegram()">Copiar</button>
+            <small>Válido até {{ telegramVinculo.expiraEm | date:'dd/MM/yyyy HH:mm' }}.</small>
+          </div>
+        </section>
         <div class="actions">
           <button nbButton status="primary" [disabled]="carregando">
             {{ voluntarioEditandoId ? 'Atualizar voluntário' : 'Salvar voluntário' }}

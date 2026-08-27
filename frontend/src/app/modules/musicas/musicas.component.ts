@@ -70,9 +70,23 @@ export class MusicasComponent implements OnInit {
     }
 
     const raw = this.form.getRawValue();
+    const titulo = (raw.titulo || '').trim();
+    const artistaBanda = (raw.artistaBanda || '').trim();
+
+    const duplicadaLocal = this.musicas.some((musica) =>
+      musica.id !== this.musicaEditandoId
+      && musica.titulo.trim().toLowerCase() === titulo.toLowerCase()
+      && musica.artistaBanda.trim().toLowerCase() === artistaBanda.toLowerCase()
+    );
+
+    if (duplicadaLocal) {
+      this.toastr.warning('Já existe música com mesmo título e artista/banda.', 'Louvor');
+      return;
+    }
+
     const payload: MusicaRequest = {
-      titulo: raw.titulo || '',
-      artistaBanda: raw.artistaBanda || '',
+      titulo,
+      artistaBanda,
       tom: raw.tom || null,
       linkCifra: raw.linkCifra || null,
       linkVideo: raw.linkVideo || null,

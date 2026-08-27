@@ -12,6 +12,7 @@ namespace GestaoCulto.Domain.Entities
         public TimeSpan? HorarioInicialPadrao { get; set; }
         public int DuracaoMinutos { get; set; }
         public string Atividade { get; set; } = string.Empty;
+        public string BlocoCronograma { get; set; } = "PRINCIPAL";
         public string? Descricao { get; set; }
         public long? MinisterioResponsavelId { get; set; }
         public Ministerio? MinisterioResponsavel { get; set; }

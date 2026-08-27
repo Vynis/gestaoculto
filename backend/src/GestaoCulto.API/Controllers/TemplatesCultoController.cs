@@ -25,6 +25,7 @@ namespace GestaoCulto.API.Controllers
         public string? HorarioInicialPadrao { get; set; }
         public int DuracaoMinutos { get; set; }
         public string Atividade { get; set; } = string.Empty;
+        public string? BlocoCronograma { get; set; }
         public string? Descricao { get; set; }
         public long? MinisterioResponsavelId { get; set; }
         public long[] MinisterioIds { get; set; } = Array.Empty<long>();
@@ -85,6 +86,7 @@ namespace GestaoCulto.API.Controllers
                     HorarioInicialPadrao = x.HorarioInicialPadrao.HasValue ? x.HorarioInicialPadrao.Value.ToString() : null,
                     x.DuracaoMinutos,
                     x.Atividade,
+                    x.BlocoCronograma,
                     x.Descricao,
                     x.MinisterioResponsavelId,
                     x.Observacoes,
@@ -145,6 +147,7 @@ namespace GestaoCulto.API.Controllers
                 x.HorarioInicialPadrao,
                 x.DuracaoMinutos,
                 x.Atividade,
+                x.BlocoCronograma,
                 x.Descricao,
                 x.MinisterioResponsavelId,
                 MinisterioIds = mapaMinisteriosIds.ContainsKey(x.Id) ? mapaMinisteriosIds[x.Id] : Array.Empty<long>(),
@@ -296,6 +299,7 @@ namespace GestaoCulto.API.Controllers
                     HorarioInicialPadrao = horario,
                     DuracaoMinutos = item.DuracaoMinutos,
                     Atividade = item.Atividade,
+                    BlocoCronograma = NormalizarBlocoCronograma(item.BlocoCronograma),
                     Descricao = item.Descricao,
                     MinisterioResponsavelId = ministerioIds.Any() ? ministerioIds.First() : item.MinisterioResponsavelId,
                     Observacoes = item.Observacoes,
@@ -336,6 +340,7 @@ namespace GestaoCulto.API.Controllers
                     HorarioInicialPadrao = x.HorarioInicialPadrao.HasValue ? x.HorarioInicialPadrao.Value.ToString() : null,
                     x.DuracaoMinutos,
                     x.Atividade,
+                    x.BlocoCronograma,
                     x.Descricao,
                     x.MinisterioResponsavelId,
                     x.Observacoes,
@@ -395,6 +400,7 @@ namespace GestaoCulto.API.Controllers
                 x.HorarioInicialPadrao,
                 x.DuracaoMinutos,
                 x.Atividade,
+                x.BlocoCronograma,
                 x.Descricao,
                 x.MinisterioResponsavelId,
                 MinisterioIds = mapaMinisteriosIds.ContainsKey(x.Id) ? mapaMinisteriosIds[x.Id] : Array.Empty<long>(),
@@ -486,6 +492,12 @@ namespace GestaoCulto.API.Controllers
             }
 
             return null;
+        }
+
+        private static string NormalizarBlocoCronograma(string? valor)
+        {
+            var texto = (valor ?? string.Empty).Trim();
+            return string.IsNullOrWhiteSpace(texto) ? "PRINCIPAL" : texto;
         }
     }
 }

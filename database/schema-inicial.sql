@@ -90,6 +90,21 @@ CREATE TABLE IF NOT EXISTS ministerio (
   KEY ix_ministerio_ativo (ativo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS ministerio_funcao_padrao (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ministerio_id BIGINT UNSIGNED NOT NULL,
+  nome VARCHAR(120) NOT NULL,
+  ordem INT NOT NULL DEFAULT 0,
+  ativo TINYINT(1) NOT NULL DEFAULT 1,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  KEY ix_ministerio_funcao_padrao_ministerio (ministerio_id),
+  KEY ix_ministerio_funcao_padrao_ativo (ativo),
+  UNIQUE KEY uq_ministerio_funcao_padrao_nome (ministerio_id, nome),
+  CONSTRAINT fk_ministerio_funcao_padrao_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS usuario_ministerio_lider (
   usuario_id BIGINT UNSIGNED NOT NULL,
   ministerio_id BIGINT UNSIGNED NOT NULL,
@@ -169,6 +184,76 @@ CREATE TABLE IF NOT EXISTS voluntario_acesso_recuperacao (
   KEY ix_voluntario_recuperacao_expira (expira_em),
   KEY ix_voluntario_recuperacao_usado (usado_em),
   CONSTRAINT fk_voluntario_recuperacao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS voluntario_telegram_conexao (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  telegram_user_id BIGINT NOT NULL,
+  telegram_chat_id BIGINT NOT NULL,
+  telegram_username VARCHAR(100) NULL,
+  telegram_primeiro_nome VARCHAR(150) NULL,
+  ativo TINYINT(1) NOT NULL DEFAULT 1,
+  consentimento_em DATETIME NOT NULL,
+  consentimento_versao VARCHAR(30) NOT NULL,
+  vinculado_em DATETIME NOT NULL,
+  ultima_interacao_em DATETIME NULL,
+  desvinculado_em DATETIME NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_voluntario_telegram_conexao_voluntario (voluntario_id),
+  UNIQUE KEY uq_voluntario_telegram_conexao_usuario (telegram_user_id),
+  UNIQUE KEY uq_voluntario_telegram_conexao_chat (telegram_chat_id),
+  KEY ix_voluntario_telegram_conexao_ativo (ativo),
+  CONSTRAINT fk_voluntario_telegram_conexao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS voluntario_telegram_vinculo_token (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  token_hash VARCHAR(64) NOT NULL,
+  expira_em DATETIME NOT NULL,
+  usado_em DATETIME NULL,
+  revogado_em DATETIME NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_voluntario_telegram_vinculo_token_hash (token_hash),
+  KEY ix_voluntario_telegram_vinculo_token_voluntario (voluntario_id),
+  KEY ix_voluntario_telegram_vinculo_token_expira (expira_em),
+  CONSTRAINT fk_voluntario_telegram_vinculo_token_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS telegram_update_processado (
+  telegram_update_id BIGINT NOT NULL,
+  recebido_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  status VARCHAR(20) NOT NULL DEFAULT 'PROCESSANDO',
+  claim_id VARCHAR(36) NULL,
+  iniciado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  concluido_em DATETIME NULL,
+  PRIMARY KEY (telegram_update_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS voluntario_google_calendar_conexao (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  google_email VARCHAR(180) NOT NULL,
+  google_sub VARCHAR(150) NULL,
+  access_token VARCHAR(2048) NOT NULL,
+  refresh_token VARCHAR(2048) NOT NULL,
+  access_token_expira_em DATETIME NULL,
+  calendario_google_id VARCHAR(255) NULL,
+  calendario_google_nome VARCHAR(255) NULL,
+  ativo TINYINT(1) NOT NULL DEFAULT 1,
+  ultimo_sync_em DATETIME NULL,
+  ultimo_erro_sync VARCHAR(1000) NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_voluntario_google_calendar_conexao_voluntario (voluntario_id),
+  KEY ix_voluntario_google_calendar_conexao_ativo (ativo),
+  CONSTRAINT fk_voluntario_google_calendar_conexao_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =========================
@@ -387,11 +472,55 @@ CREATE TABLE IF NOT EXISTS status_disponibilidade_voluntario (
   UNIQUE KEY uq_status_disp_vol_nome (nome)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  culto_id BIGINT UNSIGNED NOT NULL,
+  expira_em DATETIME NOT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_telegram_disp_rascunho_voluntario_culto (voluntario_id, culto_id),
+  KEY ix_telegram_disp_rascunho_expira (expira_em),
+  CONSTRAINT fk_telegram_disp_rascunho_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_telegram_disp_rascunho_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho_ministerio (
+  telegram_disponibilidade_rascunho_id BIGINT UNSIGNED NOT NULL,
+  ministerio_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (telegram_disponibilidade_rascunho_id, ministerio_id),
+  KEY ix_telegram_disp_rascunho_ministerio (ministerio_id),
+  CONSTRAINT fk_telegram_disp_rascunho_min_rascunho FOREIGN KEY (telegram_disponibilidade_rascunho_id) REFERENCES telegram_disponibilidade_rascunho(id) ON DELETE CASCADE,
+  CONSTRAINT fk_telegram_disp_rascunho_min_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS relatorio_culto_compartilhamento (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  culto_id BIGINT UNSIGNED NOT NULL,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  token_hash VARCHAR(64) NOT NULL,
+  expira_em DATETIME NOT NULL,
+  ultimo_acesso_em DATETIME NULL,
+  revogado_em DATETIME NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_relatorio_culto_compartilhamento_token (token_hash),
+  KEY ix_relatorio_culto_compartilhamento_culto (culto_id),
+  KEY ix_relatorio_culto_compartilhamento_voluntario (voluntario_id),
+  KEY ix_relatorio_culto_compartilhamento_expira (expira_em),
+  CONSTRAINT fk_relatorio_compartilhamento_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE,
+  CONSTRAINT fk_relatorio_compartilhamento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS escala (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   culto_id BIGINT UNSIGNED NOT NULL,
   etapa_culto_id BIGINT UNSIGNED NULL,
-  voluntario_id BIGINT UNSIGNED NOT NULL,
+  voluntario_id BIGINT UNSIGNED NULL,
+  voluntario_avulso_nome VARCHAR(160) NULL,
+  voluntario_avulso_telefone VARCHAR(40) NULL,
   ministerio_id BIGINT UNSIGNED NULL,
   funcao VARCHAR(120) NOT NULL,
   horario_previsto DATETIME NULL,
@@ -418,6 +547,23 @@ CREATE TABLE IF NOT EXISTS escala (
   CONSTRAINT fk_escala_substituido_por FOREIGN KEY (substituido_por_voluntario_id) REFERENCES voluntario(id) ON DELETE SET NULL,
   CONSTRAINT fk_escala_criado_por FOREIGN KEY (criado_por) REFERENCES usuario(id),
   CONSTRAINT fk_escala_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuario(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS voluntario_google_calendar_evento (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  escala_id BIGINT UNSIGNED NOT NULL,
+  calendario_google_id VARCHAR(255) NOT NULL,
+  evento_google_id VARCHAR(255) NOT NULL,
+  ultima_sincronizacao_em DATETIME NULL,
+  ultimo_erro_sync VARCHAR(1000) NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_voluntario_google_calendar_evento_escala (escala_id),
+  KEY ix_voluntario_google_calendar_evento_voluntario (voluntario_id),
+  CONSTRAINT fk_voluntario_google_calendar_evento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_voluntario_google_calendar_evento_escala FOREIGN KEY (escala_id) REFERENCES escala(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS presenca_escala (

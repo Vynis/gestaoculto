@@ -100,8 +100,8 @@ namespace GestaoCulto.API.Controllers
             var voluntarioIds = itens.Select(x => x.VoluntarioId).Distinct().ToList();
             var escalas = await _db.Escalas
                 .AsNoTracking()
-                .Where(x => cultoIds.Contains(x.CultoId) && voluntarioIds.Contains(x.VoluntarioId))
-                .Select(x => new { x.CultoId, x.VoluntarioId })
+                .Where(x => cultoIds.Contains(x.CultoId) && x.VoluntarioId.HasValue && voluntarioIds.Contains(x.VoluntarioId.Value))
+                .Select(x => new { x.CultoId, VoluntarioId = x.VoluntarioId!.Value })
                 .Distinct()
                 .ToListAsync();
             var chavesEscala = escalas

@@ -42,12 +42,30 @@
     <nb-card-header>{{ musicaEditandoId ? 'Editar música' : 'Nova música' }}</nb-card-header>
     <nb-card-body>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <input nbInput formControlName="titulo" placeholder="Título" />
-        <input nbInput formControlName="artistaBanda" placeholder="Artista/Banda" />
-        <input nbInput formControlName="tom" placeholder="Tom" />
-        <input nbInput formControlName="linkCifra" placeholder="Link de cifra" />
-        <input nbInput formControlName="linkVideo" placeholder="Link de vídeo" />
-        <input nbInput formControlName="observacoes" placeholder="Observações" />
+        <div class="form-field">
+          <label for="musica-titulo">Título</label>
+          <input id="musica-titulo" nbInput formControlName="titulo" placeholder="Título da música" />
+        </div>
+        <div class="form-field">
+          <label for="musica-artista">Artista/Banda</label>
+          <input id="musica-artista" nbInput formControlName="artistaBanda" placeholder="Artista ou banda" />
+        </div>
+        <div class="form-field">
+          <label for="musica-tom">Tom</label>
+          <input id="musica-tom" nbInput formControlName="tom" placeholder="Ex.: D, Gm" />
+        </div>
+        <div class="form-field">
+          <label for="musica-cifra">Link da cifra</label>
+          <input id="musica-cifra" nbInput formControlName="linkCifra" placeholder="URL da cifra (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="musica-video">Link de vídeo</label>
+          <input id="musica-video" nbInput formControlName="linkVideo" placeholder="URL de referência (opcional)" />
+        </div>
+        <div class="form-field">
+          <label for="musica-obs">Observações</label>
+          <input id="musica-obs" nbInput formControlName="observacoes" placeholder="Observações (opcional)" />
+        </div>
         <nb-checkbox formControlName="ativo">Música ativa</nb-checkbox>
         <div class="actions">
           <button nbButton status="primary">{{ musicaEditandoId ? 'Atualizar' : 'Salvar' }}</button>

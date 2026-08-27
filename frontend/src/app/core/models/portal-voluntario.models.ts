@@ -9,6 +9,7 @@ export interface VoluntarioCompromisso {
   funcao: string;
   etapaCultoId: number | null;
   etapaAtividade: string | null;
+  etapaBlocoCronograma?: string | null;
   observacoes: string | null;
   presencaStatusId: number;
   presencaStatusNome: string | null;
@@ -155,4 +156,18 @@ export interface VoluntarioEscalaDetalheResponse {
   item: VoluntarioCompromisso;
   colegasMesmoMinisterio: VoluntarioColegaMinisterio[];
   repertorioLouvor: VoluntarioRepertorioLouvor | null;
+}
+
+export interface VoluntarioGoogleCalendarStatus {
+  conectado: boolean;
+  googleEmail: string | null;
+  calendarioGoogleId: string | null;
+  calendarioGoogleNome: string | null;
+  ultimoSyncEm: string | null;
+  ultimoErroSync: string | null;
+}
+
+export interface VoluntarioGoogleCalendarItem {
+  id: string;
+  summary: string;
 }

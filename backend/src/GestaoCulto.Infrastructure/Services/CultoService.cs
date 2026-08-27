@@ -29,6 +29,7 @@ namespace GestaoCulto.Infrastructure.Services
                 .Select(c => new CultoResponseDto
                 {
                     Id = c.Id,
+                    RecorrenciaId = c.RecorrenciaId,
                     Nome = c.Nome,
                     TipoCulto = c.TipoCulto,
                     DataCulto = c.DataCulto,
@@ -50,6 +51,7 @@ namespace GestaoCulto.Infrastructure.Services
                 .Select(c => new CultoResponseDto
                 {
                     Id = c.Id,
+                    RecorrenciaId = c.RecorrenciaId,
                     Nome = c.Nome,
                     TipoCulto = c.TipoCulto,
                     DataCulto = c.DataCulto,
