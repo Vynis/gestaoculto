@@ -1,15 +1,23 @@
-<nb-layout>
+<nb-layout windowMode>
   <nb-layout-header fixed>
-    <div class="header">
-      <div>
-        <strong>Portal do Voluntário</strong>
+    <div class="topbar">
+      <button nbButton ghost size="small" status="primary" type="button" (click)="alternarMenu()">
+        <nb-icon icon="menu-2-outline"></nb-icon>
+      </button>
+      <div class="brand">
+        <span class="brand-title">Portal do Voluntário</span>
+        <span class="brand-subtitle">Escalas, disponibilidade e equipe</span>
       </div>
-      <button nbButton status="danger" size="tiny" (click)="sair()">Sair</button>
+      <button nbButton status="danger" size="small" (click)="sair()">Sair</button>
     </div>
   </nb-layout-header>
 
-  <nb-sidebar state="collapsed" responsive>
+  <nb-sidebar tag="voluntario-menu-sidebar" responsive>
     <nb-menu [items]="menu"></nb-menu>
+    <div class="version-box" *ngIf="versaoFrontendLabel || versaoBackendLabel">
+      <small *ngIf="versaoFrontendLabel">Web {{ versaoFrontendLabel }}</small>
+      <small *ngIf="versaoBackendLabel">API {{ versaoBackendLabel }}</small>
+    </div>
   </nb-sidebar>
 
   <nb-layout-column>

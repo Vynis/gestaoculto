@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Sentry.AspNetCore;
 
 namespace GestaoCulto.API
 {
@@ -13,7 +14,11 @@ namespace GestaoCulto.API
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseSentry();
+                    webBuilder.UseStartup<Startup>();
+                });
         }
     }
 }

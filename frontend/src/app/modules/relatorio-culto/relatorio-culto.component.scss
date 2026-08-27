@@ -5,14 +5,8 @@
 }
 
 .relatorio-page {
-  max-width: 1080px;
+  max-width: 1250px;
   margin: 0 auto;
-}
-
-.relatorio-page.publico nb-card {
-  box-shadow: none;
-  border: 1px solid #edf1f7;
-  border-radius: 0.8rem;
 }
 
 .page-header {
@@ -36,77 +30,145 @@
   flex-wrap: wrap;
 }
 
-.culto-bloco {
-  display: grid;
-  gap: 0.9rem;
-  margin-bottom: 1rem;
-}
-
-.grupo-equipe {
-  margin-bottom: 0.85rem;
-}
-
-.grupo-equipe h4 {
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-  color: #214061;
-}
-
-.culto-topo h3 {
-  margin: 0 0 0.25rem;
-}
-
-.culto-topo p {
-  margin: 0;
-}
-
-.resumo-grid {
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-.linha {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.linha p,
-.linha small {
-  margin: 0;
-  display: block;
-}
-
-.acoes-lista {
-  margin: 0.25rem 0 0;
-  padding-left: 1rem;
-}
-
-.status {
-  border: 1px solid #cfd7e6;
+.filtro-flutuante {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 15;
+  margin-left: auto;
+  margin-bottom: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #c7d6ec;
   border-radius: 999px;
-  padding: 0.2rem 0.6rem;
+  background: #ffffff;
+  color: #1f48b6;
   font-size: 0.78rem;
-  color: #28496f;
-  background: #f3f8ff;
-  white-space: nowrap;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(17, 37, 120, 0.08);
+}
+
+.filtro-flutuante:hover {
+  background: #f4f8ff;
+}
+
+.modelo-topo {
+  margin-bottom: 0.35rem;
+}
+
+.faixa-amarela,
+.faixa-data {
+  border: 1px solid #3f3f3f;
+  padding: 0.2rem 0.35rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.faixa-amarela {
+  background: #fff200;
+}
+
+.faixa-data {
+  background: #ffffff;
+  border-top: none;
+}
+
+.tabela-wrapper {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #3f3f3f;
+  margin-bottom: 0.8rem;
+}
+
+.tabela-menor {
+  max-width: none;
+}
+
+.tabelas-menores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.planilha-modelo,
+.planilha-lideres,
+.planilha-repertorio {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.planilha-modelo {
+  min-width: 1400px;
+}
+
+.planilha-modelo th,
+.planilha-modelo td,
+.planilha-lideres th,
+.planilha-lideres td,
+.planilha-repertorio th,
+.planilha-repertorio td {
+  border: 1px solid #3f3f3f;
+  padding: 0.3rem 0.35rem;
+  font-size: 0.76rem;
+  line-height: 1.25;
+  vertical-align: top;
+}
+
+.planilha-modelo thead th {
+  background: #fff200;
+  color: #111827;
+  text-align: center;
+  font-weight: 700;
+}
+
+.planilha-lideres thead th {
+  background: #2f75e8;
+  color: #ffffff;
+}
+
+.planilha-repertorio thead th {
+  background: #34a853;
+  color: #ffffff;
+}
+
+.secao-ministerio.variante-a .planilha-lideres thead th {
+  background: #ef6c00;
+  color: #ffffff;
+}
+
+.secao-ministerio.variante-b .planilha-lideres thead th {
+  background: #00897b;
+  color: #ffffff;
+}
+
+.secao-ministerio.variante-c .planilha-lideres thead th {
+  background: #6d4c41;
+  color: #ffffff;
+}
+
+.planilha-modelo td,
+.planilha-lideres td,
+.planilha-repertorio td {
+  white-space: pre-line;
+}
+
+.col-horario,
+.col-duracao {
+  text-align: center;
+  font-weight: 700;
+  background: #f9f9f9;
+}
+
+.col-atividade {
+  font-weight: 600;
 }
 
 :host ::ng-deep nb-card-header {
   font-weight: 700;
-}
-
-@media (max-width: 640px) {
-  .linha {
-    flex-direction: column;
-  }
-
-  .status {
-    white-space: normal;
-  }
 }
 
 @media print {
@@ -125,9 +187,27 @@
     padding: 0 !important;
   }
 
-  :host ::ng-deep nb-card {
-    box-shadow: none !important;
-    border: 1px solid #d9e2ef !important;
-    break-inside: avoid;
+  .tabela-wrapper {
+    overflow: visible;
+  }
+
+  .tabelas-menores-grid {
+    display: block;
+  }
+}
+
+@media (max-width: 900px) {
+  .tabelas-menores-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filtro-flutuante {
+    width: 100%;
+    position: static;
+    margin-left: 0;
+  }
+
+  .timeline-card dl {
+    grid-template-columns: 1fr;
   }
 }

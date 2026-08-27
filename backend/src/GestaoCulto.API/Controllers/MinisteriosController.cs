@@ -23,6 +23,14 @@ namespace GestaoCulto.API.Controllers
         public bool Ativo { get; set; } = true;
         public List<MinisterioLiderRequest> Lideres { get; set; } = new List<MinisterioLiderRequest>();
         public List<long> VoluntarioIds { get; set; } = new List<long>();
+        public List<MinisterioFuncaoPadraoRequest> FuncoesPadrao { get; set; } = new List<MinisterioFuncaoPadraoRequest>();
+    }
+
+    public class MinisterioFuncaoPadraoRequest
+    {
+        public string Nome { get; set; } = string.Empty;
+        public int? Ordem { get; set; }
+        public bool Ativo { get; set; } = true;
     }
 
     [ApiController]
@@ -87,7 +95,23 @@ namespace GestaoCulto.API.Controllers
                         x.VoluntarioId,
                         VoluntarioNome = v.Nome,
                         x.Principal
-                    })
+                })
+                .ToListAsync();
+
+            var funcoesPadrao = await _db.MinisteriosFuncoesPadrao
+                .AsNoTracking()
+                .Where(x => ids.Contains(x.MinisterioId))
+                .OrderBy(x => x.MinisterioId)
+                .ThenBy(x => x.Ordem)
+                .ThenBy(x => x.Nome)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.MinisterioId,
+                    x.Nome,
+                    x.Ordem,
+                    x.Ativo
+                })
                 .ToListAsync();
 
             var resposta = listaBase.Select(item => new
@@ -98,7 +122,8 @@ namespace GestaoCulto.API.Controllers
                 item.Descricao,
                 item.Ativo,
                 Lideres = lideres.Where(x => x.MinisterioId == item.Id).OrderByDescending(x => x.Principal).ThenBy(x => x.UsuarioNome),
-                Voluntarios = voluntarios.Where(x => x.MinisterioId == item.Id).OrderByDescending(x => x.Principal).ThenBy(x => x.VoluntarioNome)
+                Voluntarios = voluntarios.Where(x => x.MinisterioId == item.Id).OrderByDescending(x => x.Principal).ThenBy(x => x.VoluntarioNome),
+                FuncoesPadrao = funcoesPadrao.Where(x => x.MinisterioId == item.Id).OrderBy(x => x.Ordem).ThenBy(x => x.Nome)
             });
 
             return Ok(resposta);
@@ -140,7 +165,7 @@ namespace GestaoCulto.API.Controllers
             _db.Ministerios.Add(entity);
             await _db.SaveChangesAsync();
 
-            await SalvarVinculos(entity.Id, dto.Lideres, dto.VoluntarioIds);
+            await SalvarVinculos(entity.Id, dto.Lideres, dto.VoluntarioIds, dto.FuncoesPadrao);
             return Ok(new { mensagem = "Ministério criado com sucesso.", id = entity.Id });
         }
 
@@ -162,6 +187,7 @@ namespace GestaoCulto.API.Controllers
 
             var lideresAtuais = await _db.MinisteriosLideres.Where(x => x.MinisterioId == id).ToListAsync();
             var voluntariosAtuais = await _db.MinisteriosVoluntarios.Where(x => x.MinisterioId == id).ToListAsync();
+            var funcoesAtuais = await _db.MinisteriosFuncoesPadrao.Where(x => x.MinisterioId == id).ToListAsync();
             if (lideresAtuais.Any())
             {
                 _db.MinisteriosLideres.RemoveRange(lideresAtuais);
@@ -172,8 +198,13 @@ namespace GestaoCulto.API.Controllers
                 _db.MinisteriosVoluntarios.RemoveRange(voluntariosAtuais);
             }
 
+            if (funcoesAtuais.Any())
+            {
+                _db.MinisteriosFuncoesPadrao.RemoveRange(funcoesAtuais);
+            }
+
             await _db.SaveChangesAsync();
-            await SalvarVinculos(id, dto.Lideres, dto.VoluntarioIds);
+            await SalvarVinculos(id, dto.Lideres, dto.VoluntarioIds, dto.FuncoesPadrao);
 
             return Ok(new { mensagem = "Ministério atualizado com sucesso." });
         }
@@ -205,7 +236,7 @@ namespace GestaoCulto.API.Controllers
             return Ok(new { mensagem = "Ministério excluído com sucesso." });
         }
 
-        private async Task SalvarVinculos(long ministerioId, List<MinisterioLiderRequest> lideres, List<long> voluntarioIds)
+        private async Task SalvarVinculos(long ministerioId, List<MinisterioLiderRequest> lideres, List<long> voluntarioIds, List<MinisterioFuncaoPadraoRequest> funcoesPadrao)
         {
             var lideresNormalizados = (lideres ?? new List<MinisterioLiderRequest>())
                 .Where(x => x.UsuarioId > 0)
@@ -245,6 +276,33 @@ namespace GestaoCulto.API.Controllers
                     MinisterioId = ministerioId,
                     VoluntarioId = voluntariosNormalizados[i],
                     Principal = i == 0,
+                    CriadoEm = DateTime.UtcNow
+                });
+            }
+
+            var funcoesNormalizadas = (funcoesPadrao ?? new List<MinisterioFuncaoPadraoRequest>())
+                .Select((item, index) => new
+                {
+                    Nome = (item.Nome ?? string.Empty).Trim(),
+                    Ordem = item.Ordem ?? index + 1,
+                    Ativo = item.Ativo
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Nome))
+                .GroupBy(x => x.Nome, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.OrderBy(x => x.Ordem).First())
+                .OrderBy(x => x.Ordem)
+                .ThenBy(x => x.Nome)
+                .ToList();
+
+            for (var i = 0; i < funcoesNormalizadas.Count; i++)
+            {
+                var funcao = funcoesNormalizadas[i];
+                _db.MinisteriosFuncoesPadrao.Add(new MinisterioFuncaoPadrao
+                {
+                    MinisterioId = ministerioId,
+                    Nome = funcao.Nome,
+                    Ordem = funcao.Ordem > 0 ? funcao.Ordem : i + 1,
+                    Ativo = funcao.Ativo,
                     CriadoEm = DateTime.UtcNow
                 });
             }

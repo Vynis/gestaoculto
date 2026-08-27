@@ -42,6 +42,47 @@
   gap: 0.75rem;
 }
 
+.funcoes-box {
+  border: 1px dashed #d6deea;
+  border-radius: 0.6rem;
+  padding: 0.65rem;
+}
+
+.funcoes-box label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.45rem;
+}
+
+.funcoes-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.funcoes-lista {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.funcao-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid #e5ebf5;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  background: #f8fafd;
+}
+
+.funcao-acoes {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

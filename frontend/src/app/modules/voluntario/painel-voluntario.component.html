@@ -51,6 +51,9 @@
               <strong>{{ item.cultoNome }}</strong>
               <small>{{ item.dataCulto | date:'dd/MM/yyyy' }} {{ formatarHorario(item.horarioInicio) }}</small>
               <small>{{ item.ministerioNome || 'Ministério não informado' }} - {{ item.funcao }}</small>
+              <small *ngIf="item.etapaAtividade || item.etapaBlocoCronograma">
+                Etapa: {{ item.etapaAtividade || 'Sem atividade' }}<span *ngIf="item.etapaBlocoCronograma"> ({{ item.etapaBlocoCronograma }})</span>
+              </small>
             </div>
             <div class="acoes-modal">
               <button nbButton size="tiny" status="basic" type="button" (click)="verDetalheEscala(item.id)">Detalhes</button>
@@ -136,6 +139,9 @@
               <strong>{{ item.cultoNome }}</strong>
               <small>{{ item.dataCulto | date:'dd/MM/yyyy' }} {{ formatarHorario(item.horarioInicio) }}</small>
               <small>{{ item.ministerioNome || 'Ministério não informado' }} - {{ item.funcao }}</small>
+              <small *ngIf="item.etapaAtividade || item.etapaBlocoCronograma">
+                Etapa: {{ item.etapaAtividade || 'Sem atividade' }}<span *ngIf="item.etapaBlocoCronograma"> ({{ item.etapaBlocoCronograma }})</span>
+              </small>
             </div>
             <div class="acoes-modal">
               <button nbButton size="tiny" status="basic" type="button" (click)="verDetalheEscala(item.id)">Detalhes</button>
@@ -159,7 +165,9 @@
       <p><strong>{{ d.item.cultoNome }}</strong></p>
       <p>{{ d.item.dataCulto | date:'dd/MM/yyyy' }} {{ formatarHorario(d.item.horarioInicio) }}</p>
       <p>{{ d.item.ministerioNome || 'Ministério não informado' }} - {{ d.item.funcao }}</p>
-      <p *ngIf="d.item.etapaAtividade">Etapa: {{ d.item.etapaAtividade }}</p>
+      <p *ngIf="d.item.etapaAtividade || d.item.etapaBlocoCronograma">
+        Etapa: {{ d.item.etapaAtividade || 'Sem atividade' }}<span *ngIf="d.item.etapaBlocoCronograma"> ({{ d.item.etapaBlocoCronograma }})</span>
+      </p>
       <p *ngIf="d.item.observacoes">Obs: {{ d.item.observacoes }}</p>
 
       <h5>Colegas do mesmo ministério</h5>
@@ -180,10 +188,10 @@
               <small *ngIf="musica.musicaTom">Tom: {{ musica.musicaTom }}</small>
               <small *ngIf="musica.etapaAtividade">Etapa: {{ musica.etapaAtividade }}</small>
               <small *ngIf="musica.responsavel">Responsável: {{ musica.responsavel }}</small>
-              <small *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
-              <small *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
-              <small *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
-              <small *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
+              <small class="quebra-linha" *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
             </div>
           </nb-list-item>
         </nb-list>

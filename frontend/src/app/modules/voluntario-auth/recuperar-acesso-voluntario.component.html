@@ -4,22 +4,21 @@
       <nb-card>
         <nb-card-header>
           <h3>Recuperar acesso</h3>
-          <p>Gere um código para redefinir sua senha.</p>
+          <p>Informe seu e-mail ou telefone para receber um link de redefinição.</p>
         </nb-card-header>
         <nb-card-body>
           <form [formGroup]="solicitarForm" class="form" (ngSubmit)="solicitarCodigo()">
             <input nbInput fullWidth formControlName="identificador" placeholder="E-mail ou telefone" />
-            <button nbButton status="info" fullWidth [disabled]="carregando">Gerar código</button>
+            <button nbButton status="info" fullWidth [disabled]="carregando">Enviar link</button>
           </form>
 
-          <p *ngIf="codigoGerado" class="codigo">Código: <strong>{{ codigoGerado }}</strong></p>
-
-          <form [formGroup]="redefinirForm" class="form" (ngSubmit)="redefinir()">
-            <input nbInput fullWidth formControlName="identificador" placeholder="E-mail ou telefone" />
-            <input nbInput fullWidth formControlName="codigo" placeholder="Código" />
+          <form [formGroup]="redefinirForm" class="form" *ngIf="token" (ngSubmit)="redefinir()">
             <input nbInput fullWidth type="password" formControlName="novaSenha" placeholder="Nova senha" />
+            <input nbInput fullWidth type="password" formControlName="confirmarSenha" placeholder="Confirmar nova senha" />
             <button nbButton status="primary" fullWidth [disabled]="carregando">Redefinir senha</button>
           </form>
+
+          <p class="codigo" *ngIf="!token">Quando receber o e-mail, abra o link para concluir a redefinição.</p>
 
           <a routerLink="/voluntario/login">Voltar para login</a>
         </nb-card-body>

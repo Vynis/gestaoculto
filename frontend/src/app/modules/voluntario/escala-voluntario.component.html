@@ -14,6 +14,9 @@
             <strong>{{ item.cultoNome }}</strong><br />
             <small>{{ item.dataCulto | date:'dd/MM/yyyy' }} {{ formatarHorario(item.horarioInicio) }}</small>
             <small>{{ item.ministerioNome || 'Ministério não informado' }} - {{ item.funcao }}</small>
+            <small *ngIf="item.etapaAtividade || item.etapaBlocoCronograma">
+              Etapa: {{ item.etapaAtividade || 'Sem atividade' }}<span *ngIf="item.etapaBlocoCronograma"> ({{ item.etapaBlocoCronograma }})</span>
+            </small>
             <small>Status: {{ item.presencaStatusNome || item.presencaStatusId }}</small>
           </div>
           <div class="acoes">
@@ -28,39 +31,47 @@
   </nb-card-body>
 </nb-card>
 
-<nb-card *ngIf="detalhe as d">
-  <nb-card-header>Detalhes da participação</nb-card-header>
-  <nb-card-body>
-    <p><strong>{{ d.item.cultoNome }}</strong> - {{ d.item.dataCulto | date:'dd/MM/yyyy' }}</p>
-    <p>{{ d.item.ministerioNome }} | {{ d.item.funcao }}</p>
-    <p *ngIf="d.item.etapaAtividade">Etapa: {{ d.item.etapaAtividade }}</p>
-    <p *ngIf="d.item.observacoes">Obs: {{ d.item.observacoes }}</p>
+<div class="modal-backdrop" *ngIf="detalhe" (click)="detalhe = null"></div>
+<div class="modal-wrapper" *ngIf="detalhe as d">
+  <nb-card class="modal-card-inline" (click)="$event.stopPropagation()">
+    <nb-card-header>Detalhes da participação</nb-card-header>
+    <nb-card-body>
+      <p><strong>{{ d.item.cultoNome }}</strong> - {{ d.item.dataCulto | date:'dd/MM/yyyy' }}</p>
+      <p>{{ d.item.ministerioNome }} | {{ d.item.funcao }}</p>
+      <p *ngIf="d.item.etapaAtividade || d.item.etapaBlocoCronograma">
+        Etapa: {{ d.item.etapaAtividade || 'Sem atividade' }}<span *ngIf="d.item.etapaBlocoCronograma"> ({{ d.item.etapaBlocoCronograma }})</span>
+      </p>
+      <p *ngIf="d.item.observacoes">Obs: {{ d.item.observacoes }}</p>
 
-    <h5>Colegas do mesmo ministério nesse culto</h5>
-    <nb-list>
-      <nb-list-item *ngFor="let colega of d.colegasMesmoMinisterio">
-        {{ colega.voluntarioNome }} - {{ colega.ministerioNome }} - {{ colega.funcao }}
-      </nb-list-item>
-    </nb-list>
-
-    <ng-container *ngIf="d.repertorioLouvor as repertorio">
-      <h5>Repertório de louvor</h5>
-      <p *ngIf="repertorio.observacoes">Obs do repertório: {{ repertorio.observacoes }}</p>
+      <h5>Colegas do mesmo ministério nesse culto</h5>
       <nb-list>
-        <nb-list-item *ngFor="let musica of repertorio.itens">
-          <div>
-            <strong>{{ musica.ordem }}. {{ musica.musicaTitulo || ('Música #' + musica.musicaId) }}</strong>
-            <small *ngIf="musica.musicaArtistaBanda">Artista/Banda: {{ musica.musicaArtistaBanda }}</small>
-            <small *ngIf="musica.musicaTom">Tom: {{ musica.musicaTom }}</small>
-            <small *ngIf="musica.etapaAtividade">Etapa: {{ musica.etapaAtividade }}</small>
-            <small *ngIf="musica.responsavel">Responsável: {{ musica.responsavel }}</small>
-            <small *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
-            <small *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
-            <small *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
-            <small *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
-          </div>
+        <nb-list-item *ngFor="let colega of d.colegasMesmoMinisterio">
+          {{ colega.voluntarioNome }} - {{ colega.ministerioNome }} - {{ colega.funcao }}
         </nb-list-item>
       </nb-list>
-    </ng-container>
-  </nb-card-body>
-</nb-card>
+
+      <ng-container *ngIf="d.repertorioLouvor as repertorio">
+        <h5>Repertório de louvor</h5>
+        <p *ngIf="repertorio.observacoes">Obs do repertório: {{ repertorio.observacoes }}</p>
+        <nb-list>
+          <nb-list-item *ngFor="let musica of repertorio.itens">
+            <div>
+              <strong>{{ musica.ordem }}. {{ musica.musicaTitulo || ('Música #' + musica.musicaId) }}</strong>
+              <small *ngIf="musica.musicaArtistaBanda">Artista/Banda: {{ musica.musicaArtistaBanda }}</small>
+              <small *ngIf="musica.musicaTom">Tom: {{ musica.musicaTom }}</small>
+              <small *ngIf="musica.etapaAtividade">Etapa: {{ musica.etapaAtividade }}</small>
+              <small *ngIf="musica.responsavel">Responsável: {{ musica.responsavel }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
+              <small class="quebra-linha" *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
+              <small class="quebra-linha" *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
+            </div>
+          </nb-list-item>
+        </nb-list>
+      </ng-container>
+    </nb-card-body>
+    <nb-card-footer>
+      <button nbButton status="basic" type="button" (click)="detalhe = null">Fechar</button>
+    </nb-card-footer>
+  </nb-card>
+</div>

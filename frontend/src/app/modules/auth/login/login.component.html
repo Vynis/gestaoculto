@@ -3,6 +3,7 @@
     <div class="login-page">
       <nb-card class="login-card">
         <nb-card-header>
+          <img class="brand-logo" src="assets/logo-vertical.png" alt="Gestão de Culto" />
           <h2>Acesse sua conta</h2>
           <p>Use seu e-mail e senha para entrar</p>
         </nb-card-header>
@@ -26,11 +27,7 @@
             </button>
           </form>
 
-          <button nbButton status="info" outline fullWidth [disabled]="carregando" (click)="entrarComGoogle()">
-            Entrar com Google
-          </button>
-
-          <button nbButton ghost status="basic" fullWidth>Esqueci minha senha</button>
+          <a nbButton ghost status="basic" fullWidth routerLink="/auth/recuperar-senha">Esqueci minha senha</a>
 
           <a routerLink="/voluntario/login">Sou voluntário</a>
 

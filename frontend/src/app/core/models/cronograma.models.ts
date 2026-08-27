@@ -17,6 +17,7 @@ export interface EtapaCulto {
   duracaoMinutos: number;
   horarioFimCalculado: string | null;
   atividade: string;
+  blocoCronograma?: string | null;
   descricao: string | null;
   ministerioResponsavelId?: number | null;
   ministerioResponsavelNome?: string | null;

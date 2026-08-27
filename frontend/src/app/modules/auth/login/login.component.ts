@@ -36,7 +36,7 @@ export class LoginComponent {
     this.authService.login(value.email!, value.senha!, value.manterConectado ?? true).subscribe({
       next: () => {
         this.toastr.success('Acesso liberado com sucesso.', 'Bem-vindo');
-        this.router.navigate([this.authService.destinoPadraoPosLogin()]);
+        this.router.navigate([this.authService.destinoPosLogin('gestao')]);
       },
       error: (error) => {
         this.carregando = false;
@@ -54,7 +54,7 @@ export class LoginComponent {
       const manter = this.form.controls.manterConectado.value ?? true;
       await this.authService.loginComGoogle(manter);
       this.toastr.success('Login Google concluído.', 'Bem-vindo');
-      await this.router.navigate([this.authService.destinoPadraoPosLogin()]);
+      await this.router.navigate([this.authService.destinoPosLogin('gestao')]);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Falha no login com Google.';
       this.toastr.danger(message, 'Atenção');

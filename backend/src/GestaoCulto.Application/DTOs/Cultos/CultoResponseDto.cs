@@ -5,6 +5,7 @@ namespace GestaoCulto.Application.DTOs.Cultos
     public class CultoResponseDto
     {
         public long Id { get; set; }
+        public long? RecorrenciaId { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string TipoCulto { get; set; } = string.Empty;
         public DateTime DataCulto { get; set; }

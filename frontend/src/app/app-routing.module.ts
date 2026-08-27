@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './modules/auth/login/login.component';
+import { RecuperarSenhaComponent } from './modules/auth/recuperar-senha/recuperar-senha.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
 import { AuthGuard } from './core/guards/auth.guard';
@@ -8,6 +9,7 @@ import { GestaoGuard } from './core/guards/gestao.guard';
 import { VoluntarioGuard } from './core/guards/voluntario.guard';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
 import { CultosComponent } from './modules/cultos/cultos.component';
+import { RecorrenciasCultoComponent } from './modules/recorrencias-culto/recorrencias-culto.component';
 import { CronogramaComponent } from './modules/cronograma/cronograma.component';
 import { EscalasComponent } from './modules/escalas/escalas.component';
 import { ConvidadosComponent } from './modules/convidados/convidados.component';
@@ -29,13 +31,20 @@ import { EscalaVoluntarioComponent } from './modules/voluntario/escala-voluntari
 import { MinisteriosVoluntarioComponent } from './modules/voluntario/ministerios-voluntario.component';
 import { ColegasMinisterioVoluntarioComponent } from './modules/voluntario/colegas-ministerio-voluntario.component';
 import { MeusDadosVoluntarioComponent } from './modules/voluntario/meus-dados-voluntario.component';
+import { AppInfoPageComponent } from './modules/publico/app-info-page.component';
+import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
+import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
+  { path: 'auth/recuperar-senha', component: RecuperarSenhaComponent },
   { path: 'voluntario/login', component: LoginVoluntarioComponent },
   { path: 'voluntario/primeiro-acesso', component: PrimeiroAcessoVoluntarioComponent },
   { path: 'voluntario/recuperar-acesso', component: RecuperarAcessoVoluntarioComponent },
   { path: 'relatorio-culto-publico', component: RelatorioCultoPublicoPageComponent },
+  { path: 'app-info', component: AppInfoPageComponent },
+  { path: 'politica-de-privacidade', component: PoliticaPrivacidadePageComponent },
+  { path: 'termos-de-uso', component: TermosUsoPageComponent },
   {
     path: '',
     component: MainLayoutComponent,
@@ -44,6 +53,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'cultos', component: CultosComponent },
+      { path: 'recorrencias-culto', component: RecorrenciasCultoComponent },
       { path: 'templates', component: TemplatesCultoComponent },
       { path: 'ministerios', component: MinisteriosComponent },
       { path: 'cronograma', component: CronogramaComponent },

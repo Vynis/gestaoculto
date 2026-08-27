@@ -36,6 +36,7 @@
           <div class="title-row">
             <span class="seq-badge">#{{ etapa.sequencia }}</span>
             <strong>{{ etapa.atividade }}</strong>
+            <span class="seq-badge">{{ etapa.blocoCronograma || 'PRINCIPAL' }}</span>
           </div>
           <p>{{ etapa.descricao }}</p>
           <small *ngIf="etapa.ministerioResponsavelNome">Equipe: {{ etapa.ministerioResponsavelNome }}</small>
@@ -68,24 +69,76 @@
     <nb-card-header>{{ etapaEditandoId ? 'Editar etapa' : 'Nova etapa' }}</nb-card-header>
     <nb-card-body>
       <form id="etapa-form" class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
-        <nb-select formControlName="cultoId" placeholder="Culto">
-          <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }}</nb-option>
-        </nb-select>
-        <input nbInput type="number" formControlName="sequencia" placeholder="Sequência" />
-        <input nbInput type="time" formControlName="horarioInicio" />
-        <input nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração" />
-        <input nbInput formControlName="atividade" placeholder="Atividade" />
-        <input nbInput formControlName="descricao" placeholder="Descrição" />
+        <div class="form-field">
+          <label for="cronograma-culto">Culto</label>
+          <nb-select id="cronograma-culto" formControlName="cultoId" placeholder="Selecione o culto">
+            <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }}</nb-option>
+          </nb-select>
+        </div>
+        <div class="form-field">
+          <label for="cronograma-sequencia">Sequência</label>
+          <input id="cronograma-sequencia" nbInput type="number" formControlName="sequencia" placeholder="Sequência" />
+        </div>
+        <div class="form-field">
+          <label for="cronograma-horario">Horário de início</label>
+          <input id="cronograma-horario" nbInput type="time" formControlName="horarioInicio" />
+        </div>
+        <div class="form-field">
+          <label for="cronograma-duracao">Duração (min)</label>
+          <input id="cronograma-duracao" nbInput type="number" formControlName="duracaoMinutos" placeholder="Duração" />
+        </div>
+        <div class="form-field">
+          <label for="cronograma-atividade">Atividade</label>
+          <input id="cronograma-atividade" nbInput formControlName="atividade" placeholder="Atividade" />
+        </div>
+        <div class="form-field">
+          <label for="cronograma-bloco">Bloco do cronograma</label>
+          <input
+            id="cronograma-bloco"
+            nbInput
+            formControlName="blocoCronograma"
+            placeholder="Bloco do cronograma"
+            list="cronograma-blocos"
+            autocomplete="off"
+          />
+        </div>
+        <datalist id="cronograma-blocos">
+          <option *ngFor="let bloco of blocosCronogramaDisponiveis" [value]="bloco"></option>
+        </datalist>
+        <div class="form-field">
+          <label for="cronograma-equipe">Equipe responsável (opcional)</label>
+          <select id="cronograma-equipe" class="gc-native-select" nbInput formControlName="ministerioResponsavelId">
+            <option [ngValue]="null">Equipe responsável (opcional)</option>
+            <option *ngFor="let ministerio of ministeriosOrdenados" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="cronograma-descricao">Descrição</label>
+          <input id="cronograma-descricao" nbInput formControlName="descricao" placeholder="Descrição (opcional)" />
+        </div>
 
         <div class="acoes-editor">
           <h4>Acoes por ministerio da etapa</h4>
           <div class="form-grid" [formGroup]="acaoForm">
-            <nb-select formControlName="ministerioId" placeholder="Ministerio">
-              <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
-            </nb-select>
-            <input nbInput formControlName="descricaoAcao" placeholder="Descricao da acao" />
-            <input nbInput type="number" formControlName="ordem" placeholder="Ordem (opcional)" />
-            <input nbInput formControlName="observacao" placeholder="Observacao (opcional)" />
+            <div class="form-field">
+              <label for="cronograma-acao-ministerio">Ministério</label>
+              <select id="cronograma-acao-ministerio" class="gc-native-select" nbInput formControlName="ministerioId">
+                <option [ngValue]="null">Ministério</option>
+                <option *ngFor="let ministerio of ministeriosOrdenados" [ngValue]="ministerio.id">{{ ministerio.nome }}</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="cronograma-acao-descricao">Descrição da ação</label>
+              <input id="cronograma-acao-descricao" nbInput formControlName="descricaoAcao" placeholder="Descrição da ação" />
+            </div>
+            <div class="form-field">
+              <label for="cronograma-acao-ordem">Ordem (opcional)</label>
+              <input id="cronograma-acao-ordem" nbInput type="number" formControlName="ordem" placeholder="Ordem" />
+            </div>
+            <div class="form-field">
+              <label for="cronograma-acao-observacao">Observação (opcional)</label>
+              <input id="cronograma-acao-observacao" nbInput formControlName="observacao" placeholder="Observação" />
+            </div>
             <nb-checkbox formControlName="ativo">Acao ativa</nb-checkbox>
             <div class="form-actions">
               <button nbButton status="info" type="button" (click)="salvarAcaoMinisterio()">{{ acaoEditandoIndex !== null ? 'Atualizar acao' : 'Adicionar acao' }}</button>

@@ -16,6 +16,7 @@ namespace GestaoCulto.API.Controllers
         public DateTime HorarioInicio { get; set; }
         public int DuracaoMinutos { get; set; }
         public string Atividade { get; set; } = string.Empty;
+        public string? BlocoCronograma { get; set; }
         public string? Descricao { get; set; }
         public long? MinisterioResponsavelId { get; set; }
         public long StatusEtapaId { get; set; }
@@ -60,6 +61,7 @@ namespace GestaoCulto.API.Controllers
                     e.DuracaoMinutos,
                     e.HorarioFimCalculado,
                     e.Atividade,
+                    e.BlocoCronograma,
                     e.Descricao,
                     e.MinisterioResponsavelId,
                     MinisterioResponsavelNome = _db.Ministerios.Where(m => m.Id == e.MinisterioResponsavelId).Select(m => m.Nome).FirstOrDefault(),
@@ -73,6 +75,7 @@ namespace GestaoCulto.API.Controllers
                 {
                     x.CultoId,
                     x.Sequencia,
+                    BlocoCronograma = (x.BlocoCronograma ?? "PRINCIPAL").Trim().ToLower(),
                     Atividade = (x.Atividade ?? string.Empty).Trim().ToLower()
                 })
                 .Select(g => g.OrderBy(x => x.Id).First())
@@ -110,10 +113,11 @@ namespace GestaoCulto.API.Controllers
                 x.CultoId,
                 x.Sequencia,
                 x.HorarioInicio,
-                x.DuracaoMinutos,
-                x.HorarioFimCalculado,
-                x.Atividade,
-                x.Descricao,
+                    x.DuracaoMinutos,
+                    x.HorarioFimCalculado,
+                    x.Atividade,
+                    x.BlocoCronograma,
+                    x.Descricao,
                 x.MinisterioResponsavelId,
                 x.MinisterioResponsavelNome,
                 x.AtrasoMinutos,
@@ -143,6 +147,13 @@ namespace GestaoCulto.API.Controllers
                 horarioInicio = culto.DataCulto.Date.Add(horarioInicio.TimeOfDay);
             }
 
+            var blocoCronograma = NormalizarBlocoCronograma(dto.BlocoCronograma);
+            var conflitoCriacao = await ExisteConflitoSequenciaPorBloco(dto.CultoId, dto.Sequencia, blocoCronograma, null);
+            if (conflitoCriacao)
+            {
+                return BadRequest(new { mensagem = $"Já existe uma etapa no bloco '{blocoCronograma}' com a sequência {dto.Sequencia}." });
+            }
+
             var entity = new EtapaCulto
             {
                 CultoId = dto.CultoId,
@@ -151,6 +162,7 @@ namespace GestaoCulto.API.Controllers
                 DuracaoMinutos = dto.DuracaoMinutos,
                 HorarioFimCalculado = horarioInicio.AddMinutes(dto.DuracaoMinutos),
                 Atividade = dto.Atividade,
+                BlocoCronograma = blocoCronograma,
                 Descricao = dto.Descricao,
                 MinisterioResponsavelId = dto.MinisterioResponsavelId,
                 StatusEtapaId = dto.StatusEtapaId,
@@ -188,12 +200,20 @@ namespace GestaoCulto.API.Controllers
                 horarioInicio = culto.DataCulto.Date.Add(horarioInicio.TimeOfDay);
             }
 
+            var blocoCronograma = NormalizarBlocoCronograma(dto.BlocoCronograma);
+            var conflitoAtualizacao = await ExisteConflitoSequenciaPorBloco(dto.CultoId, dto.Sequencia, blocoCronograma, id);
+            if (conflitoAtualizacao)
+            {
+                return BadRequest(new { mensagem = $"Já existe uma etapa no bloco '{blocoCronograma}' com a sequência {dto.Sequencia}." });
+            }
+
             entity.CultoId = dto.CultoId;
             entity.Sequencia = dto.Sequencia;
             entity.HorarioInicio = horarioInicio;
             entity.DuracaoMinutos = dto.DuracaoMinutos;
             entity.HorarioFimCalculado = horarioInicio.AddMinutes(dto.DuracaoMinutos);
             entity.Atividade = dto.Atividade;
+            entity.BlocoCronograma = blocoCronograma;
             entity.Descricao = dto.Descricao;
             entity.MinisterioResponsavelId = dto.MinisterioResponsavelId;
             entity.StatusEtapaId = dto.StatusEtapaId;
@@ -287,6 +307,7 @@ namespace GestaoCulto.API.Controllers
                     e.DuracaoMinutos,
                     e.HorarioFimCalculado,
                     e.Atividade,
+                    e.BlocoCronograma,
                     e.Descricao,
                     e.MinisterioResponsavelId,
                     MinisterioResponsavelNome = _db.Ministerios.Where(m => m.Id == e.MinisterioResponsavelId).Select(m => m.Nome).FirstOrDefault(),
@@ -322,6 +343,7 @@ namespace GestaoCulto.API.Controllers
                 etapa.DuracaoMinutos,
                 etapa.HorarioFimCalculado,
                 etapa.Atividade,
+                etapa.BlocoCronograma,
                 etapa.Descricao,
                 etapa.MinisterioResponsavelId,
                 etapa.MinisterioResponsavelNome,
@@ -329,6 +351,24 @@ namespace GestaoCulto.API.Controllers
                 etapa.StatusEtapaId,
                 AcoesMinisterio = acoes
             };
+        }
+
+        private static string NormalizarBlocoCronograma(string? valor)
+        {
+            var texto = (valor ?? string.Empty).Trim();
+            return string.IsNullOrWhiteSpace(texto) ? "PRINCIPAL" : texto;
+        }
+
+        private async Task<bool> ExisteConflitoSequenciaPorBloco(long cultoId, int sequencia, string blocoCronograma, long? etapaIgnoradaId)
+        {
+            var blocoNormalizado = (blocoCronograma ?? string.Empty).Trim().ToLower();
+
+            return await _db.EtapasCulto
+                .AsNoTracking()
+                .Where(x => x.CultoId == cultoId)
+                .Where(x => etapaIgnoradaId == null || x.Id != etapaIgnoradaId.Value)
+                .Where(x => x.Sequencia == sequencia)
+                .AnyAsync(x => ((x.BlocoCronograma ?? "PRINCIPAL").Trim().ToLower()) == blocoNormalizado);
         }
     }
 }

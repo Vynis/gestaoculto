@@ -1,1 +1,8 @@
 <router-outlet></router-outlet>
+
+<div class="global-loading" *ngIf="loadingService.loading$ | async" aria-live="polite" aria-label="Carregando">
+  <div class="global-loading-card">
+    <span class="global-loading-spinner"></span>
+    <span>Carregando...</span>
+  </div>
+</div>

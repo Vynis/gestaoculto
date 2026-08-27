@@ -7,6 +7,8 @@ namespace GestaoCulto.Domain.Entities
     {
         public long? TemplateCultoId { get; set; }
         public TemplateCulto? TemplateCulto { get; set; }
+        public long? RecorrenciaId { get; set; }
+        public CultoRecorrencia? Recorrencia { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string TipoCulto { get; set; } = string.Empty;
         public DateTime DataCulto { get; set; }

@@ -34,6 +34,7 @@ namespace GestaoCulto.API.Controllers
         public string Funcao { get; set; } = string.Empty;
         public long? EtapaCultoId { get; set; }
         public string? EtapaAtividade { get; set; }
+        public string? EtapaBlocoCronograma { get; set; }
         public string? Observacoes { get; set; }
         public long PresencaStatusId { get; set; }
         public string? PresencaStatusNome { get; set; }
@@ -53,11 +54,16 @@ namespace GestaoCulto.API.Controllers
     {
         private readonly GestaoCultoDbContext _db;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IDisponibilidadeVoluntarioService _disponibilidadeService;
 
-        public PortalVoluntarioController(GestaoCultoDbContext db, IPasswordHasher passwordHasher)
+        public PortalVoluntarioController(
+            GestaoCultoDbContext db,
+            IPasswordHasher passwordHasher,
+            IDisponibilidadeVoluntarioService disponibilidadeService)
         {
             _db = db;
             _passwordHasher = passwordHasher;
+            _disponibilidadeService = disponibilidadeService;
         }
 
         [HttpGet("painel")]
@@ -131,10 +137,11 @@ namespace GestaoCulto.API.Controllers
 
             var inicio = new DateTime(ano, mes, 1);
             var fim = inicio.AddMonths(1).AddDays(-1);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
 
             var cultos = await _db.Cultos
                 .AsNoTracking()
-                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim)
+                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim && x.StatusCultoId == statusCultoAtivoId)
                 .OrderBy(x => x.DataCulto)
                 .ThenBy(x => x.HorarioInicio)
                 .Select(x => new
@@ -233,7 +240,8 @@ namespace GestaoCulto.API.Controllers
                 return Unauthorized(new { mensagem = "Voluntário não vinculado ao usuário autenticado." });
             }
 
-            var culto = await _db.Cultos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == cultoId);
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+            var culto = await _db.Cultos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == cultoId && x.StatusCultoId == statusCultoAtivoId);
             if (culto == null)
             {
                 return NotFound(new { mensagem = "Culto não encontrado." });
@@ -302,97 +310,25 @@ namespace GestaoCulto.API.Controllers
                 return Unauthorized(new { mensagem = "Voluntário não vinculado ao usuário autenticado." });
             }
 
-            var culto = await _db.Cultos.FirstOrDefaultAsync(x => x.Id == cultoId);
-            if (culto == null)
-            {
-                return NotFound(new { mensagem = "Culto não encontrado." });
-            }
-
-            if (culto.DataCulto.Date < DateTime.Today)
-            {
-                return BadRequest(new { mensagem = "Não é possível responder disponibilidade para culto passado." });
-            }
-
-            var ministerioIdsPermitidos = await _db.MinisteriosVoluntarios
-                .AsNoTracking()
-                .Where(x => x.VoluntarioId == voluntario.Id)
-                .Select(x => x.MinisterioId)
-                .ToListAsync();
-
             var ministerioIds = (request.MinisterioIds ?? new List<long>())
                 .Where(x => x > 0)
                 .Distinct()
                 .ToList();
-
-            if (request.Disponivel && !ministerioIds.Any())
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+            var cultoExiste = await _db.Cultos
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == cultoId && x.StatusCultoId == statusCultoAtivoId);
+            if (!cultoExiste)
             {
-                return BadRequest(new { mensagem = "Selecione ao menos um ministério para disponibilidade." });
+                return NotFound(new { mensagem = "Culto não encontrado." });
             }
 
-            if (ministerioIds.Any(x => !ministerioIdsPermitidos.Contains(x)))
-            {
-                return BadRequest(new { mensagem = "Foram informados ministérios inválidos para este voluntário." });
-            }
-
-            var statusCodigo = request.Disponivel ? "DISPONIVEL" : "INDISPONIVEL";
-            var statusId = await _db.StatusDisponibilidadeVoluntarios
-                .Where(x => x.Codigo == statusCodigo)
-                .Select(x => x.Id)
-                .FirstOrDefaultAsync();
-
-            if (statusId <= 0)
-            {
-                return BadRequest(new { mensagem = "Status de disponibilidade não encontrado." });
-            }
-
-            var entity = await _db.DisponibilidadesCultoVoluntarios
-                .FirstOrDefaultAsync(x => x.CultoId == cultoId && x.VoluntarioId == voluntario.Id);
-
-            var agora = DateTime.UtcNow;
-            if (entity == null)
-            {
-                entity = new DisponibilidadeCultoVoluntario
-                {
-                    CultoId = cultoId,
-                    VoluntarioId = voluntario.Id,
-                    StatusDisponibilidadeId = statusId,
-                    Observacao = LimparTexto(request.Observacao),
-                    RespondidoEm = agora,
-                    CriadoEm = agora
-                };
-                _db.DisponibilidadesCultoVoluntarios.Add(entity);
-                await _db.SaveChangesAsync();
-            }
-            else
-            {
-                entity.StatusDisponibilidadeId = statusId;
-                entity.Observacao = LimparTexto(request.Observacao);
-                entity.RespondidoEm = agora;
-                entity.AtualizadoEm = agora;
-                await _db.SaveChangesAsync();
-
-                var vinculosAntigos = await _db.DisponibilidadesCultoVoluntariosMinisterios
-                    .Where(x => x.DisponibilidadeCultoVoluntarioId == entity.Id)
-                    .ToListAsync();
-
-                if (vinculosAntigos.Any())
-                {
-                    _db.DisponibilidadesCultoVoluntariosMinisterios.RemoveRange(vinculosAntigos);
-                    await _db.SaveChangesAsync();
-                }
-            }
-
-            if (request.Disponivel && ministerioIds.Any())
-            {
-                var vinculos = ministerioIds.Select(id => new DisponibilidadeCultoVoluntarioMinisterio
-                {
-                    DisponibilidadeCultoVoluntarioId = entity.Id,
-                    MinisterioId = id
-                }).ToList();
-
-                _db.DisponibilidadesCultoVoluntariosMinisterios.AddRange(vinculos);
-                await _db.SaveChangesAsync();
-            }
+            await _disponibilidadeService.SalvarAsync(
+                voluntario.Id,
+                cultoId,
+                request.Disponivel,
+                ministerioIds,
+                request.Observacao);
 
             return Ok(new { mensagem = "Disponibilidade registrada com sucesso." });
         }
@@ -483,12 +419,24 @@ namespace GestaoCulto.API.Controllers
                             x.Id,
                             x.Ordem,
                             x.MusicaId,
-                            MusicaTitulo = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
-                            MusicaArtistaBanda = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.ArtistaBanda).FirstOrDefault(),
-                            MusicaTom = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Tom).FirstOrDefault(),
-                            MusicaLinkCifra = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkCifra).FirstOrDefault(),
-                            MusicaLinkVideo = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkVideo).FirstOrDefault(),
-                            MusicaObservacoes = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Observacoes).FirstOrDefault(),
+                            MusicaTitulo = !string.IsNullOrWhiteSpace(x.MusicaTitulo)
+                                ? x.MusicaTitulo
+                                : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(),
+                            MusicaArtistaBanda = !string.IsNullOrWhiteSpace(x.MusicaArtistaBanda)
+                                ? x.MusicaArtistaBanda
+                                : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.ArtistaBanda).FirstOrDefault(),
+                            MusicaTom = !string.IsNullOrWhiteSpace(x.MusicaTom)
+                                ? x.MusicaTom
+                                : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Tom).FirstOrDefault(),
+                            MusicaLinkCifra = !string.IsNullOrWhiteSpace(x.MusicaLinkCifra)
+                                ? x.MusicaLinkCifra
+                                : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkCifra).FirstOrDefault(),
+                            MusicaLinkVideo = !string.IsNullOrWhiteSpace(x.MusicaLinkVideo)
+                                ? x.MusicaLinkVideo
+                                : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkVideo).FirstOrDefault(),
+                            MusicaObservacoes = !string.IsNullOrWhiteSpace(x.MusicaObservacoes)
+                                ? x.MusicaObservacoes
+                                : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Observacoes).FirstOrDefault(),
                             x.EtapaCultoId,
                             EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
                             x.Responsavel,
@@ -653,6 +601,8 @@ namespace GestaoCulto.API.Controllers
 
         private async Task<List<VoluntarioCompromissoDto>> ConsultarEscalas(long voluntarioId, DateTime inicio, DateTime fim)
         {
+            var statusCultoAtivoId = await ObterStatusCultoAtivoId();
+
             return await _db.Escalas
                 .AsNoTracking()
                 .Where(x => x.VoluntarioId == voluntarioId)
@@ -668,14 +618,28 @@ namespace GestaoCulto.API.Controllers
                     Funcao = x.Funcao,
                     EtapaCultoId = x.EtapaCultoId,
                     EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
+                    EtapaBlocoCronograma = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.BlocoCronograma).FirstOrDefault(),
                     Observacoes = x.Observacoes,
                     PresencaStatusId = x.PresencaStatusId,
                     PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == x.PresencaStatusId).Select(s => s.Nome).FirstOrDefault()
                 })
-                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim)
+                .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim
+                    && _db.Cultos.Where(c => c.Id == x.CultoId).Select(c => c.StatusCultoId).FirstOrDefault() == statusCultoAtivoId)
                 .OrderBy(x => x.DataCulto)
                 .ThenBy(x => x.HorarioInicio)
                 .ToListAsync();
+        }
+
+        private async Task<long> ObterStatusCultoAtivoId()
+        {
+            var statusAtivoId = await _db.StatusCultos
+                .Where(x => x.Codigo == "ATIVO")
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync();
+
+            return statusAtivoId > 0
+                ? statusAtivoId
+                : await _db.StatusCultos.OrderBy(x => x.Ordem).Select(x => x.Id).FirstOrDefaultAsync();
         }
 
         private async Task<List<object>> ListarMinisterios(long voluntarioId)

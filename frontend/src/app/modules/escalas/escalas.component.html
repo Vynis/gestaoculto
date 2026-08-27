@@ -55,9 +55,12 @@
   [aberto]="modalAberto"
   [cultos]="cultos"
   [voluntarios]="voluntarios"
+  [carregandoVoluntarios]="carregandoVoluntarios"
+  [erroVoluntarios]="erroVoluntarios"
   [ministerios]="ministerios"
   [escalaEditando]="escalaEditando"
   [prefill]="prefillModal"
   (fechar)="fecharModalEscala()"
   (salvou)="aoSalvarModalEscala()"
+  (recarregarVoluntarios)="carregarVoluntarios()"
 ></app-escala-modal>

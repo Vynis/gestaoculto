@@ -4,6 +4,15 @@ export interface Ministerio {
   codigo: string;
   descricao: string | null;
   ativo: boolean;
+  funcoesPadrao?: MinisterioFuncaoPadrao[];
+}
+
+export interface MinisterioFuncaoPadrao {
+  id?: number;
+  ministerioId?: number;
+  nome: string;
+  ordem?: number;
+  ativo: boolean;
 }
 
 export interface Voluntario {
@@ -25,4 +34,17 @@ export interface UsuarioOpcaoVoluntario {
   nome: string;
   email: string;
   voluntarioId: number | null;
+}
+
+export interface TelegramVinculo {
+  url: string;
+  expiraEm: string;
+}
+
+export interface TelegramConexaoStatus {
+  vinculado: boolean;
+  ativo: boolean;
+  username: string | null;
+  vinculadoEm: string | null;
+  ultimaInteracaoEm: string | null;
 }

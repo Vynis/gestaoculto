@@ -29,10 +29,17 @@ export class VoluntarioAuthService {
     return this.http.post<AuthResponse>(`${this.apiUrl}/ativar-acesso`, payload);
   }
 
-  solicitarRecuperacao(identificador: string, canal = 'APP'): Observable<{ mensagem: string; codigo: string; expiraEm: string }> {
-    return this.http.post<{ mensagem: string; codigo: string; expiraEm: string }>(`${this.apiUrl}/solicitar-recuperacao`, {
+  solicitarRecuperacao(identificador: string, canal = 'APP'): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/solicitar-recuperacao`, {
       identificador,
       canal
+    });
+  }
+
+  redefinirAcessoPorToken(token: string, novaSenha: string): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/redefinir-acesso-por-token`, {
+      token,
+      novaSenha
     });
   }
 
