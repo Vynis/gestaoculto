@@ -49,6 +49,7 @@ namespace GestaoCulto.API.Controllers
                     e.Id,
                     e.CultoId,
                     e.EtapaCultoId,
+                    e.BlocoCronograma,
                     e.VoluntarioId,
                     VoluntarioAvulsoNome = e.VoluntarioAvulsoNome,
                     VoluntarioAvulsoTelefone = e.VoluntarioAvulsoTelefone,
@@ -91,6 +92,14 @@ namespace GestaoCulto.API.Controllers
                 return Forbid();
             }
 
+            var erroEtapa = await ValidarEtapaDoCulto(dto.CultoId, dto.EtapaCultoId);
+            if (!string.IsNullOrWhiteSpace(erroEtapa))
+            {
+                return BadRequest(new { mensagem = erroEtapa });
+            }
+
+            var blocoCronograma = await ObterBlocoCronogramaDaFuncao(dto.MinisterioId, funcaoNormalizada);
+
             var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
                 ? dto.VoluntarioId
                 : null;
@@ -132,6 +141,7 @@ namespace GestaoCulto.API.Controllers
                 VoluntarioAvulsoTelefone = string.IsNullOrWhiteSpace(voluntarioAvulsoTelefone) ? null : voluntarioAvulsoTelefone,
                 MinisterioId = dto.MinisterioId,
                 Funcao = funcaoNormalizada,
+                BlocoCronograma = blocoCronograma,
                 HorarioPrevisto = null,
                 PresencaStatusId = dto.PresencaStatusId,
                 Observacoes = dto.Observacoes,
@@ -181,6 +191,14 @@ namespace GestaoCulto.API.Controllers
                 return Forbid();
             }
 
+            var erroEtapa = await ValidarEtapaDoCulto(dto.CultoId, dto.EtapaCultoId);
+            if (!string.IsNullOrWhiteSpace(erroEtapa))
+            {
+                return BadRequest(new { mensagem = erroEtapa });
+            }
+
+            var blocoCronograma = await ObterBlocoCronogramaDaFuncao(dto.MinisterioId, funcaoNormalizada);
+
             var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
                 ? dto.VoluntarioId
                 : null;
@@ -205,6 +223,7 @@ namespace GestaoCulto.API.Controllers
             entity.VoluntarioAvulsoTelefone = string.IsNullOrWhiteSpace(voluntarioAvulsoTelefone) ? null : voluntarioAvulsoTelefone;
             entity.MinisterioId = dto.MinisterioId;
             entity.Funcao = funcaoNormalizada;
+            entity.BlocoCronograma = blocoCronograma;
             entity.PresencaStatusId = dto.PresencaStatusId;
             entity.Observacoes = dto.Observacoes;
             entity.AtualizadoEm = DateTime.UtcNow;
@@ -264,6 +283,38 @@ namespace GestaoCulto.API.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { mensagem = "Confirmação cancelada com sucesso." });
+        }
+
+        [HttpPost("confirmar-todas")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
+        public async Task<IActionResult> ConfirmarTodas([FromQuery] long cultoId, [FromQuery] long? ministerioId)
+        {
+            if (cultoId <= 0)
+            {
+                return BadRequest(new { mensagem = "Informe o culto para confirmar as escalas." });
+            }
+
+            var query = _db.Escalas.Where(x => x.CultoId == cultoId);
+            if (ministerioId.HasValue && ministerioId.Value > 0)
+            {
+                query = query.Where(x => x.MinisterioId == ministerioId.Value);
+            }
+
+            var escalas = await query.ToListAsync();
+            if (!escalas.Any())
+            {
+                return Ok(new { mensagem = "Nenhuma escala encontrada para confirmação.", total = 0 });
+            }
+
+            foreach (var escala in escalas)
+            {
+                escala.PresencaStatusId = 2;
+                escala.ConfirmadoEm = DateTime.UtcNow;
+                escala.AtualizadoEm = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok(new { mensagem = $"{escalas.Count} escalas confirmadas com sucesso.", total = escalas.Count });
         }
 
         [HttpDelete("{id:long}")]
@@ -345,6 +396,49 @@ namespace GestaoCulto.API.Controllers
                 .AnyAsync(x => x.UsuarioId == usuarioId && x.MinisterioId == ministerioId.Value);
 
             return permitido ? null : "Você não pode lançar escala para este ministério.";
+        }
+
+        private async Task<string?> ValidarEtapaDoCulto(long cultoId, long? etapaCultoId)
+        {
+            if (!etapaCultoId.HasValue || etapaCultoId.Value <= 0)
+            {
+                return null;
+            }
+
+            var existe = await _db.EtapasCulto
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == etapaCultoId.Value && x.CultoId == cultoId);
+
+            return existe ? null : "A etapa selecionada não pertence ao culto informado.";
+        }
+
+        private async Task<string> ObterBlocoCronogramaDaFuncao(long? ministerioId, string funcao)
+        {
+            if (!ministerioId.HasValue || ministerioId.Value <= 0)
+            {
+                return "SOMENTE_EQUIPE";
+            }
+
+            var bloco = await _db.MinisteriosFuncoesPadrao
+                .AsNoTracking()
+                .Where(x => x.MinisterioId == ministerioId.Value && x.Ativo && x.Nome.ToLower() == funcao.ToLower())
+                .Select(x => x.BlocoCronograma)
+                .FirstOrDefaultAsync();
+
+            return NormalizarBlocoCronograma(bloco);
+        }
+
+        private static string NormalizarBlocoCronograma(string? valor)
+        {
+            var texto = (valor ?? string.Empty).Trim().ToUpperInvariant();
+            return texto switch
+            {
+                "PRINCIPAL" => "PRINCIPAL",
+                "LOUNGE" => "LOUNGE",
+                "ADICIONAL" => "ADICIONAL",
+                "SOMENTE_EQUIPE" => "SOMENTE_EQUIPE",
+                _ => "SOMENTE_EQUIPE"
+            };
         }
     }
 }

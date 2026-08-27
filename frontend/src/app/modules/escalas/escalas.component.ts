@@ -8,7 +8,7 @@ import { CultoService } from '../../core/services/culto.service';
 import { CadastroService } from '../../core/services/cadastro.service';
 import { Ministerio, Voluntario } from '../../core/models/cadastro.models';
 import { EscalaModalPrefill } from './escala-modal.component';
-import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
+import { confirmarAcao, confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 
 @Component({
   selector: 'app-escalas',
@@ -114,6 +114,46 @@ export class EscalasComponent implements OnInit {
     this.escalaService.confirmar(id).subscribe(() => {
       this.carregar();
       this.toastr.success('Presença confirmada.', 'Tudo certo');
+    });
+  }
+
+  async confirmarTodasDoCultoSelecionado(): Promise<void> {
+    const cultoId = Number(this.filtro.value.cultoId);
+    if (!cultoId) {
+      this.toastr.warning('Selecione um culto antes de confirmar.', 'Atenção');
+      return;
+    }
+
+    const ministerioId = Number(this.filtro.value.ministerioId) || null;
+    const total = this.escalasFiltradas.length;
+    if (!total) {
+      this.toastr.warning('Não há escalas para confirmar com o filtro atual.', 'Escalas');
+      return;
+    }
+
+    const textoFiltro = ministerioId
+      ? ` do ministério selecionado`
+      : '';
+    const confirmou = await confirmarAcao(
+      'Confirmar escalas',
+      `Deseja confirmar todas as ${total} escalas${textoFiltro}?`,
+      'question',
+      'Sim, confirmar',
+      '#0984e3'
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    this.escalaService.confirmarTodasPorCulto(cultoId, ministerioId).subscribe({
+      next: (response) => {
+        this.carregar();
+        this.toastr.success(response.mensagem, 'Escalas');
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível confirmar as escalas.', 'Erro');
+      }
     });
   }
 

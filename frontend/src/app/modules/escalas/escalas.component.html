@@ -18,6 +18,9 @@
         <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
       </nb-select>
       <button nbButton status="info" (click)="carregar()" [disabled]="carregando">{{ carregando ? 'Carregando...' : 'Carregar' }}</button>
+      <button nbButton status="success" type="button" (click)="confirmarTodasDoCultoSelecionado()" [disabled]="carregando || !escalasFiltradas.length">
+        Confirmar todas
+      </button>
       <button nbButton status="danger" (click)="excluirTodasDoCultoSelecionado()">Excluir todas do culto</button>
     </div>
 

@@ -29,6 +29,7 @@ namespace GestaoCulto.API.Controllers
     public class MinisterioFuncaoPadraoRequest
     {
         public string Nome { get; set; } = string.Empty;
+        public string? BlocoCronograma { get; set; }
         public int? Ordem { get; set; }
         public bool Ativo { get; set; } = true;
     }
@@ -109,6 +110,7 @@ namespace GestaoCulto.API.Controllers
                     x.Id,
                     x.MinisterioId,
                     x.Nome,
+                    x.BlocoCronograma,
                     x.Ordem,
                     x.Ativo
                 })
@@ -284,6 +286,7 @@ namespace GestaoCulto.API.Controllers
                 .Select((item, index) => new
                 {
                     Nome = (item.Nome ?? string.Empty).Trim(),
+                    BlocoCronograma = NormalizarBlocoCronograma(item.BlocoCronograma),
                     Ordem = item.Ordem ?? index + 1,
                     Ativo = item.Ativo
                 })
@@ -301,6 +304,7 @@ namespace GestaoCulto.API.Controllers
                 {
                     MinisterioId = ministerioId,
                     Nome = funcao.Nome,
+                    BlocoCronograma = funcao.BlocoCronograma,
                     Ordem = funcao.Ordem > 0 ? funcao.Ordem : i + 1,
                     Ativo = funcao.Ativo,
                     CriadoEm = DateTime.UtcNow
@@ -322,6 +326,19 @@ namespace GestaoCulto.API.Controllers
                 .ToUpperInvariant()
                 .Replace(" ", "_")
                 .Replace("-", "_");
+        }
+
+        private static string NormalizarBlocoCronograma(string? valor)
+        {
+            var texto = (valor ?? string.Empty).Trim().ToUpperInvariant();
+            return texto switch
+            {
+                "PRINCIPAL" => "PRINCIPAL",
+                "LOUNGE" => "LOUNGE",
+                "ADICIONAL" => "ADICIONAL",
+                "SOMENTE_EQUIPE" => "SOMENTE_EQUIPE",
+                _ => "SOMENTE_EQUIPE"
+            };
         }
     }
 }

@@ -78,13 +78,27 @@
               placeholder="Ex.: Líder de equipe"
               (keydown.enter)="$event.preventDefault(); adicionarFuncaoPadrao()"
             />
+            <nb-select
+              fullWidth
+              [(ngModel)]="novaFuncaoBlocoCronograma"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Exibição"
+            >
+              <nb-option *ngFor="let bloco of blocosCronograma" [value]="bloco.value">{{ bloco.label }}</nb-option>
+            </nb-select>
             <button nbButton size="small" status="info" type="button" (click)="adicionarFuncaoPadrao()">Adicionar</button>
           </div>
 
           <div class="funcoes-lista" *ngIf="funcoesPadraoEmEdicao.length; else semFuncoes">
             <div class="funcao-item" *ngFor="let funcao of funcoesPadraoEmEdicao; let i = index">
-              <span>{{ funcao.nome }}</span>
+              <div class="funcao-info">
+                <span>{{ funcao.nome }}</span>
+                <small>{{ labelBlocoCronograma(funcao.blocoCronograma) }}</small>
+              </div>
               <div class="funcao-acoes">
+                <nb-select fullWidth [ngModel]="funcao.blocoCronograma || 'SOMENTE_EQUIPE'" [ngModelOptions]="{ standalone: true }" (selectedChange)="alterarBlocoFuncaoPadrao(i, $event)">
+                  <nb-option *ngFor="let bloco of blocosCronograma" [value]="bloco.value">{{ bloco.label }}</nb-option>
+                </nb-select>
                 <button nbButton size="tiny" [status]="funcao.ativo ? 'success' : 'basic'" type="button" (click)="alternarFuncaoPadrao(i)">
                   {{ funcao.ativo ? 'Ativa' : 'Inativa' }}
                 </button>

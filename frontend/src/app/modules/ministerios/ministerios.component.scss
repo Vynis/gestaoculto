@@ -61,6 +61,10 @@
   margin-bottom: 0.6rem;
 }
 
+.funcoes-toolbar nb-select {
+  min-width: 190px;
+}
+
 .funcoes-lista {
   display: grid;
   gap: 0.45rem;
@@ -77,10 +81,24 @@
   background: #f8fafd;
 }
 
+.funcao-info {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.funcao-info small {
+  color: #607086;
+}
+
 .funcao-acoes {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.funcao-acoes nb-select {
+  min-width: 160px;
 }
 
 .modal-backdrop {

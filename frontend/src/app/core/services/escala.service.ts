@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Escala } from '../models/escala.models';
 import { environment } from '../../../environments/environment';
@@ -28,6 +29,15 @@ export class EscalaService {
 
   cancelarConfirmacao(id: number): Observable<{ mensagem: string }> {
     return this.http.post<{ mensagem: string }>(`${this.apiUrl}/${id}/cancelar-confirmacao`, {});
+  }
+
+  confirmarTodasPorCulto(cultoId: number, ministerioId?: number | null): Observable<{ mensagem: string; total: number }> {
+    let params = new HttpParams().set('cultoId', String(cultoId));
+    if (ministerioId && ministerioId > 0) {
+      params = params.set('ministerioId', String(ministerioId));
+    }
+
+    return this.http.post<{ mensagem: string; total: number }>(`${this.apiUrl}/confirmar-todas`, {}, { params });
   }
 
   excluir(id: number): Observable<{ mensagem: string }> {

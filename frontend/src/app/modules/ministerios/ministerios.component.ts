@@ -20,6 +20,14 @@ export class MinisteriosComponent implements OnInit {
   termoBusca = '';
   funcoesPadraoEmEdicao: MinisterioFuncaoPadrao[] = [];
   novaFuncaoNome = '';
+  novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
+
+  readonly blocosCronograma = [
+    { value: 'SOMENTE_EQUIPE', label: 'Somente equipe' },
+    { value: 'PRINCIPAL', label: 'Cronograma principal' },
+    { value: 'LOUNGE', label: 'Lounge' },
+    { value: 'ADICIONAL', label: 'Adicional' }
+  ];
 
   readonly form = this.fb.group({
     nome: ['', Validators.required],
@@ -72,6 +80,7 @@ export class MinisteriosComponent implements OnInit {
       .slice()
       .sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
     this.novaFuncaoNome = '';
+    this.novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
 
     this.form.patchValue({
       nome: ministerio.nome,
@@ -108,6 +117,7 @@ export class MinisteriosComponent implements OnInit {
           id: item.id,
           ministerioId: item.ministerioId,
           nome: (item.nome || '').trim(),
+          blocoCronograma: (item.blocoCronograma || 'SOMENTE_EQUIPE').trim().toUpperCase(),
           ordem: index + 1,
           ativo: item.ativo !== false
         }))
@@ -158,6 +168,7 @@ export class MinisteriosComponent implements OnInit {
     this.ministerioEditandoId = null;
     this.funcoesPadraoEmEdicao = [];
     this.novaFuncaoNome = '';
+    this.novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
     this.form.reset({
       nome: '',
       descricao: '',
@@ -184,11 +195,13 @@ export class MinisteriosComponent implements OnInit {
       ...this.funcoesPadraoEmEdicao,
       {
         nome,
+        blocoCronograma: this.novaFuncaoBlocoCronograma,
         ordem: this.funcoesPadraoEmEdicao.length + 1,
         ativo: true
       }
     ];
     this.novaFuncaoNome = '';
+    this.novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
   }
 
   removerFuncaoPadrao(index: number): void {
@@ -199,5 +212,16 @@ export class MinisteriosComponent implements OnInit {
 
   alternarFuncaoPadrao(index: number): void {
     this.funcoesPadraoEmEdicao = this.funcoesPadraoEmEdicao.map((item, idx) => idx === index ? { ...item, ativo: !item.ativo } : item);
+  }
+
+  alterarBlocoFuncaoPadrao(index: number, blocoCronograma: string): void {
+    this.funcoesPadraoEmEdicao = this.funcoesPadraoEmEdicao.map((item, idx) => idx === index
+      ? { ...item, blocoCronograma }
+      : item);
+  }
+
+  labelBlocoCronograma(valor?: string | null): string {
+    const bloco = (valor || 'SOMENTE_EQUIPE').trim().toUpperCase();
+    return this.blocosCronograma.find((item) => item.value === bloco)?.label || 'Somente equipe';
   }
 }

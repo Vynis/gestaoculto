@@ -3,9 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { CellClickedEvent, ColDef } from 'ag-grid-community';
 import { Culto } from '../../core/models/culto.models';
-import { RepertorioItem } from '../../core/models/repertorio.models';
 import { CultoService } from '../../core/services/culto.service';
-import { RepertorioService } from '../../core/services/repertorio.service';
 import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 
 interface CultoGridRow {
@@ -25,12 +23,8 @@ interface CultoGridRow {
 })
 export class CultosComponent implements OnInit {
   cultos: Culto[] = [];
-  cultosSelecao: Culto[] = [];
   rowData: CultoGridRow[] = [];
   filtroGrid = '';
-  repertorioCultoId = 0;
-  repertorioCultoNome = '';
-  repertorioItens: RepertorioItem[] = [];
   carregando = false;
   modalAberto = false;
   mensagemSucesso = '';
@@ -74,7 +68,7 @@ export class CultosComponent implements OnInit {
       sortable: false,
       filter: false,
       cellRenderer: () =>
-        '<div class="grid-actions"><button class="grid-btn icon view" data-action="repertorio" type="button" title="Ver repertório" aria-label="Ver repertório"><span class="icon-list"></span></button><button class="grid-btn icon edit" data-action="editar" type="button" title="Editar culto" aria-label="Editar culto"><span class="icon-pencil"></span></button><button class="grid-btn icon delete" data-action="excluir" type="button" title="Excluir culto" aria-label="Excluir culto"><span class="icon-trash"></span></button></div>'
+        '<div class="grid-actions"><button class="grid-btn icon edit" data-action="editar" type="button" title="Editar culto" aria-label="Editar culto"><span class="icon-pencil"></span></button><button class="grid-btn icon delete" data-action="excluir" type="button" title="Excluir culto" aria-label="Excluir culto"><span class="icon-trash"></span></button></div>'
     }
   ];
 
@@ -86,8 +80,7 @@ export class CultosComponent implements OnInit {
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly cultoService: CultoService,
-    private readonly repertorioService: RepertorioService
+    private readonly cultoService: CultoService
   ) {}
 
   ngOnInit(): void {
@@ -97,26 +90,7 @@ export class CultosComponent implements OnInit {
   carregar(): void {
     this.cultoService.listar().subscribe((data) => {
       this.cultos = data;
-      this.cultosSelecao = CultoService.ordenarPorProximidade(data);
       this.rowData = this.mapearParaGrid(data);
-      if (!this.repertorioCultoId && this.cultosSelecao.length > 0) {
-        this.repertorioCultoId = this.cultosSelecao[0].id;
-        this.carregarRepertorio();
-      }
-    });
-  }
-
-  carregarRepertorio(): void {
-    if (!this.repertorioCultoId) {
-      this.repertorioCultoNome = '';
-      this.repertorioItens = [];
-      return;
-    }
-
-    this.repertorioCultoNome = this.cultos.find((item) => item.id === this.repertorioCultoId)?.nome || '';
-
-    this.repertorioService.obterPorCulto(this.repertorioCultoId).subscribe((data) => {
-      this.repertorioItens = (data.itens || []).slice().sort((a, b) => a.ordem - b.ordem);
     });
   }
 
@@ -132,11 +106,6 @@ export class CultosComponent implements OnInit {
       return;
     }
 
-    if (action === 'repertorio') {
-      this.visualizarRepertorio(row.culto);
-      return;
-    }
-
     if (action === 'editar') {
       this.editar(row.culto);
       return;
@@ -145,11 +114,6 @@ export class CultosComponent implements OnInit {
     if (action === 'excluir') {
       this.excluir(row.culto);
     }
-  }
-
-  visualizarRepertorio(culto: Culto): void {
-    this.repertorioCultoId = culto.id;
-    this.carregarRepertorio();
   }
 
   abrirModalNovoCulto(): void {

@@ -25,6 +25,11 @@ namespace GestaoCulto.API.Controllers
         public bool Ativo { get; set; } = true;
     }
 
+    public class CultoRecorrenciaGeracaoRequest
+    {
+        public List<string> Datas { get; set; } = new List<string>();
+    }
+
     [ApiController]
     [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
     [Route("api/cultos-recorrencias")]
@@ -149,8 +154,36 @@ namespace GestaoCulto.API.Controllers
             return Ok(new { mensagem = "Recorrência removida com sucesso." });
         }
 
+        [HttpGet("{id:long}/datas-geracao")]
+        public async Task<IActionResult> ListarDatasGeracao(long id)
+        {
+            var recorrencia = await _db.CultosRecorrencias.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            if (recorrencia == null)
+            {
+                return NotFound(new { mensagem = "Recorrência não encontrada." });
+            }
+
+            if (!recorrencia.Ativo)
+            {
+                return BadRequest(new { mensagem = "Ative a recorrência antes de gerar cultos." });
+            }
+
+            var datas = new List<object>();
+            foreach (var data in MontarDatas(recorrencia.DiaSemana, recorrencia.QuantidadeSemanasAntecedencia))
+            {
+                var jaExiste = await _db.Cultos.AnyAsync(c =>
+                    c.DataCulto == data.Date &&
+                    c.HorarioInicio == recorrencia.HorarioInicio &&
+                    (c.RecorrenciaId == recorrencia.Id || c.Nome == recorrencia.Nome));
+
+                datas.Add(new { data = data.ToString("yyyy-MM-dd"), jaExiste });
+            }
+
+            return Ok(new { recorrenciaId = recorrencia.Id, nome = recorrencia.Nome, datas });
+        }
+
         [HttpPost("{id:long}/gerar")]
-        public async Task<IActionResult> Gerar(long id)
+        public async Task<IActionResult> Gerar(long id, [FromBody] CultoRecorrenciaGeracaoRequest dto)
         {
             var recorrencia = await _db.CultosRecorrencias.FirstOrDefaultAsync(x => x.Id == id);
             if (recorrencia == null)
@@ -163,12 +196,42 @@ namespace GestaoCulto.API.Controllers
                 return BadRequest(new { mensagem = "Ative a recorrência antes de gerar cultos." });
             }
 
-            var datas = MontarDatas(recorrencia.DiaSemana, recorrencia.QuantidadeSemanasAntecedencia);
+            if (dto == null || dto.Datas == null || dto.Datas.Count == 0)
+            {
+                return BadRequest(new { mensagem = "Selecione pelo menos uma data para gerar os cultos." });
+            }
+
+            var datasDisponiveis = MontarDatas(recorrencia.DiaSemana, recorrencia.QuantidadeSemanasAntecedencia)
+                .Select(x => x.Date)
+                .ToHashSet();
+            var datasSelecionadas = new List<DateTime>();
+            foreach (var dataTexto in dto.Datas)
+            {
+                if (string.IsNullOrWhiteSpace(dataTexto) ||
+                    !DateTime.TryParseExact(dataTexto, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var data) ||
+                    data.TimeOfDay != TimeSpan.Zero)
+                {
+                    return BadRequest(new { mensagem = $"Data inválida: {dataTexto}." });
+                }
+
+                if (!datasDisponiveis.Contains(data.Date))
+                {
+                    return BadRequest(new { mensagem = $"A data {dataTexto} não pertence às próximas datas da recorrência." });
+                }
+
+                if (datasSelecionadas.Contains(data.Date))
+                {
+                    return BadRequest(new { mensagem = $"A data {dataTexto} foi selecionada mais de uma vez." });
+                }
+
+                datasSelecionadas.Add(data.Date);
+            }
+
             var criados = 0;
             var ignorados = 0;
             var cultoIdsCriados = new List<long>();
 
-            foreach (var data in datas)
+            foreach (var data in datasSelecionadas)
             {
                 var jaExiste = await _db.Cultos.AnyAsync(c =>
                     c.DataCulto == data.Date &&
@@ -214,6 +277,7 @@ namespace GestaoCulto.API.Controllers
             return Ok(new
             {
                 mensagem = $"{criados} culto(s) criado(s). {ignorados} já existiam e foram ignorados.",
+                solicitados = datasSelecionadas.Count,
                 criados,
                 ignorados,
                 cultoIdsCriados

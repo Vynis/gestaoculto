@@ -90,6 +90,28 @@ nb-card-header {
 .form-field {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
+}
+
+.form-field > *,
+.form-grid > *,
+.recorrencia-form > *,
+.filtros > *,
+.filtro > *,
+.toolbar > * {
+  min-width: 0;
+}
+
+nb-select,
+nb-select .select-button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+nb-select .select-button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .form-field > label {

@@ -86,6 +86,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                   ministerio_id BIGINT UNSIGNED NOT NULL,
                   nome VARCHAR(120) NOT NULL,
+                  bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'SOMENTE_EQUIPE',
                   ordem INT NOT NULL DEFAULT 0,
                   ativo TINYINT(1) NOT NULL DEFAULT 1,
                   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -97,6 +98,14 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_ministerio_funcao_padrao_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
+
+            if (await TabelaExisteAsync("ministerio_funcao_padrao") && !await ColunaExisteAsync("ministerio_funcao_padrao", "bloco_cronograma"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE ministerio_funcao_padrao
+                    ADD COLUMN bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'SOMENTE_EQUIPE' AFTER nome;
+                ");
+            }
 
             await SincronizarVinculosVoluntarioMinisterioAsync();
 
@@ -561,6 +570,14 @@ namespace GestaoCulto.Infrastructure.Persistence
                     ALTER TABLE escala
                     MODIFY COLUMN voluntario_id BIGINT UNSIGNED NULL;
                 ");
+
+                if (!await ColunaExisteAsync("escala", "bloco_cronograma"))
+                {
+                    await _db.Database.ExecuteSqlRawAsync(@"
+                        ALTER TABLE escala
+                        ADD COLUMN bloco_cronograma VARCHAR(80) NULL AFTER etapa_culto_id;
+                    ");
+                }
 
                 if (!await ColunaExisteAsync("escala", "voluntario_avulso_nome"))
                 {

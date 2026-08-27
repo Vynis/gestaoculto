@@ -12,16 +12,6 @@
         </div>
 
         <div class="form-field">
-          <label for="escala-etapa">Etapa do cronograma (opcional)</label>
-          <select id="escala-etapa" class="gc-native-select" nbInput formControlName="etapaCultoId">
-            <option [ngValue]="null">Etapa do cronograma (opcional)</option>
-            <option *ngIf="carregandoEtapas" [ngValue]="null" disabled>Carregando etapas...</option>
-            <option *ngIf="erroEtapas && !carregandoEtapas" [ngValue]="null" disabled>{{ erroEtapas }}</option>
-            <option *ngFor="let etapa of etapasCulto" [ngValue]="etapa.id">{{ descricaoEtapa(etapa) }}</option>
-          </select>
-        </div>
-
-        <div class="form-field">
           <label for="escala-tipo-vol">Tipo de voluntário</label>
           <select id="escala-tipo-vol" class="gc-native-select" nbInput formControlName="tipoVoluntario">
             <option [ngValue]="'CADASTRADO'">Voluntário cadastrado</option>
@@ -98,19 +88,20 @@
         </div>
 
         <div class="form-field" *ngIf="usarComboFuncao">
-          <label for="escala-funcao-select">Função</label>
+          <label for="escala-funcao-select">Função na equipe</label>
           <select id="escala-funcao-select" class="gc-native-select" nbInput formControlName="funcao">
             <option [ngValue]="null" disabled>Selecione a função</option>
             <option *ngFor="let funcao of funcoesPadraoDisponiveis" [ngValue]="funcao">{{ funcao }}</option>
             <option *ngIf="funcaoAtualNaoCatalogada" [ngValue]="funcaoAtualNaoCatalogada">Função legada: {{ funcaoAtualNaoCatalogada }}</option>
           </select>
+          <small>Exibição no relatório: {{ blocoCronogramaFuncaoSelecionada }}</small>
         </div>
 
         <div class="form-field" *ngIf="!usarComboFuncao">
-          <label for="escala-funcao-input">Função</label>
+          <label for="escala-funcao-input">Função na equipe</label>
           <input id="escala-funcao-input" nbInput formControlName="funcao" placeholder="Função" />
         </div>
-        <small *ngIf="!usarComboFuncao">Equipe sem funções cadastradas. Digite a função livremente.</small>
+        <small *ngIf="!usarComboFuncao">Equipe sem funções cadastradas. Digite a função livremente. Exibição no relatório: {{ blocoCronogramaFuncaoSelecionada }}</small>
 
         <div class="modal-actions">
           <button nbButton status="primary" [disabled]="salvando">{{ escalaEditando ? 'Atualizar' : 'Adicionar' }}</button>

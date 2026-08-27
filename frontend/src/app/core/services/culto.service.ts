@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { Culto, CultoRecorrencia, CultoRecorrenciaGeracaoResponse, CultoRecorrenciaRequest, CultoRequest } from '../models/culto.models';
+import { Culto, CultoRecorrencia, CultoRecorrenciaDatasGeracaoResponse, CultoRecorrenciaGeracaoRequest, CultoRecorrenciaGeracaoResponse, CultoRecorrenciaRequest, CultoRequest } from '../models/culto.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -71,8 +71,12 @@ export class CultoService {
     return this.http.delete<{ mensagem: string }>(`${this.recorrenciasUrl}/${id}`);
   }
 
-  gerarCultosRecorrencia(id: number): Observable<CultoRecorrenciaGeracaoResponse> {
-    return this.http.post<CultoRecorrenciaGeracaoResponse>(`${this.recorrenciasUrl}/${id}/gerar`, {});
+  listarDatasGeracao(id: number): Observable<CultoRecorrenciaDatasGeracaoResponse> {
+    return this.http.get<CultoRecorrenciaDatasGeracaoResponse>(`${this.recorrenciasUrl}/${id}/datas-geracao`);
+  }
+
+  gerarCultosRecorrencia(id: number, dto: CultoRecorrenciaGeracaoRequest): Observable<CultoRecorrenciaGeracaoResponse> {
+    return this.http.post<CultoRecorrenciaGeracaoResponse>(`${this.recorrenciasUrl}/${id}/gerar`, dto);
   }
 
   private static dataHoraCulto(culto: Culto): Date {

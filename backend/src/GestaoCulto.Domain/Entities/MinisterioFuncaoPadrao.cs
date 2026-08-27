@@ -7,6 +7,7 @@ namespace GestaoCulto.Domain.Entities
         public long MinisterioId { get; set; }
         public Ministerio Ministerio { get; set; } = null!;
         public string Nome { get; set; } = string.Empty;
+        public string BlocoCronograma { get; set; } = "SOMENTE_EQUIPE";
         public int Ordem { get; set; }
         public bool Ativo { get; set; } = true;
     }

@@ -1,0 +1,9 @@
+- Backend utiliza ASP.NET Core 3.1.
+- Não atualizar o projeto para versões mais novas do .NET.
+- Banco de dados é MySQL.
+- Seguir o padrão Repository/Service já existente.
+- Antes de criar uma classe, procurar implementação semelhante.
+- Frontend utiliza Angular/Ionic.
+- Não atualizar dependências sem autorização.
+- Migrations devem seguir o padrão atual.
+- Evitar mudanças fora do escopo solicitado.

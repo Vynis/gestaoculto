@@ -37,13 +37,6 @@
   align-items: center;
 }
 
-.repertorio-toolbar {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 0.8rem;
-  flex-wrap: wrap;
-}
-
 .feedback {
   margin-bottom: 0.75rem;
   padding: 0.6rem 0.7rem;
@@ -126,12 +119,6 @@
 
 :host ::ng-deep .grid-btn .icon-trash::before {
   content: '\1F5D1';
-  font-size: 0.9rem;
-  line-height: 1;
-}
-
-:host ::ng-deep .grid-btn .icon-list::before {
-  content: '\2630';
   font-size: 0.9rem;
   line-height: 1;
 }

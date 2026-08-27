@@ -32,38 +32,6 @@
   </nb-card-body>
 </nb-card>
 
-<nb-card>
-  <nb-card-header>Repertório do culto (visualização)</nb-card-header>
-  <nb-card-body>
-    <div class="repertorio-toolbar">
-      <nb-select
-        [(ngModel)]="repertorioCultoId"
-        [ngModelOptions]="{ standalone: true }"
-        placeholder="Selecione o culto"
-        (selectedChange)="carregarRepertorio()"
-      >
-        <nb-option *ngFor="let culto of cultosSelecao" [value]="culto.id">{{ culto.nome }}</nb-option>
-      </nb-select>
-    </div>
-
-    <p *ngIf="repertorioCultoNome"><strong>Culto selecionado:</strong> {{ repertorioCultoNome }}</p>
-
-    <nb-list *ngIf="repertorioItens.length; else semRepertorio">
-      <nb-list-item *ngFor="let item of repertorioItens">
-        <div>
-          <strong>{{ item.ordem }} - {{ item.musicaTitulo || ('Música #' + item.musicaId) }}</strong>
-          <small *ngIf="item.etapaAtividade">Etapa: {{ item.etapaAtividade }}</small>
-          <small *ngIf="item.responsavel">Responsável: {{ item.responsavel }}</small>
-          <small *ngIf="item.observacoes">Obs: {{ item.observacoes }}</small>
-        </div>
-      </nb-list-item>
-    </nb-list>
-    <ng-template #semRepertorio>
-      <p>Sem repertório cadastrado para o culto selecionado.</p>
-    </ng-template>
-  </nb-card-body>
-</nb-card>
-
 <div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicao()"></div>
 <div class="modal-wrapper" *ngIf="modalAberto">
   <nb-card class="modal-card">

@@ -14,6 +14,7 @@ export interface MinisterioFuncaoPadrao {
   id?: number;
   ministerioId?: number;
   nome: string;
+  blocoCronograma?: string;
   ordem?: number;
   ativo: boolean;
 }

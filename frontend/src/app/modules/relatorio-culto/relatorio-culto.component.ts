@@ -40,12 +40,10 @@ interface LinhaRepertorio {
 interface LinhaCronogramaAdicional {
   horario: string;
   atividade: string;
-  voluntarios: string[];
 }
 
 interface SecaoCronogramaAdicional {
   titulo: string;
-  quantidadeVoluntarios: number;
   linhas: LinhaCronogramaAdicional[];
 }
 
@@ -411,7 +409,8 @@ export class RelatorioCultoComponent implements OnInit {
       const etapasAdicionais = etapasOrdenadas.filter((etapa) => this.normalizarBloco(etapa.blocoCronograma) !== 'PRINCIPAL');
 
       for (const etapa of etapasPrincipais) {
-        const escalasEtapa = escalas.filter((item) => Number(item.etapaCultoId || 0) === Number(etapa.id));
+        const escalasEtapa = (escalas || [])
+          .filter((item) => Number(item.etapaCultoId || 0) === Number(etapa.id));
         const repertorioEtapa = repertorio.filter((item) => Number(item.etapaCultoId || 0) === Number(etapa.id));
 
         const colunas = this.montarColunasOperacionais(etapa, escalasEtapa);
@@ -438,23 +437,13 @@ export class RelatorioCultoComponent implements OnInit {
 
       for (const etapa of etapasAdicionais) {
         const nomeBloco = this.normalizarBloco(etapa.blocoCronograma);
-        const escalasEtapa = escalas
-          .filter((item) => Number(item.etapaCultoId || 0) === Number(etapa.id))
-          .slice()
-          .sort((a, b) => String(a.voluntarioNome || '').localeCompare(String(b.voluntarioNome || ''), 'pt-BR'));
-
-        const voluntarios = escalasEtapa
-          .map((item) => this.textoValido(item.voluntarioNome) || `Voluntário #${item.voluntarioId}`)
-          .filter((item) => !!item);
-
         if (!mapaBlocosAdicionais.has(nomeBloco)) {
           mapaBlocosAdicionais.set(nomeBloco, []);
         }
 
         mapaBlocosAdicionais.get(nomeBloco)!.push({
           horario: this.montarFaixaHorario(etapa),
-          atividade: this.textoValido(etapa.atividade) || 'Etapa',
-          voluntarios: voluntarios.length ? voluntarios : ['*']
+          atividade: this.textoValido(etapa.atividade) || 'Etapa'
         });
       }
 
@@ -509,21 +498,13 @@ export class RelatorioCultoComponent implements OnInit {
     this.cronogramasAdicionais = Array.from(mapaBlocosAdicionais.entries())
       .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'))
       .map(([nomeBloco, linhas]) => {
-        const quantidadeVoluntarios = Math.max(2, ...linhas.map((linha) => linha.voluntarios.length));
         const linhasNormalizadas = linhas
           .slice()
           .sort((a, b) => this.compararHorarioTexto(a.horario, b.horario))
-          .map((linha) => ({
-            ...linha,
-            voluntarios: [
-              ...linha.voluntarios,
-              ...Array.from({ length: Math.max(0, quantidadeVoluntarios - linha.voluntarios.length) }, () => '*')
-            ]
-          }));
+          .map((linha) => ({ ...linha }));
 
         return {
           titulo: `Cronograma - ${nomeBloco}`,
-          quantidadeVoluntarios,
           linhas: linhasNormalizadas
         };
       });
@@ -809,10 +790,9 @@ export class RelatorioCultoComponent implements OnInit {
       this.adicionarCardsEmGridPdf(content, this.cronogramasAdicionais.map((secao) => this.montarCardPdf([
         { text: secao.titulo, style: 'tituloCard' },
         ...secao.linhas.map((linha) => ({
-          stack: [
-            { text: `${linha.horario} - ${linha.atividade}`, bold: true, margin: [0, 4, 0, 1] },
-            { text: linha.voluntarios.join(' | ') || '-', color: '#475569' }
-          ]
+          text: `${linha.horario} - ${linha.atividade}`,
+          margin: [0, 4, 0, 1],
+          color: '#475569'
         }))
       ], '#2563EB')));
     }
@@ -1046,10 +1026,6 @@ export class RelatorioCultoComponent implements OnInit {
     return texto ? texto.toUpperCase() : 'PRINCIPAL';
   }
 
-  cabecalhosVoluntarios(secao: SecaoCronogramaAdicional): string[] {
-    return Array.from({ length: secao.quantidadeVoluntarios }, (_, index) => `Voluntário ${index + 1}`);
-  }
-
   classeCorMinisterio(index: number): string {
     const variantes = ['variante-a', 'variante-b', 'variante-c'];
     return variantes[Math.abs(Number(index) || 0) % variantes.length];
@@ -1060,8 +1036,8 @@ export class RelatorioCultoComponent implements OnInit {
       titulo: secao.titulo,
       tipo: 'adicional',
       variante: 0,
-      cabecalho: ['TEMPO', 'ATIVIDADE', ...Array.from({ length: secao.quantidadeVoluntarios }, (_, index) => `Voluntário ${index + 1}`)],
-      linhas: secao.linhas.map((linha) => [linha.horario, linha.atividade, ...linha.voluntarios])
+      cabecalho: ['TEMPO', 'ATIVIDADE'],
+      linhas: secao.linhas.map((linha) => [linha.horario, linha.atividade])
     }));
 
     const secoesMinisterio: SecaoMenorPreview[] = this.secoesVoluntariosMinisterio.map((secao, index) => ({

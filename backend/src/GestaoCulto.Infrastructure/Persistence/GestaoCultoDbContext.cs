@@ -144,6 +144,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
                 entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(120).IsRequired();
+                entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
                 entity.Property(x => x.Ativo).HasColumnName("ativo");
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
@@ -617,6 +618,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.CultoId).HasColumnName("culto_id");
                 entity.Property(x => x.EtapaCultoId).HasColumnName("etapa_culto_id");
+                entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80);
                 entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
                 entity.Property(x => x.VoluntarioAvulsoNome).HasColumnName("voluntario_avulso_nome").HasMaxLength(160);
                 entity.Property(x => x.VoluntarioAvulsoTelefone).HasColumnName("voluntario_avulso_telefone").HasMaxLength(40);

@@ -65,6 +65,90 @@
   justify-content: flex-end;
 }
 
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  background: rgba(20, 35, 55, 0.48);
+}
+
+.modal-wrapper {
+  position: fixed;
+  z-index: 1001;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.modal-card {
+  width: min(100%, 600px);
+  max-height: calc(100vh - 2rem);
+  margin: 0;
+  pointer-events: auto;
+}
+
+.modal-description {
+  margin-top: 0;
+  color: #607086;
+}
+
+.datas-acoes,
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.datas-acoes {
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.datas-geracao {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  max-height: 42vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.data-geracao {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #d8e2f0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.data-geracao span {
+  display: flex;
+  flex-direction: column;
+}
+
+.data-geracao small {
+  color: #607086;
+}
+
+.data-geracao em {
+  margin-left: auto;
+  color: #607086;
+  font-size: 0.75rem;
+  font-style: normal;
+}
+
+.data-geracao.data-ja-gerada {
+  opacity: 0.62;
+  background: #f5f7fa;
+  cursor: not-allowed;
+}
+
 .feedback {
   margin-bottom: 0.75rem;
   padding: 0.6rem 0.7rem;
@@ -96,5 +180,9 @@
 
   .recorrencia-card-actions {
     justify-content: flex-start;
+  }
+
+  .datas-geracao {
+    grid-template-columns: 1fr;
   }
 }

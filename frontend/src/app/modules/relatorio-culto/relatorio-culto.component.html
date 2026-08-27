@@ -79,19 +79,17 @@
           <table class="planilha-lideres">
             <thead>
               <tr>
-                <th [attr.colspan]="2 + secao.quantidadeVoluntarios">{{ secao.titulo }}</th>
+                <th colspan="2">{{ secao.titulo }}</th>
               </tr>
               <tr>
                 <th>TEMPO</th>
                 <th>ATIVIDADE</th>
-                <th *ngFor="let cabecalho of cabecalhosVoluntarios(secao)">{{ cabecalho }}</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let linha of secao.linhas">
                 <td>{{ linha.horario }}</td>
                 <td>{{ linha.atividade }}</td>
-                <td *ngFor="let voluntario of linha.voluntarios">{{ voluntario }}</td>
               </tr>
             </tbody>
           </table>
@@ -203,7 +201,6 @@
               <h5>{{ secao.titulo }}</h5>
               <div class="cv-linha" *ngFor="let linha of secao.linhas">
                 <span>{{ linha.horario }} - {{ linha.atividade }}</span>
-                <small>{{ linha.voluntarios.join(' | ') || '-' }}</small>
               </div>
             </article>
           </div>

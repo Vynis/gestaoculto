@@ -38,6 +38,11 @@
   cursor: not-allowed;
 }
 
+.form-field small {
+  color: #607086;
+  line-height: 1.35;
+}
+
 .gc-native-select-multiple {
   min-height: 6.75rem;
   background-image: none;

@@ -1,0 +1,183 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Modelo usado quando nenhum agente define outro modelo.
+  "model": "openai/gpt-5.6-luna",
+
+  // Agente padrão ao abrir o OpenCode.
+  "default_agent": "build",
+
+  "providers": {
+    "openai": {
+      "models": {
+        "gpt-5.6-luna": {
+          "modelID": "gpt-5.6-luna",
+          "name": "GPT-5.6 Luna"
+        },
+
+        "gpt-5.6-terra": {
+          "modelID": "gpt-5.6-terra",
+          "name": "GPT-5.6 Terra"
+        },
+
+        "gpt-5.6-sol": {
+          "modelID": "gpt-5.6-sol",
+          "name": "GPT-5.6 Sol"
+        }
+      }
+    }
+  },
+
+  "agents": {
+    // =========================================================
+    // PADRÃO - trabalho diário
+    // =========================================================
+    "build": {
+      "description": "Implementação diária com baixo custo",
+      "mode": "primary",
+      "model": "openai/gpt-5.6-luna",
+
+      "system": "Você é o agente principal de desenvolvimento. Antes de alterar código, analise a estrutura existente e siga rigorosamente os padrões já usados no projeto. Evite reescrever arquivos inteiros sem necessidade. Faça mudanças mínimas, simples e compatíveis com a arquitetura existente. Reutilize services, repositories, DTOs, models, componentes e padrões existentes sempre que possível. Não introduza novas bibliotecas sem necessidade. Após alterações, verifique possíveis erros de compilação, imports, referências e impactos relacionados.",
+
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git push *",
+          "effect": "ask"
+        }
+      ]
+    },
+
+    // =========================================================
+    // PLANEJAMENTO
+    // =========================================================
+    "plan": {
+      "description": "Analisa e planeja alterações antes de implementar",
+      "mode": "primary",
+      "model": "openai/gpt-5.6-luna",
+
+      "system": "Analise o projeto e elabore um plano de implementação antes de alterar qualquer código. Identifique arquivos envolvidos, dependências, padrões existentes, riscos e a solução mais simples compatível com a arquitetura atual. Evite sugerir refatorações desnecessárias.",
+
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    },
+
+    // =========================================================
+    // DESENVOLVIMENTO COMPLEXO
+    // =========================================================
+    "architect": {
+      "description": "Implementações complexas, arquitetura e bugs difíceis",
+      "mode": "all",
+      "model": "openai/gpt-5.6-terra",
+
+      "system": "Você é um engenheiro de software sênior especializado em análise de sistemas existentes. Use este agente para bugs difíceis, arquitetura, autenticação, migrations complexas, refatorações maiores, integração frontend/backend/banco e problemas que exigem raciocínio profundo. Antes de propor mudanças, investigue a implementação existente. Preserve padrões e compatibilidade. Prefira corrigir a causa raiz em vez de contornar sintomas.",
+
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git push *",
+          "effect": "ask"
+        }
+      ]
+    },
+
+    // =========================================================
+    // CODE REVIEW
+    // =========================================================
+    "reviewer": {
+      "description": "Revisa código sem modificar arquivos",
+      "mode": "subagent",
+      "model": "openai/gpt-5.6-luna",
+
+      "system": "Revise as alterações procurando bugs, regressões, problemas de segurança, consultas SQL inadequadas, problemas de performance, código duplicado, violações dos padrões existentes e possíveis erros de compilação. Não altere arquivos. Apresente primeiro os problemas mais importantes e indique os arquivos envolvidos.",
+
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    },
+
+    // =========================================================
+    // ÚLTIMO RECURSO
+    // =========================================================
+    "expert": {
+      "description": "Problemas extremamente difíceis",
+      "mode": "all",
+      "model": "openai/gpt-5.6-sol",
+
+      "system": "Atue como especialista sênior em engenharia de software. Investigue profundamente problemas que outros agentes não conseguiram resolver. Analise código, arquitetura, fluxo de dados, banco, dependências e efeitos colaterais antes de fazer alterações. Priorize causa raiz, segurança, compatibilidade e alterações mínimas.",
+
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git push *",
+          "effect": "ask"
+        }
+      ]
+    }
+  },
+
+  // Reduz crescimento desnecessário do contexto.
+  "compaction": {
+    "auto": true,
+    "keep": {
+      "tokens": 15000
+    },
+    "buffer": 20000
+  },
+
+  // Evita ficar observando arquivos gerados.
+  "watcher": {
+    "ignore": [
+      "**/bin/**",
+      "**/obj/**",
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.angular/**",
+      "**/coverage/**"
+    ]
+  }
+}

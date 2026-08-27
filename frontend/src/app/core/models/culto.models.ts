@@ -43,9 +43,25 @@ export interface CultoRecorrenciaRequest {
 
 export interface CultoRecorrenciaGeracaoResponse {
   mensagem: string;
+  solicitados: number;
   criados: number;
   ignorados: number;
   cultoIdsCriados: number[];
+}
+
+export interface CultoRecorrenciaDataGeracao {
+  data: string;
+  jaExiste: boolean;
+}
+
+export interface CultoRecorrenciaDatasGeracaoResponse {
+  recorrenciaId: number;
+  nome: string;
+  datas: CultoRecorrenciaDataGeracao[];
+}
+
+export interface CultoRecorrenciaGeracaoRequest {
+  datas: string[];
 }
 
 export interface CultoRequest {

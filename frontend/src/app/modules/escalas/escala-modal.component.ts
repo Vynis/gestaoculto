@@ -384,6 +384,8 @@ export class EscalaModalComponent implements OnChanges {
     if (!atual) {
       this.form.controls.ministerioId.patchValue(ministerioEtapa, { emitEvent: false });
     }
+
+    this.atualizarFuncoesPorMinisterio(ministerioEtapa);
   }
 
   descricaoEtapa(etapa: EtapaCulto): string {
@@ -405,6 +407,35 @@ export class EscalaModalComponent implements OnChanges {
 
     const existe = this.funcoesPadraoDisponiveis.some((item) => item.toLowerCase() === atual.toLowerCase());
     return existe ? null : atual;
+  }
+
+  get blocoCronogramaFuncaoSelecionada(): string {
+    const funcao = (this.form.controls.funcao.value || '').trim();
+    if (!funcao) {
+      return 'Somente equipe';
+    }
+
+    const ministerioId = Number(this.form.controls.ministerioId.value) || 0;
+    const ministerio = this.ministeriosDisponiveis.find((item) => Number(item.id) === ministerioId)
+      || this.ministerios.find((item) => Number(item.id) === ministerioId);
+
+    const funcaoPadrao = (ministerio?.funcoesPadrao || [])
+      .find((item) => String(item.nome || '').trim().toLowerCase() === funcao.toLowerCase());
+
+    return this.rotuloBlocoCronograma(funcaoPadrao?.blocoCronograma);
+  }
+
+  private rotuloBlocoCronograma(valor?: string | null): string {
+    switch (String(valor || 'SOMENTE_EQUIPE').trim().toUpperCase()) {
+      case 'PRINCIPAL':
+        return 'Cronograma principal';
+      case 'LOUNGE':
+        return 'Lounge';
+      case 'ADICIONAL':
+        return 'Adicional';
+      default:
+        return 'Somente equipe';
+    }
   }
 
   private obterVoluntarioPreferencial(): number {

@@ -89,3 +89,42 @@
     </ng-template>
   </nb-card-body>
 </nb-card>
+
+<div class="modal-backdrop" *ngIf="modalGeracaoAberto" (click)="fecharModalGeracao()"></div>
+<div class="modal-wrapper" *ngIf="modalGeracaoAberto">
+  <nb-card class="modal-card" (click)="$event.stopPropagation()">
+    <nb-card-header>Selecionar datas para geração</nb-card-header>
+    <nb-card-body>
+      <p class="modal-description">
+        Selecione os dias em que <strong>{{ recorrenciaGeracao?.nome }}</strong> deverá ser gerado.
+        Os dias já gerados não podem ser selecionados novamente.
+      </p>
+
+      <div class="datas-acoes">
+        <button nbButton size="small" status="basic" type="button" (click)="selecionarTodasDatas()" [disabled]="gerandoCultos">
+          Selecionar todas
+        </button>
+        <button nbButton size="small" status="basic" type="button" (click)="limparSelecaoDatas()" [disabled]="gerandoCultos">
+          Limpar seleção
+        </button>
+      </div>
+
+      <div class="datas-geracao">
+        <div class="data-geracao" *ngFor="let item of datasGeracao" [class.data-ja-gerada]="item.jaExiste">
+          <nb-checkbox [(ngModel)]="item.selecionada" [disabled]="item.jaExiste || gerandoCultos"></nb-checkbox>
+          <span>
+            <strong>{{ formatarDataGeracao(item.data) }}</strong>
+            <small>{{ diaDataGeracao(item.data) }}</small>
+          </span>
+          <em *ngIf="item.jaExiste">Já gerado</em>
+        </div>
+      </div>
+    </nb-card-body>
+    <nb-card-footer class="modal-actions">
+      <button nbButton status="basic" type="button" (click)="fecharModalGeracao()" [disabled]="gerandoCultos">Cancelar</button>
+      <button nbButton status="primary" type="button" (click)="confirmarGeracao()" [disabled]="gerandoCultos">
+        {{ gerandoCultos ? 'Gerando...' : 'Gerar selecionados' }}
+      </button>
+    </nb-card-footer>
+  </nb-card>
+</div>

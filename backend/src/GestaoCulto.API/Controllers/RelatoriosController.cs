@@ -21,6 +21,7 @@ namespace GestaoCulto.API.Controllers
             public long Id { get; set; }
             public long CultoId { get; set; }
             public long? EtapaCultoId { get; set; }
+            public string? BlocoCronograma { get; set; }
             public string Funcao { get; set; } = string.Empty;
             public long VoluntarioId { get; set; }
             public string? VoluntarioNome { get; set; }
@@ -325,6 +326,7 @@ namespace GestaoCulto.API.Controllers
                     Id = e.Id,
                     CultoId = e.CultoId,
                     EtapaCultoId = e.EtapaCultoId,
+                    BlocoCronograma = e.BlocoCronograma,
                     Funcao = e.Funcao,
                     VoluntarioId = e.VoluntarioId ?? 0,
                     VoluntarioNome = e.VoluntarioId.HasValue
@@ -339,6 +341,46 @@ namespace GestaoCulto.API.Controllers
                     Observacoes = e.Observacoes
                 })
                 .ToListAsync();
+
+            var ministerioIdsEscalas = escalas
+                .Where(x => x.MinisterioId.HasValue)
+                .Select(x => x.MinisterioId!.Value)
+                .Distinct()
+                .ToList();
+
+            var funcoesMinisterio = await _db.MinisteriosFuncoesPadrao
+                .AsNoTracking()
+                .Where(x => ministerioIdsEscalas.Contains(x.MinisterioId))
+                .Select(x => new
+                {
+                    x.MinisterioId,
+                    x.Nome,
+                    x.BlocoCronograma
+                })
+                .ToListAsync();
+
+            var blocosPorFuncao = funcoesMinisterio
+                .GroupBy(x => $"{x.MinisterioId}|{NormalizarFuncao(x.Nome)}")
+                .ToDictionary(x => x.Key, x => x.First().BlocoCronograma);
+
+            var blocosPorEtapa = etapas
+                .ToDictionary(x => (long)x.Id, x => x.BlocoCronograma);
+
+            foreach (var escala in escalas.Where(x => string.IsNullOrWhiteSpace(x.BlocoCronograma)))
+            {
+                if (escala.MinisterioId.HasValue
+                    && blocosPorFuncao.TryGetValue($"{escala.MinisterioId.Value}|{NormalizarFuncao(escala.Funcao)}", out var blocoFuncao))
+                {
+                    escala.BlocoCronograma = blocoFuncao;
+                    continue;
+                }
+
+                if (escala.EtapaCultoId.HasValue
+                    && blocosPorEtapa.TryGetValue(escala.EtapaCultoId.Value, out var blocoEtapa))
+                {
+                    escala.BlocoCronograma = blocoEtapa;
+                }
+            }
 
             var repertorios = await _db.RepertoriosCulto
                 .AsNoTracking()
@@ -508,6 +550,11 @@ namespace GestaoCulto.API.Controllers
                 quantidadeCultos = resultadoCultos.Count,
                 cultos = resultadoCultos
             };
+        }
+
+        private static string NormalizarFuncao(string? valor)
+        {
+            return (valor ?? string.Empty).Trim().ToUpperInvariant();
         }
     }
 }

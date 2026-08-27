@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { CultoRecorrencia, CultoRecorrenciaRequest } from '../../core/models/culto.models';
+import { CultoRecorrencia, CultoRecorrenciaDataGeracao, CultoRecorrenciaRequest } from '../../core/models/culto.models';
 import { TemplateCulto } from '../../core/models/template-culto.models';
 import { CultoService } from '../../core/services/culto.service';
 import { TemplateCultoService } from '../../core/services/template-culto.service';
@@ -19,6 +19,10 @@ export class RecorrenciasCultoComponent implements OnInit {
   carregando = false;
   mensagemSucesso = '';
   mensagemErro = '';
+  modalGeracaoAberto = false;
+  recorrenciaGeracao: CultoRecorrencia | null = null;
+  datasGeracao: Array<CultoRecorrenciaDataGeracao & { selecionada: boolean }> = [];
+  gerandoCultos = false;
 
   readonly statusOptions = [
     { id: 1, label: 'Ativo' },
@@ -157,14 +161,93 @@ export class RecorrenciasCultoComponent implements OnInit {
     this.carregando = true;
 
     try {
-      const resposta = await firstValueFrom(this.cultoService.gerarCultosRecorrencia(recorrencia.id));
-      this.mensagemSucesso = resposta.mensagem;
-      this.carregarRecorrencias();
+      const resposta = await firstValueFrom(this.cultoService.listarDatasGeracao(recorrencia.id));
+      this.recorrenciaGeracao = recorrencia;
+      this.datasGeracao = (resposta.datas || []).map((item) => ({
+        ...item,
+        selecionada: !item.jaExiste
+      }));
+      this.modalGeracaoAberto = true;
     } catch (error) {
       this.mensagemErro = this.extrairMensagemErro(error);
     } finally {
       this.carregando = false;
     }
+  }
+
+  selecionarTodasDatas(): void {
+    this.datasGeracao.forEach((item) => {
+      if (!item.jaExiste) {
+        item.selecionada = true;
+      }
+    });
+  }
+
+  limparSelecaoDatas(): void {
+    this.datasGeracao.forEach((item) => {
+      if (!item.jaExiste) {
+        item.selecionada = false;
+      }
+    });
+  }
+
+  fecharModalGeracao(): void {
+    if (this.gerandoCultos) {
+      return;
+    }
+
+    this.modalGeracaoAberto = false;
+    this.recorrenciaGeracao = null;
+    this.datasGeracao = [];
+  }
+
+  async confirmarGeracao(): Promise<void> {
+    if (!this.recorrenciaGeracao) {
+      return;
+    }
+
+    const datas = this.datasGeracao
+      .filter((item) => item.selecionada && !item.jaExiste)
+      .map((item) => item.data);
+    if (!datas.length) {
+      this.mensagemErro = 'Selecione pelo menos uma data para gerar os cultos.';
+      return;
+    }
+
+    this.mensagemErro = '';
+    this.gerandoCultos = true;
+    try {
+      const resposta = await firstValueFrom(this.cultoService.gerarCultosRecorrencia(
+        this.recorrenciaGeracao.id,
+        { datas }
+      ));
+      this.mensagemSucesso = resposta.mensagem;
+      this.gerandoCultos = false;
+      this.fecharModalGeracao();
+      this.carregarRecorrencias();
+    } catch (error) {
+      this.mensagemErro = this.extrairMensagemErro(error);
+    } finally {
+      this.gerandoCultos = false;
+    }
+  }
+
+  formatarDataGeracao(data: string): string {
+    const partes = data.split('-');
+    if (partes.length !== 3) {
+      return data;
+    }
+
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+
+  diaDataGeracao(data: string): string {
+    const partes = data.split('-').map(Number);
+    if (partes.length !== 3 || partes.some((parte) => Number.isNaN(parte))) {
+      return '';
+    }
+
+    return this.diaSemanaLabel(new Date(Date.UTC(partes[0], partes[1] - 1, partes[2])).getUTCDay());
   }
 
   limparFormulario(): void {
