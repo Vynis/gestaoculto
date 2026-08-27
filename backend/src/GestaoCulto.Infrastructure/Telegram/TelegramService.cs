@@ -21,6 +21,7 @@ namespace GestaoCulto.Infrastructure.Telegram
         private const string CallbackVincular = "vincular:";
         private const string CallbackDisponibilidade = "disp:";
         private const string CallbackRelatorio = "rel:c:";
+        private const string CallbackConfirmarEscala = "esc:conf:";
         private readonly GestaoCultoDbContext _db;
         private readonly ITelegramBotClient _botClient;
         private readonly IDisponibilidadeVoluntarioService _disponibilidadeService;
@@ -350,6 +351,13 @@ namespace GestaoCulto.Infrastructure.Telegram
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(callback.Data)
+                && callback.Data.StartsWith(CallbackConfirmarEscala, StringComparison.Ordinal))
+            {
+                await ProcessarConfirmarEscalaCallbackAsync(callback);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(callback.Data) || !callback.Data.StartsWith(CallbackVincular, StringComparison.Ordinal))
             {
                 await _botClient.ResponderCallbackAsync(callback.Id, "Ação inválida.");
@@ -510,6 +518,7 @@ namespace GestaoCulto.Infrastructure.Telegram
             }
 
             var texto = new StringBuilder("Suas próximas escalas:\n");
+            var botoes = new List<TelegramBotaoDto>();
             foreach (var escala in escalas)
             {
                 var horario = escala.HorarioPrevisto?.ToString("HH:mm") ?? escala.HorarioCulto.ToString(@"hh\:mm");
@@ -537,9 +546,19 @@ namespace GestaoCulto.Infrastructure.Telegram
                 texto.Append("\nStatus: ");
                 texto.Append(escala.StatusPresenca ?? "Pendente");
                 texto.Append("\n");
+
+                if (!string.Equals(escala.StatusPresenca, "Confirmado", StringComparison.OrdinalIgnoreCase))
+                {
+                    botoes.Add(new TelegramBotaoDto
+                    {
+                        Texto = $"Confirmar {escala.DataCulto:dd/MM} {horario}",
+                        CallbackData = $"{CallbackConfirmarEscala}{escala.Id}",
+                        Linha = botoes.Count
+                    });
+                }
             }
 
-            await _botClient.EnviarMensagemAsync(chatId, texto.ToString().TrimEnd());
+            await _botClient.EnviarMensagemAsync(chatId, texto.ToString().TrimEnd(), botoes);
         }
 
         private async Task EnviarDisponibilidadesAsync(long voluntarioId, long chatId)
@@ -677,6 +696,43 @@ namespace GestaoCulto.Infrastructure.Telegram
                     }
                 });
             await _botClient.ResponderCallbackAsync(callback.Id, "Relatório disponível.");
+        }
+
+        private async Task ProcessarConfirmarEscalaCallbackAsync(TelegramCallbackDto callback)
+        {
+            var mensagem = callback.Message!;
+            var conexao = await ObterConexaoAsync(callback.From.Id, mensagem.Chat.Id);
+            if (conexao == null)
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, "Sua conta não está vinculada.");
+                return;
+            }
+
+            var escalaTexto = (callback.Data ?? string.Empty).Substring(CallbackConfirmarEscala.Length);
+            if (!long.TryParse(escalaTexto, out var escalaId) || escalaId <= 0)
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, "Escala inválida.");
+                return;
+            }
+
+            var erro = await ConfirmarEscalaAsync(conexao.VoluntarioId, escalaId);
+            if (!string.IsNullOrWhiteSpace(erro))
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, erro);
+                return;
+            }
+
+            conexao.UltimaInteracaoEm = DateTime.UtcNow;
+            conexao.AtualizadoEm = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            await _botClient.ResponderCallbackAsync(callback.Id, "Escala confirmada com sucesso.");
+            await _botClient.EditarMensagemAsync(
+                mensagem.Chat.Id,
+                mensagem.MessageId,
+                "Escala confirmada com sucesso.\n\nAtualizando suas próximas escalas...");
+
+            await EnviarProximasEscalasAsync(conexao.VoluntarioId, mensagem.Chat.Id);
         }
 
         private async Task ProcessarDisponibilidadeCallbackAsync(TelegramCallbackDto callback)
@@ -1093,6 +1149,31 @@ namespace GestaoCulto.Infrastructure.Telegram
                 .FirstOrDefaultAsync(x => x.TokenHash == hash);
         }
 
+        private async Task<string?> ConfirmarEscalaAsync(long voluntarioId, long escalaId)
+        {
+            using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+            var escala = await _db.Escalas
+                .FirstOrDefaultAsync(x => x.Id == escalaId && x.VoluntarioId == voluntarioId);
+
+            if (escala == null)
+            {
+                return "Escala não encontrada para o seu cadastro.";
+            }
+
+            if (escala.PresencaStatusId == 2)
+            {
+                return "Essa escala já está confirmada.";
+            }
+
+            escala.PresencaStatusId = 2;
+            escala.ConfirmadoEm = DateTime.UtcNow;
+            escala.AtualizadoEm = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return null;
+        }
+
         private void ValidarConfiguracao()
         {
             if (!_options.Enabled
@@ -1105,7 +1186,7 @@ namespace GestaoCulto.Infrastructure.Telegram
 
         private static string MontarAjuda()
         {
-            return "Comandos disponíveis:\n/minhaescala - consultar a próxima escala\n/proximas - listar próximas escalas\n/disponibilidade - informar disponibilidade\n/relatorio - abrir relatório de um culto\n/desvincular - remover o vínculo\n/ajuda - exibir esta mensagem";
+            return "Comandos disponíveis:\n/minhaescala - consultar e confirmar suas escalas pendentes\n/proximas - listar próximas escalas\n/disponibilidade - informar disponibilidade\n/relatorio - abrir relatório de um culto\n/desvincular - remover o vínculo\n/ajuda - exibir esta mensagem";
         }
 
         private static string GerarToken()
