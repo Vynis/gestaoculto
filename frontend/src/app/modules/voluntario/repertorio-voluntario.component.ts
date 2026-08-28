@@ -28,12 +28,15 @@ export class RepertorioVoluntarioComponent implements OnInit {
   modalAdicionarAberto = false;
   modalCadastroAberto = false;
   musicasFiltradas: Musica[] = [];
+  musicaSelecionada: Musica | null = null;
   readonly buscaMusicaControl = new FormControl('', { nonNullable: true });
   modoLista = true;
 
   readonly itemForm = this.fb.group({
     musicaId: [0, Validators.required],
     musicaTom: [''],
+    musicaLinkCifra: [''],
+    musicaLinkVideo: [''],
     responsavel: [''],
     observacoes: ['']
   });
@@ -144,7 +147,8 @@ export class RepertorioVoluntarioComponent implements OnInit {
     this.modalAdicionarAberto = false;
     this.buscaMusicaControl.setValue('', { emitEvent: false });
     this.musicasFiltradas = [];
-    this.itemForm.reset({ musicaId: 0, musicaTom: '', responsavel: '', observacoes: '' });
+    this.musicaSelecionada = null;
+    this.itemForm.reset({ musicaId: 0, musicaTom: '', musicaLinkCifra: '', musicaLinkVideo: '', responsavel: '', observacoes: '' });
   }
 
   abrirModalCadastro(): void {
@@ -161,20 +165,34 @@ export class RepertorioVoluntarioComponent implements OnInit {
   }
 
   selecionarMusicaModal(musicaId: number): void {
-    const musica = this.musicas.find((item) => item.id === musicaId);
+    const musica = this.musicas.find((item) => item.id === musicaId)
+      || (this.musicaSelecionada?.id === musicaId ? this.musicaSelecionada : null);
+    this.musicaSelecionada = musica;
     this.itemForm.patchValue({
       musicaId,
-      musicaTom: this.itemForm.controls.musicaTom.value || musica?.tom || ''
+      musicaTom: musica?.tom || '',
+      musicaLinkCifra: musica?.linkCifra || '',
+      musicaLinkVideo: musica?.linkVideo || ''
     });
   }
 
-  selecionarMusicaAutocomplete(texto: string): void {
-    const musica = this.musicas.find((item) => this.textoMusica(item) === texto);
+  selecionarMusicaAutocomplete(valor: string | Musica | null | undefined): void {
+    if (!valor || (typeof valor === 'string' && !valor.trim())) {
+      return;
+    }
+
+    const texto = typeof valor === 'string' ? valor : this.textoMusica(valor);
+    const musica = typeof valor === 'string'
+      ? this.musicas.find((item) => this.textoMusica(item) === texto)
+        || this.musicasFiltradas.find((item) => this.textoMusica(item) === texto)
+      : valor;
     if (!musica) {
+      this.toastr.warning('Não foi possível identificar a música selecionada.', 'Repertório');
       return;
     }
 
     this.buscaMusicaControl.setValue(texto, { emitEvent: false });
+    this.musicaSelecionada = musica;
     this.selecionarMusicaModal(musica.id);
   }
 
@@ -208,8 +226,16 @@ export class RepertorioVoluntarioComponent implements OnInit {
     }
 
     const raw = this.itemForm.getRawValue();
-    const musica = this.musicas.find((item) => item.id === Number(raw.musicaId));
+    const musica = this.musicaSelecionada?.id === Number(raw.musicaId)
+      ? this.musicaSelecionada
+      : this.musicas.find((item) => item.id === Number(raw.musicaId));
     if (!musica) {
+      this.toastr.warning('Selecione novamente uma música válida.', 'Repertório');
+      return;
+    }
+
+    if (!this.linksValidos(raw.musicaLinkCifra, raw.musicaLinkVideo)) {
+      this.toastr.warning('Informe links válidos usando http ou https.', 'Repertório');
       return;
     }
 
@@ -223,8 +249,8 @@ export class RepertorioVoluntarioComponent implements OnInit {
       musicaTitulo: musica.titulo,
       musicaArtistaBanda: musica.artistaBanda,
       musicaTom: raw.musicaTom || musica.tom,
-      musicaLinkCifra: musica.linkCifra,
-      musicaLinkVideo: musica.linkVideo,
+      musicaLinkCifra: this.normalizarLink(raw.musicaLinkCifra) || musica.linkCifra,
+      musicaLinkVideo: this.normalizarLink(raw.musicaLinkVideo) || musica.linkVideo,
       musicaObservacoes: musica.observacoes,
       etapaCultoId: null,
       ordem: this.repertorio.itens.length + 1,
@@ -233,7 +259,8 @@ export class RepertorioVoluntarioComponent implements OnInit {
     };
 
     this.repertorio.itens = [...this.repertorio.itens, item];
-    this.itemForm.reset({ musicaId: 0, musicaTom: '', responsavel: '', observacoes: '' });
+    this.musicaSelecionada = null;
+    this.itemForm.reset({ musicaId: 0, musicaTom: '', musicaLinkCifra: '', musicaLinkVideo: '', responsavel: '', observacoes: '' });
     this.modalAdicionarAberto = false;
   }
 
@@ -382,6 +409,27 @@ export class RepertorioVoluntarioComponent implements OnInit {
         this.carregando = false;
       },
       complete: () => this.carregando = false
+    });
+  }
+
+  private normalizarLink(valor: string | null | undefined): string | null {
+    const texto = String(valor || '').trim();
+    return texto || null;
+  }
+
+  private linksValidos(linkCifra: string | null | undefined, linkVideo: string | null | undefined): boolean {
+    return [linkCifra, linkVideo].every((link) => {
+      const texto = this.normalizarLink(link);
+      if (!texto) {
+        return true;
+      }
+
+      try {
+        const url = new URL(texto);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        return false;
+      }
     });
   }
 }

@@ -277,6 +277,14 @@ namespace GestaoCulto.Infrastructure.Telegram
                 case "/repertorio":
                     await ProcessarComandoRepertorioAsync(conexao.VoluntarioId, mensagem.Chat.Id, parametro);
                     break;
+                case "/cancelar":
+                    var cancelouEdicao = await CancelarEdicoesAsync(conexao.VoluntarioId);
+                    await _botClient.EnviarMensagemAsync(
+                        mensagem.Chat.Id,
+                        cancelouEdicao
+                            ? "Edição cancelada. Nenhuma alteração foi realizada."
+                            : "Não há nenhuma edição em andamento.");
+                    break;
                 case "/desvincular":
                     conexao.Ativo = false;
                     conexao.DesvinculadoEm = DateTime.UtcNow;
@@ -299,6 +307,33 @@ namespace GestaoCulto.Infrastructure.Telegram
             }
 
             await _db.SaveChangesAsync();
+        }
+
+        private async Task<bool> CancelarEdicoesAsync(long voluntarioId)
+        {
+            var agora = DateTime.UtcNow;
+            var rascunhos = await _db.TelegramDisponibilidadeRascunhos
+                .Where(x => x.VoluntarioId == voluntarioId && x.ExpiraEm > agora)
+                .ToListAsync();
+
+            if (!rascunhos.Any())
+            {
+                return false;
+            }
+
+            var rascunhoIds = rascunhos.Select(x => x.Id).ToList();
+            var ministerios = await _db.TelegramDisponibilidadeRascunhosMinisterios
+                .Where(x => rascunhoIds.Contains(x.TelegramDisponibilidadeRascunhoId))
+                .ToListAsync();
+            _db.TelegramDisponibilidadeRascunhosMinisterios.RemoveRange(ministerios);
+
+            foreach (var rascunho in rascunhos)
+            {
+                rascunho.ExpiraEm = agora;
+                rascunho.AtualizadoEm = agora;
+            }
+
+            return true;
         }
 
         private async Task IniciarVinculoAsync(long chatId, string token)

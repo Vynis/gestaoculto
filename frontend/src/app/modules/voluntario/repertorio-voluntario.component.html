@@ -110,6 +110,8 @@
 
       <form class="form-grid" [formGroup]="itemForm" (ngSubmit)="adicionarItem()">
         <input nbInput formControlName="musicaTom" placeholder="Tom (opcional)" />
+        <input nbInput formControlName="musicaLinkCifra" placeholder="Link da cifra (opcional)" />
+        <input nbInput formControlName="musicaLinkVideo" placeholder="Link do vídeo (opcional)" />
         <input nbInput formControlName="responsavel" placeholder="Responsável (opcional)" />
         <input nbInput formControlName="observacoes" placeholder="Observações (opcional)" />
         <button nbButton status="success" type="submit" [disabled]="!itemForm.controls.musicaId.value">Adicionar ao repertório</button>
