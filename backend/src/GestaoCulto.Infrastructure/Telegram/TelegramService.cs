@@ -739,6 +739,13 @@ namespace GestaoCulto.Infrastructure.Telegram
             }
 
             var partes = (callback.Data ?? string.Empty).Split(':');
+            if (partes.Length == 2 && partes[1] == "l")
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, "Voltando aos cultos...");
+                await ExibirListaCultosAsync(callback, conexao.VoluntarioId);
+                return;
+            }
+
             if (partes.Length < 3 || !long.TryParse(partes[2], out var cultoId) || cultoId <= 0)
             {
                 await _botClient.ResponderCallbackAsync(callback.Id, "Ação de repertório inválida.");
@@ -823,11 +830,28 @@ namespace GestaoCulto.Infrastructure.Telegram
             botoes.Add(new TelegramBotaoDto
             {
                 Texto = "Voltar aos cultos",
-                Url = MontarUrlEdicaoRepertorioListagem(),
+                CallbackData = CallbackRepertorio + "l",
                 Linha = linhaBotao
             });
 
             await _botClient.EditarMensagemAsync(callback.Message!.Chat.Id, callback.Message.MessageId, texto.ToString(), botoes);
+        }
+
+        private async Task ExibirListaCultosAsync(TelegramCallbackDto callback, long voluntarioId)
+        {
+            var cultos = await ListarCultosLouvorAsync(voluntarioId);
+            var botoes = cultos.Select((x, i) => new TelegramBotaoDto
+            {
+                Texto = $"{x.DataCulto:dd/MM} {x.HorarioInicio:hh\\:mm} - {x.Nome}",
+                CallbackData = CallbackRepertorio + "v:" + x.Id,
+                Linha = i
+            }).ToList();
+
+            var texto = cultos.Any()
+                ? "Escolha o culto para visualizar o repertório:"
+                : "Você não possui cultos de louvor disponíveis para repertório.";
+
+            await _botClient.EditarMensagemAsync(callback.Message!.Chat.Id, callback.Message.MessageId, texto, botoes);
         }
 
         private async Task<List<Culto>> ListarCultosLouvorAsync(long voluntarioId)
@@ -894,12 +918,6 @@ namespace GestaoCulto.Infrastructure.Telegram
         {
             var baseUrl = (_options.FrontendBaseUrl ?? string.Empty).Trim().TrimEnd('/');
             return $"{baseUrl}/voluntario/repertorio/escala/{escalaId}";
-        }
-
-        private string MontarUrlEdicaoRepertorioListagem()
-        {
-            var baseUrl = (_options.FrontendBaseUrl ?? string.Empty).Trim().TrimEnd('/');
-            return $"{baseUrl}/voluntario/repertorio";
         }
 
         private static bool AdicionarBotaoUrlSeguro(List<TelegramBotaoDto> botoes, string texto, string? url, int linha)
