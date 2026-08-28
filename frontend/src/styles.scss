@@ -120,6 +120,13 @@ nb-select .select-button {
   color: #4c5a73;
 }
 
+.link-acoes {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
 .relatorio-page .cards-visualizacao {
   --cv-bg: #f4f8ff;
   --cv-card: #ffffff;

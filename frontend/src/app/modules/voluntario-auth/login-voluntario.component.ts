@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NbToastrService } from '@nebular/theme';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -22,8 +22,14 @@ export class LoginVoluntarioComponent {
     private readonly fb: FormBuilder,
     private readonly authService: AuthService,
     private readonly toastr: NbToastrService,
+    private readonly route: ActivatedRoute,
     private readonly router: Router
   ) {}
+
+  private obterReturnUrl(): string {
+    const retorno = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    return retorno.startsWith('/voluntario/') ? retorno : this.authService.destinoPosLogin('voluntario');
+  }
 
   entrar(): void {
     if (this.form.invalid) {
@@ -43,7 +49,7 @@ export class LoginVoluntarioComponent {
         }
 
         this.toastr.success('Bem-vindo ao portal do voluntário.', 'Sucesso');
-        this.router.navigate([this.authService.destinoPosLogin('voluntario')]);
+        this.router.navigateByUrl(this.obterReturnUrl());
       },
       error: (error) => {
         this.carregando = false;

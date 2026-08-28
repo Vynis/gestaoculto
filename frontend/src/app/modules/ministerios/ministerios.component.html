@@ -86,6 +86,13 @@
             >
               <nb-option *ngFor="let bloco of blocosCronograma" [value]="bloco.value">{{ bloco.label }}</nb-option>
             </nb-select>
+            <nb-checkbox
+              *ngIf="isLouvorEmEdicao()"
+              [(ngModel)]="novaFuncaoPodeGerenciarRepertorio"
+              [ngModelOptions]="{ standalone: true }"
+            >
+              Pode gerenciar repertório
+            </nb-checkbox>
             <button nbButton size="small" status="info" type="button" (click)="adicionarFuncaoPadrao()">Adicionar</button>
           </div>
 
@@ -94,11 +101,19 @@
               <div class="funcao-info">
                 <span>{{ funcao.nome }}</span>
                 <small>{{ labelBlocoCronograma(funcao.blocoCronograma) }}</small>
+                <small *ngIf="isLouvorEmEdicao() && funcao.podeGerenciarRepertorio">Pode gerenciar repertório</small>
               </div>
               <div class="funcao-acoes">
                 <nb-select fullWidth [ngModel]="funcao.blocoCronograma || 'SOMENTE_EQUIPE'" [ngModelOptions]="{ standalone: true }" (selectedChange)="alterarBlocoFuncaoPadrao(i, $event)">
                   <nb-option *ngFor="let bloco of blocosCronograma" [value]="bloco.value">{{ bloco.label }}</nb-option>
                 </nb-select>
+                <nb-checkbox
+                  *ngIf="isLouvorEmEdicao()"
+                  [checked]="funcao.podeGerenciarRepertorio === true"
+                  (checkedChange)="alterarPermissaoRepertorio(i, $event)"
+                >
+                  Gerencia repertório
+                </nb-checkbox>
                 <button nbButton size="tiny" [status]="funcao.ativo ? 'success' : 'basic'" type="button" (click)="alternarFuncaoPadrao(i)">
                   {{ funcao.ativo ? 'Ativa' : 'Inativa' }}
                 </button>

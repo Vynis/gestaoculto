@@ -33,6 +33,8 @@ interface LinhaRepertorio {
   etapa: string;
   musica: string;
   tom: string;
+  linkCifra: string | null;
+  linkVideo: string | null;
   responsavel: string;
   observacoes: string;
 }
@@ -660,6 +662,8 @@ export class RelatorioCultoComponent implements OnInit {
         etapa: item.etapaCultoId ? (mapaEtapas.get(Number(item.etapaCultoId)) || 'Sem etapa vinculada') : 'Sem etapa vinculada',
         musica: item.musicaTitulo || `Música #${item.musicaId}`,
         tom: this.textoValido(item.musicaTom ?? item.tom) || '-',
+        linkCifra: this.textoValido(item.musicaLinkCifra ?? item.linkCifra),
+        linkVideo: this.textoValido(item.musicaLinkVideo ?? item.linkVideo),
         responsavel: this.textoValido(item.responsavel) || '-',
         observacoes: this.textoValido(item.observacoes) || '-'
       }));

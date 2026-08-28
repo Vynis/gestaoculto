@@ -32,6 +32,7 @@ namespace GestaoCulto.API.Controllers
         public string? BlocoCronograma { get; set; }
         public int? Ordem { get; set; }
         public bool Ativo { get; set; } = true;
+        public bool PodeGerenciarRepertorio { get; set; }
     }
 
     [ApiController]
@@ -112,7 +113,8 @@ namespace GestaoCulto.API.Controllers
                     x.Nome,
                     x.BlocoCronograma,
                     x.Ordem,
-                    x.Ativo
+                    x.Ativo,
+                    x.PodeGerenciarRepertorio
                 })
                 .ToListAsync();
 
@@ -240,6 +242,10 @@ namespace GestaoCulto.API.Controllers
 
         private async Task SalvarVinculos(long ministerioId, List<MinisterioLiderRequest> lideres, List<long> voluntarioIds, List<MinisterioFuncaoPadraoRequest> funcoesPadrao)
         {
+            var ehLouvor = await _db.Ministerios
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == ministerioId && x.Codigo == "LOUVOR");
+
             var lideresNormalizados = (lideres ?? new List<MinisterioLiderRequest>())
                 .Where(x => x.UsuarioId > 0)
                 .GroupBy(x => x.UsuarioId)
@@ -288,7 +294,8 @@ namespace GestaoCulto.API.Controllers
                     Nome = (item.Nome ?? string.Empty).Trim(),
                     BlocoCronograma = NormalizarBlocoCronograma(item.BlocoCronograma),
                     Ordem = item.Ordem ?? index + 1,
-                    Ativo = item.Ativo
+                    Ativo = item.Ativo,
+                    PodeGerenciarRepertorio = ehLouvor && item.PodeGerenciarRepertorio
                 })
                 .Where(x => !string.IsNullOrWhiteSpace(x.Nome))
                 .GroupBy(x => x.Nome, StringComparer.OrdinalIgnoreCase)
@@ -307,11 +314,37 @@ namespace GestaoCulto.API.Controllers
                     BlocoCronograma = funcao.BlocoCronograma,
                     Ordem = funcao.Ordem > 0 ? funcao.Ordem : i + 1,
                     Ativo = funcao.Ativo,
+                    PodeGerenciarRepertorio = ehLouvor && funcao.PodeGerenciarRepertorio,
                     CriadoEm = DateTime.UtcNow
                 });
             }
 
             await _db.SaveChangesAsync();
+
+            if (ehLouvor)
+            {
+                var funcoes = await _db.MinisteriosFuncoesPadrao
+                    .AsNoTracking()
+                    .Where(x => x.MinisterioId == ministerioId && x.Ativo)
+                    .Select(x => new { x.Nome, x.PodeGerenciarRepertorio })
+                    .ToListAsync();
+
+                var escalasFuturas = await _db.Escalas
+                    .Where(x => x.MinisterioId == ministerioId
+                        && _db.Cultos.Any(c => c.Id == x.CultoId && c.DataCulto >= DateTime.Today))
+                    .ToListAsync();
+
+                foreach (var escala in escalasFuturas)
+                {
+                    var funcao = funcoes.FirstOrDefault(x => string.Equals(x.Nome.Trim(), escala.Funcao.Trim(), StringComparison.OrdinalIgnoreCase));
+                    escala.PodeGerenciarRepertorio = funcao?.PodeGerenciarRepertorio == true;
+                }
+
+                if (escalasFuturas.Any())
+                {
+                    await _db.SaveChangesAsync();
+                }
+            }
         }
 
         private static string GerarCodigo(string nome)

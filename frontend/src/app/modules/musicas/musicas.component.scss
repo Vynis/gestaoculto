@@ -9,27 +9,34 @@
 .toolbar {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: 1fr minmax(180px, 220px) auto;
+  grid-template-columns: minmax(180px, 220px) auto;
   margin-bottom: 1rem;
 }
 
-.item {
-  width: 100%;
+.toolbar button {
+  width: fit-content;
+  min-width: 0;
+  justify-self: start;
+}
+
+.grid-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.item small {
-  display: block;
-  color: #5f6f86;
+.grid-search {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: min(420px, 100%);
 }
 
-.item-actions,
 .actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .form-grid {
@@ -58,4 +65,80 @@
   width: min(760px, 100%);
   max-height: calc(100vh - 2rem);
   overflow: auto;
+}
+
+.musicas-grid {
+  width: 100%;
+  height: 520px;
+}
+
+.grid-link {
+  color: #1f5a94;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.grid-link:hover {
+  text-decoration: underline;
+}
+
+:host ::ng-deep .grid-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:host ::ng-deep .grid-btn {
+  border: 1px solid #cfd7e6;
+  background: #f8fafc;
+  color: #2c4f7d;
+  border-radius: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  cursor: pointer;
+}
+
+:host ::ng-deep .grid-btn.icon {
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:host ::ng-deep .grid-btn .icon-pencil::before {
+  content: '\270E';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+:host ::ng-deep .grid-btn .icon-trash::before {
+  content: '\1F5D1';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+:host ::ng-deep .grid-btn.edit {
+  border-color: #a9c6e8;
+  background: #eef6ff;
+  color: #1f5a94;
+}
+
+:host ::ng-deep .grid-btn.delete {
+  border-color: #e7b3b9;
+  background: #fff0f2;
+  color: #9f2330;
+}
+
+@media (max-width: 900px) {
+  .grid-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grid-search {
+    min-width: 0;
+  }
 }

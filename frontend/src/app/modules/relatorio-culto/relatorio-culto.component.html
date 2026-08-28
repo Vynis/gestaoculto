@@ -194,7 +194,13 @@
               <tr *ngFor="let linha of linhasRepertorio">
                 <td>{{ linha.ordem }}</td>
                 <td>{{ linha.etapa }}</td>
-                <td>{{ linha.musica }}</td>
+                <td>
+                  <div>{{ linha.musica }}</div>
+                  <div class="link-acoes" *ngIf="linha.linkCifra || linha.linkVideo">
+                    <app-external-link-viewer *ngIf="linha.linkCifra" [url]="linha.linkCifra" label="Cifra" mode="modal"></app-external-link-viewer>
+                    <app-external-link-viewer *ngIf="linha.linkVideo" [url]="linha.linkVideo" label="Vídeo" mode="blank"></app-external-link-viewer>
+                  </div>
+                </td>
                 <td>{{ linha.tom }}</td>
                 <td>{{ linha.responsavel }}</td>
                 <td>{{ linha.observacoes }}</td>
@@ -280,6 +286,10 @@
               <div>
                 <h5>{{ linha.musica }}</h5>
                 <p>{{ linha.etapa }} - Tom: {{ linha.tom }} - {{ linha.responsavel }}</p>
+                <div class="link-acoes" *ngIf="linha.linkCifra || linha.linkVideo">
+                  <app-external-link-viewer *ngIf="linha.linkCifra" [url]="linha.linkCifra" label="Cifra" mode="modal"></app-external-link-viewer>
+                  <app-external-link-viewer *ngIf="linha.linkVideo" [url]="linha.linkVideo" label="Vídeo" mode="blank"></app-external-link-viewer>
+                </div>
                 <small *ngIf="linha.observacoes && linha.observacoes !== '-'">{{ linha.observacoes }}</small>
               </div>
             </article>

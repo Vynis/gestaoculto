@@ -38,6 +38,67 @@ namespace GestaoCulto.API.Controllers
         public string? Observacoes { get; set; }
         public long PresencaStatusId { get; set; }
         public string? PresencaStatusNome { get; set; }
+        public bool PodeGerenciarRepertorio { get; set; }
+    }
+
+    public class VoluntarioMinisterioResumoDto
+    {
+        public long MinisterioId { get; set; }
+        public string MinisterioNome { get; set; } = string.Empty;
+        public string MinisterioCodigo { get; set; } = string.Empty;
+        public bool Principal { get; set; }
+    }
+
+    public class VoluntarioRepertorioListaItemDto
+    {
+        public long CultoId { get; set; }
+        public string CultoNome { get; set; } = string.Empty;
+        public DateTime DataCulto { get; set; }
+        public string HorarioInicio { get; set; } = string.Empty;
+        public string StatusCultoNome { get; set; } = string.Empty;
+        public int TotalMusicas { get; set; }
+        public bool TemRepertorio { get; set; }
+        public bool PodeGerenciar { get; set; }
+        public long? EscalaGerenciavelId { get; set; }
+        public string? Observacoes { get; set; }
+    }
+
+    public class VoluntarioRepertorioDetalheDto
+    {
+        public long CultoId { get; set; }
+        public string CultoNome { get; set; } = string.Empty;
+        public DateTime DataCulto { get; set; }
+        public string HorarioInicio { get; set; } = string.Empty;
+        public string StatusCultoNome { get; set; } = string.Empty;
+        public bool PodeVisualizar { get; set; }
+        public bool PodeGerenciar { get; set; }
+        public long? EscalaGerenciavelId { get; set; }
+        public RepertorioLouvorDto? Repertorio { get; set; }
+    }
+
+    public class RepertorioLouvorDto
+    {
+        public long Id { get; set; }
+        public long CultoId { get; set; }
+        public string? Observacoes { get; set; }
+        public List<RepertorioLouvorItemDto> Itens { get; set; } = new List<RepertorioLouvorItemDto>();
+    }
+
+    public class RepertorioLouvorItemDto
+    {
+        public long Id { get; set; }
+        public long MusicaId { get; set; }
+        public int Ordem { get; set; }
+        public string? MusicaTitulo { get; set; }
+        public string? MusicaArtistaBanda { get; set; }
+        public string? MusicaTom { get; set; }
+        public string? MusicaLinkCifra { get; set; }
+        public string? MusicaLinkVideo { get; set; }
+        public string? MusicaObservacoes { get; set; }
+        public long? EtapaCultoId { get; set; }
+        public string? EtapaAtividade { get; set; }
+        public string? Responsavel { get; set; }
+        public string? Observacoes { get; set; }
     }
 
     public class VoluntarioDisponibilidadeRequest
@@ -55,15 +116,260 @@ namespace GestaoCulto.API.Controllers
         private readonly GestaoCultoDbContext _db;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IDisponibilidadeVoluntarioService _disponibilidadeService;
+        private readonly IRepertorioPermissionService _repertorioPermissionService;
 
         public PortalVoluntarioController(
             GestaoCultoDbContext db,
             IPasswordHasher passwordHasher,
-            IDisponibilidadeVoluntarioService disponibilidadeService)
+            IDisponibilidadeVoluntarioService disponibilidadeService,
+            IRepertorioPermissionService repertorioPermissionService)
         {
             _db = db;
             _passwordHasher = passwordHasher;
             _disponibilidadeService = disponibilidadeService;
+            _repertorioPermissionService = repertorioPermissionService;
+        }
+
+        [HttpGet("escala/{escalaId:long}/repertorio")]
+        public async Task<IActionResult> ObterRepertorioDaEscala(long escalaId)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.PodeGerenciarAsync(usuarioId.Value, escalaId))
+            {
+                return Forbid();
+            }
+
+            var escala = await _db.Escalas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == escalaId);
+            if (escala == null) return NotFound(new { mensagem = "Escala não encontrada." });
+            return await ObterRepertorio(escala.CultoId);
+        }
+
+        [HttpGet("repertorios")]
+        public async Task<IActionResult> ListarRepertorios()
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.EhMembroLouvorAsync(usuarioId.Value))
+            {
+                return Forbid();
+            }
+
+            var cultos = await _db.Cultos
+                .AsNoTracking()
+                .Join(_db.StatusCultos.AsNoTracking(),
+                    culto => culto.StatusCultoId,
+                    status => status.Id,
+                    (culto, status) => new
+                    {
+                        culto.Id,
+                        culto.Nome,
+                        culto.DataCulto,
+                        culto.HorarioInicio,
+                        StatusCultoNome = status.Nome,
+                        StatusCultoCodigo = status.Codigo
+                    })
+                .ToListAsync();
+
+            cultos = cultos
+                .OrderByDescending(x => x.DataCulto >= DateTime.Today)
+                .ThenBy(x => x.DataCulto >= DateTime.Today ? x.DataCulto : DateTime.MinValue)
+                .ThenByDescending(x => x.DataCulto < DateTime.Today)
+                .ThenByDescending(x => x.DataCulto)
+                .ToList();
+
+            var itens = new List<VoluntarioRepertorioListaItemDto>();
+            foreach (var culto in cultos)
+            {
+                var repertorio = await _db.RepertoriosCulto.AsNoTracking().FirstOrDefaultAsync(x => x.CultoId == culto.Id);
+                var totalMusicas = repertorio == null
+                    ? 0
+                    : await _db.RepertoriosCultoItens.AsNoTracking().CountAsync(x => x.RepertorioCultoId == repertorio.Id);
+                var escalaGerenciavelId = await _repertorioPermissionService.ObterEscalaGerenciavelAsync(usuarioId.Value, culto.Id);
+                itens.Add(new VoluntarioRepertorioListaItemDto
+                {
+                    CultoId = culto.Id,
+                    CultoNome = culto.Nome,
+                    DataCulto = culto.DataCulto,
+                    HorarioInicio = culto.HorarioInicio.ToString(@"hh\:mm"),
+                    StatusCultoNome = culto.StatusCultoNome,
+                    TemRepertorio = repertorio != null,
+                    TotalMusicas = totalMusicas,
+                    PodeGerenciar = escalaGerenciavelId.HasValue,
+                    EscalaGerenciavelId = escalaGerenciavelId,
+                    Observacoes = repertorio?.Observacoes
+                });
+            }
+
+            return Ok(itens);
+        }
+
+        [HttpGet("repertorios/culto/{cultoId:long}")]
+        public async Task<IActionResult> ObterRepertorioDoCulto(long cultoId)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.EhMembroLouvorAsync(usuarioId.Value))
+            {
+                return Forbid();
+            }
+
+            var culto = await _db.Cultos
+                .AsNoTracking()
+                .Join(_db.StatusCultos.AsNoTracking(),
+                    c => c.StatusCultoId,
+                    s => s.Id,
+                    (c, s) => new { c, s })
+                .Where(x => x.c.Id == cultoId)
+                .Select(x => new
+                {
+                    x.c.Id,
+                    x.c.Nome,
+                    x.c.DataCulto,
+                    x.c.HorarioInicio,
+                    StatusCultoNome = x.s.Nome
+                })
+                .FirstOrDefaultAsync();
+
+            if (culto == null)
+            {
+                return NotFound(new { mensagem = "Culto não encontrado." });
+            }
+
+            var escalaGerenciavelId = await _repertorioPermissionService.ObterEscalaGerenciavelAsync(usuarioId.Value, cultoId);
+            var repertorio = await _db.RepertoriosCulto.AsNoTracking().FirstOrDefaultAsync(x => x.CultoId == cultoId);
+            RepertorioLouvorDto? repertorioDto = null;
+            if (repertorio != null)
+            {
+                var itens = await _db.RepertoriosCultoItens
+                    .AsNoTracking()
+                    .Where(x => x.RepertorioCultoId == repertorio.Id)
+                    .OrderBy(x => x.Ordem)
+                    .Select(x => new RepertorioLouvorItemDto
+                    {
+                        Id = x.Id,
+                        MusicaId = x.MusicaId,
+                        Ordem = x.Ordem,
+                        MusicaTitulo = x.MusicaTitulo,
+                        MusicaArtistaBanda = x.MusicaArtistaBanda,
+                        MusicaTom = x.MusicaTom,
+                        MusicaLinkCifra = x.MusicaLinkCifra,
+                        MusicaLinkVideo = x.MusicaLinkVideo,
+                        MusicaObservacoes = x.MusicaObservacoes,
+                        EtapaCultoId = x.EtapaCultoId,
+                        EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
+                        Responsavel = x.Responsavel,
+                        Observacoes = x.Observacoes
+                    })
+                    .ToListAsync();
+
+                repertorioDto = new RepertorioLouvorDto
+                {
+                    Id = repertorio.Id,
+                    CultoId = repertorio.CultoId,
+                    Observacoes = repertorio.Observacoes,
+                    Itens = itens
+                };
+            }
+
+            return Ok(new VoluntarioRepertorioDetalheDto
+            {
+                CultoId = culto.Id,
+                CultoNome = culto.Nome,
+                DataCulto = culto.DataCulto,
+                HorarioInicio = culto.HorarioInicio.ToString(@"hh\:mm"),
+                StatusCultoNome = culto.StatusCultoNome,
+                PodeVisualizar = true,
+                PodeGerenciar = escalaGerenciavelId.HasValue,
+                EscalaGerenciavelId = escalaGerenciavelId,
+                Repertorio = repertorioDto
+            });
+        }
+
+        [HttpGet("repertorios/musicas")]
+        public async Task<IActionResult> ListarMusicasLouvor([FromQuery] string? busca)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.EhMembroLouvorAsync(usuarioId.Value))
+            {
+                return Forbid();
+            }
+
+            var query = _db.Musicas.AsNoTracking().Where(x => x.Ativo);
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var termo = busca.Trim().ToLower();
+                query = query.Where(x => x.Titulo.ToLower().Contains(termo) || x.ArtistaBanda.ToLower().Contains(termo));
+            }
+
+            return Ok(await query
+                .OrderBy(x => x.Titulo)
+                .Select(x => new { x.Id, x.Titulo, x.ArtistaBanda, x.Tom, x.LinkCifra, x.LinkVideo, x.Observacoes, x.Ativo })
+                .ToListAsync());
+        }
+
+        [HttpGet("escala/{escalaId:long}/musicas")]
+        public async Task<IActionResult> ListarMusicasDaEscala(long escalaId, [FromQuery] string? busca)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.PodeGerenciarAsync(usuarioId.Value, escalaId)) return Forbid();
+            var query = _db.Musicas.AsNoTracking().Where(x => x.Ativo);
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var termo = busca.Trim().ToLower();
+                query = query.Where(x => x.Titulo.ToLower().Contains(termo) || x.ArtistaBanda.ToLower().Contains(termo));
+            }
+            return Ok(await query.OrderBy(x => x.Titulo).Select(x => new { x.Id, x.Titulo, x.ArtistaBanda, x.Tom, x.LinkCifra, x.LinkVideo, x.Observacoes }).ToListAsync());
+        }
+
+        [HttpPost("escala/{escalaId:long}/musicas")]
+        public async Task<IActionResult> CadastrarMusicaDaEscala(long escalaId, [FromBody] MusicaRequest request)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.PodeGerenciarAsync(usuarioId.Value, escalaId)) return Forbid();
+            var titulo = (request.Titulo ?? string.Empty).Trim();
+            var artista = (request.ArtistaBanda ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(titulo) || string.IsNullOrWhiteSpace(artista)) return BadRequest(new { mensagem = "Informe título e artista/banda da música." });
+            if (await _db.Musicas.AnyAsync(x => x.Titulo.ToLower() == titulo.ToLower() && x.ArtistaBanda.ToLower() == artista.ToLower())) return BadRequest(new { mensagem = "Música já cadastrada." });
+            var musica = new Musica { Titulo = titulo, ArtistaBanda = artista, Tom = request.Tom, LinkCifra = request.LinkCifra, LinkVideo = request.LinkVideo, Observacoes = request.Observacoes, Ativo = true, CriadoEm = DateTime.UtcNow };
+            _db.Musicas.Add(musica);
+            await _db.SaveChangesAsync();
+            return Ok(new { musica.Id, musica.Titulo, musica.ArtistaBanda, musica.Tom, musica.LinkCifra, musica.LinkVideo, musica.Observacoes });
+        }
+
+        [HttpPut("escala/{escalaId:long}/repertorio")]
+        public async Task<IActionResult> SalvarRepertorioDaEscala(long escalaId, [FromBody] RepertorioRequest request)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.PodeGerenciarAsync(usuarioId.Value, escalaId)) return Forbid();
+            var escala = await _db.Escalas.FirstOrDefaultAsync(x => x.Id == escalaId);
+            if (escala == null) return NotFound(new { mensagem = "Escala não encontrada." });
+            if (request.CultoId != escala.CultoId) return BadRequest(new { mensagem = "O repertório deve pertencer ao culto da escala." });
+            var repertorio = await _db.RepertoriosCulto.FirstOrDefaultAsync(x => x.CultoId == request.CultoId);
+            if (repertorio == null) { repertorio = new RepertorioCulto { CultoId = request.CultoId, CriadoEm = DateTime.UtcNow }; _db.RepertoriosCulto.Add(repertorio); await _db.SaveChangesAsync(); }
+            var itens = (request.Itens ?? new List<RepertorioItemRequest>()).Where(x => x.MusicaId > 0).OrderBy(x => x.Ordem).ToList();
+            var musicaIds = itens.Select(x => x.MusicaId).Distinct().ToList();
+            if (await _db.Musicas.CountAsync(x => musicaIds.Contains(x.Id) && x.Ativo) != musicaIds.Count) return BadRequest(new { mensagem = "Uma ou mais músicas não estão disponíveis." });
+            var etapaIds = itens.Where(x => x.EtapaCultoId.HasValue).Select(x => x.EtapaCultoId!.Value).Distinct().ToList();
+            if (etapaIds.Any() && await _db.EtapasCulto.CountAsync(x => etapaIds.Contains(x.Id) && x.CultoId == escala.CultoId) != etapaIds.Count)
+            {
+                return BadRequest(new { mensagem = "Uma ou mais etapas não pertencem ao culto." });
+            }
+
+            using var transacao = await _db.Database.BeginTransactionAsync();
+            repertorio.Observacoes = request.Observacoes;
+            repertorio.AtualizadoEm = DateTime.UtcNow;
+            var atuais = await _db.RepertoriosCultoItens.Where(x => x.RepertorioCultoId == repertorio.Id).ToListAsync();
+            _db.RepertoriosCultoItens.RemoveRange(atuais);
+            for (var i = 0; i < itens.Count; i++) { var item = itens[i]; _db.RepertoriosCultoItens.Add(new RepertorioCultoItem { RepertorioCultoId = repertorio.Id, MusicaId = item.MusicaId, MusicaTitulo = item.MusicaTitulo, MusicaArtistaBanda = item.MusicaArtistaBanda, MusicaTom = item.MusicaTom, MusicaLinkCifra = item.MusicaLinkCifra, MusicaLinkVideo = item.MusicaLinkVideo, MusicaObservacoes = item.MusicaObservacoes, EtapaCultoId = item.EtapaCultoId, Ordem = i + 1, Responsavel = item.Responsavel, Observacoes = item.Observacoes, CriadoEm = DateTime.UtcNow }); }
+            await _db.SaveChangesAsync();
+            await transacao.CommitAsync();
+            return Ok(new { mensagem = "Repertório salvo com sucesso." });
+        }
+
+        private async Task<IActionResult> ObterRepertorio(long cultoId)
+        {
+            var repertorio = await _db.RepertoriosCulto.AsNoTracking().FirstOrDefaultAsync(x => x.CultoId == cultoId);
+            if (repertorio == null) return Ok(new { cultoId, observacoes = (string?)null, itens = new List<object>() });
+            var itens = await _db.RepertoriosCultoItens.AsNoTracking().Where(x => x.RepertorioCultoId == repertorio.Id).OrderBy(x => x.Ordem).Select(x => new { x.Id, x.MusicaId, MusicaTitulo = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.Titulo).FirstOrDefault(), MusicaArtistaBanda = _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.ArtistaBanda).FirstOrDefault(), x.MusicaTom, x.MusicaLinkCifra, x.MusicaLinkVideo, x.MusicaObservacoes, x.EtapaCultoId, x.Ordem, x.Responsavel, x.Observacoes }).ToListAsync();
+            return Ok(new { repertorio.Id, repertorio.CultoId, repertorio.Observacoes, itens });
         }
 
         [HttpGet("painel")]
@@ -620,8 +926,9 @@ namespace GestaoCulto.API.Controllers
                     EtapaAtividade = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.Atividade).FirstOrDefault(),
                     EtapaBlocoCronograma = _db.EtapasCulto.Where(e => e.Id == x.EtapaCultoId).Select(e => e.BlocoCronograma).FirstOrDefault(),
                     Observacoes = x.Observacoes,
-                    PresencaStatusId = x.PresencaStatusId,
-                    PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == x.PresencaStatusId).Select(s => s.Nome).FirstOrDefault()
+                     PresencaStatusId = x.PresencaStatusId,
+                     PodeGerenciarRepertorio = x.PodeGerenciarRepertorio,
+                     PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == x.PresencaStatusId).Select(s => s.Nome).FirstOrDefault()
                 })
                 .Where(x => x.DataCulto >= inicio && x.DataCulto <= fim
                     && _db.Cultos.Where(c => c.Id == x.CultoId).Select(c => c.StatusCultoId).FirstOrDefault() == statusCultoAtivoId)
@@ -642,18 +949,19 @@ namespace GestaoCulto.API.Controllers
                 : await _db.StatusCultos.OrderBy(x => x.Ordem).Select(x => x.Id).FirstOrDefaultAsync();
         }
 
-        private async Task<List<object>> ListarMinisterios(long voluntarioId)
+        private async Task<List<VoluntarioMinisterioResumoDto>> ListarMinisterios(long voluntarioId)
         {
             return await _db.MinisteriosVoluntarios
                 .AsNoTracking()
                 .Where(x => x.VoluntarioId == voluntarioId)
                 .OrderByDescending(x => x.Principal)
                 .ThenBy(x => x.MinisterioId)
-                .Select(x => (object)new
+                .Select(x => new VoluntarioMinisterioResumoDto
                 {
-                    x.MinisterioId,
-                    MinisterioNome = _db.Ministerios.Where(m => m.Id == x.MinisterioId).Select(m => m.Nome).FirstOrDefault(),
-                    x.Principal
+                    MinisterioId = x.MinisterioId,
+                    MinisterioNome = _db.Ministerios.Where(m => m.Id == x.MinisterioId).Select(m => m.Nome).FirstOrDefault() ?? string.Empty,
+                    MinisterioCodigo = _db.Ministerios.Where(m => m.Id == x.MinisterioId).Select(m => m.Codigo).FirstOrDefault() ?? string.Empty,
+                    Principal = x.Principal
                 })
                 .ToListAsync();
         }
@@ -676,8 +984,8 @@ namespace GestaoCulto.API.Controllers
                 .Join(_db.Ministerios,
                     vm => vm.MinisterioId,
                     m => m.Id,
-                    (vm, m) => m.Nome)
-                .AnyAsync(nome => nome != null && nome.ToLower().Contains("louvor"));
+                    (vm, m) => m.Codigo)
+                .AnyAsync(codigo => codigo == "LOUVOR");
         }
 
         private async Task<Voluntario?> ObterVoluntarioLogado()

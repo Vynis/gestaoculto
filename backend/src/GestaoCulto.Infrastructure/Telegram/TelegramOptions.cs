@@ -7,6 +7,7 @@ namespace GestaoCulto.Infrastructure.Telegram
         public string BotUsername { get; set; } = string.Empty;
         public string WebhookSecret { get; set; } = string.Empty;
         public string WebhookUrl { get; set; } = string.Empty;
+        public string FrontendBaseUrl { get; set; } = string.Empty;
         public int LinkExpirationMinutes { get; set; } = 30;
         public string ConsentimentoVersao { get; set; } = "1.0";
     }

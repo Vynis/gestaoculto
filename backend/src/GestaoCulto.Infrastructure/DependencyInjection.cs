@@ -29,6 +29,7 @@ namespace GestaoCulto.Infrastructure
             services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
             services.AddScoped<IEmailSender, SmtpEmailSender>();
             services.AddScoped<IDisponibilidadeVoluntarioService, DisponibilidadeVoluntarioService>();
+            services.AddScoped<IRepertorioPermissionService, RepertorioPermissionService>();
             services.Configure<RelatorioCompartilhamentoOptions>(configuration.GetSection("RelatorioCompartilhamento"));
             services.AddScoped<IRelatorioCompartilhamentoService, RelatorioCompartilhamentoService>();
             services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));

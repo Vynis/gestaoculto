@@ -15,8 +15,12 @@ import {
   VoluntarioEscalaDetalheResponse,
   VoluntarioMeusDados,
   VoluntarioMinisterioResumo,
+  VoluntarioRepertorioDetalhe,
+  VoluntarioRepertorioListaItem,
   VoluntarioPainelResponse
 } from '../models/portal-voluntario.models';
+import { RepertorioCulto } from '../models/repertorio.models';
+import { Musica } from '../models/musica.models';
 
 @Injectable({ providedIn: 'root' })
 export class PortalVoluntarioService {
@@ -41,12 +45,42 @@ export class PortalVoluntarioService {
     return this.http.get<VoluntarioEscalaDetalheResponse>(`${this.apiUrl}/minha-escala/${id}/detalhe`);
   }
 
+  obterRepertorioDaEscala(escalaId: number): Observable<RepertorioCulto> {
+    return this.http.get<RepertorioCulto>(`${this.apiUrl}/escala/${escalaId}/repertorio`);
+  }
+
+  listarMusicasDaEscala(escalaId: number, busca?: string): Observable<Musica[]> {
+    const query = busca ? `?busca=${encodeURIComponent(busca)}` : '';
+    return this.http.get<Musica[]>(`${this.apiUrl}/escala/${escalaId}/musicas${query}`);
+  }
+
+  salvarRepertorioDaEscala(escalaId: number, payload: RepertorioCulto): Observable<{ mensagem: string }> {
+    return this.http.put<{ mensagem: string }>(`${this.apiUrl}/escala/${escalaId}/repertorio`, payload);
+  }
+
+  cadastrarMusicaDaEscala(escalaId: number, payload: Partial<Musica>): Observable<Musica> {
+    return this.http.post<Musica>(`${this.apiUrl}/escala/${escalaId}/musicas`, payload);
+  }
+
   confirmarPresenca(id: number): Observable<{ mensagem: string }> {
     return this.http.post<{ mensagem: string }>(`${this.apiUrl}/minha-escala/${id}/confirmar`, {});
   }
 
   listarMeusMinisterios(): Observable<VoluntarioMinisterioResumo[]> {
     return this.http.get<VoluntarioMinisterioResumo[]>(`${this.apiUrl}/meus-ministerios`);
+  }
+
+  listarRepertorios(): Observable<VoluntarioRepertorioListaItem[]> {
+    return this.http.get<VoluntarioRepertorioListaItem[]>(`${this.apiUrl}/repertorios`);
+  }
+
+  obterRepertorioCulto(cultoId: number): Observable<VoluntarioRepertorioDetalhe> {
+    return this.http.get<VoluntarioRepertorioDetalhe>(`${this.apiUrl}/repertorios/culto/${cultoId}`);
+  }
+
+  listarMusicasLouvor(busca?: string): Observable<Musica[]> {
+    const query = busca ? `?busca=${encodeURIComponent(busca)}` : '';
+    return this.http.get<Musica[]>(`${this.apiUrl}/repertorios/musicas${query}`);
   }
 
   listarColegasMinisterio(): Observable<VoluntarioColegaMinisterio[]> {

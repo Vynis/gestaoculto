@@ -1,0 +1,130 @@
+.musica {
+  width: 100%;
+}
+
+.musica small {
+  display: block;
+}
+
+.links {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.culto-item,
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.culto-acoes,
+.acoes-topo,
+.busca-box {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.form-grid,
+.music-form {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.quebra {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.55);
+  z-index: 1040;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1050;
+}
+
+.modal-card {
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.resultado-busca {
+  margin-top: 1rem;
+}
+
+.lista-musicas {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 280px;
+  margin-top: 0.5rem;
+  overflow-y: auto;
+}
+
+.musica-opcao {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem;
+  color: #2e3a59;
+  text-align: left;
+  background: #f7f9fc;
+  border: 1px solid #e4e9f2;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.musica-opcao small,
+.musica-opcao span {
+  display: block;
+}
+
+.musica-opcao.selecionada {
+  background: #edf7ff;
+  border-color: #0095ff;
+}
+
+.sem-resultado {
+  padding: 1rem;
+  color: #8f9bb3;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .culto-item,
+  .cabecalho {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal-wrapper {
+    align-items: flex-start;
+    padding-top: 4rem;
+  }
+}
+
+.music-form,
+.form-grid {
+  padding: 1rem 0 0;
+}
+
+.music-form {
+  border: 0;
+}

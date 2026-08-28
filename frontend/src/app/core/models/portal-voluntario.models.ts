@@ -13,11 +13,13 @@ export interface VoluntarioCompromisso {
   observacoes: string | null;
   presencaStatusId: number;
   presencaStatusNome: string | null;
+  podeGerenciarRepertorio?: boolean;
 }
 
 export interface VoluntarioMinisterioResumo {
   ministerioId: number;
   ministerioNome: string;
+  ministerioCodigo?: string;
   principal: boolean;
 }
 
@@ -150,6 +152,31 @@ export interface VoluntarioRepertorioLouvor {
   cultoId: number;
   observacoes: string | null;
   itens: VoluntarioRepertorioLouvorItem[];
+}
+
+export interface VoluntarioRepertorioListaItem {
+  cultoId: number;
+  cultoNome: string;
+  dataCulto: string;
+  horarioInicio: string;
+  statusCultoNome: string;
+  totalMusicas: number;
+  temRepertorio: boolean;
+  podeGerenciar: boolean;
+  escalaGerenciavelId: number | null;
+  observacoes: string | null;
+}
+
+export interface VoluntarioRepertorioDetalhe {
+  cultoId: number;
+  cultoNome: string;
+  dataCulto: string;
+  horarioInicio: string;
+  statusCultoNome: string;
+  podeVisualizar: boolean;
+  podeGerenciar: boolean;
+  escalaGerenciavelId: number | null;
+  repertorio: VoluntarioRepertorioLouvor | null;
 }
 
 export interface VoluntarioEscalaDetalheResponse {

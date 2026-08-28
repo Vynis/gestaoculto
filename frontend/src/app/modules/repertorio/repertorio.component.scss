@@ -5,33 +5,163 @@
   margin-bottom: 1rem;
 }
 
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.grid-search {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: min(420px, 100%);
+}
+
+.repertorio-grid {
+  width: 100%;
+  height: 520px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 3000;
+}
+
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 3010;
+}
+
 .form-grid {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  margin-bottom: 1rem;
 }
 
-.item {
+.native-select {
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
+  min-height: 2.5rem;
+  padding: 0.65rem 0.75rem;
+  color: #2e3a59;
+  background: #ffffff;
+  border: 1px solid #cfd7e6;
+  border-radius: 0.4rem;
+  font: inherit;
 }
 
-.item-content {
-  flex: 1;
+.native-select:focus {
+  outline: 0;
+  border-color: #3a7afe;
+  box-shadow: 0 0 0 0.15rem rgba(58, 122, 254, 0.18);
 }
 
-.item small {
-  display: block;
-  color: #5f6f86;
+.native-select:disabled {
+  color: #8f9bb3;
+  background: #f7f9fc;
 }
 
-.item-editor-grid {
+.campo-aviso {
+  color: #8f9bb3;
+}
+
+.grid-container {
+  width: 100%;
+}
+
+.grid-link {
+  color: #1f5a94;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.grid-link:hover {
+  text-decoration: underline;
+}
+
+.actions-modal {
   margin-top: 0.5rem;
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.modal-card {
+  width: min(980px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+:host ::ng-deep .grid-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:host ::ng-deep .grid-btn {
+  border: 1px solid #cfd7e6;
+  background: #f8fafc;
+  color: #2c4f7d;
+  border-radius: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  cursor: pointer;
+}
+
+:host ::ng-deep .grid-btn.icon {
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:host ::ng-deep .grid-btn .icon-pencil::before {
+  content: '\270E';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+:host ::ng-deep .grid-btn .icon-trash::before {
+  content: '\1F5D1';
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+:host ::ng-deep .grid-btn.edit {
+  border-color: #a9c6e8;
+  background: #eef6ff;
+  color: #1f5a94;
+}
+
+:host ::ng-deep .grid-btn.delete {
+  border-color: #e7b3b9;
+  background: #fff0f2;
+  color: #9f2330;
+}
+
+:host ::ng-deep .grid-btn[data-action='subir'],
+:host ::ng-deep .grid-btn[data-action='descer'] {
+  min-width: 1.9rem;
+}
+
+@media (max-width: 900px) {
+  .grid-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grid-search {
+    min-width: 0;
+  }
 }

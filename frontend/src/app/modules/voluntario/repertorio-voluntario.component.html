@@ -1,0 +1,148 @@
+<ng-container *ngIf="!carregando; else carregandoTpl">
+  <nb-card *ngIf="modoLista; else detalheTpl">
+    <nb-card-header>Repertório</nb-card-header>
+    <nb-card-body>
+      <p>Selecione um culto para visualizar o repertório.</p>
+      <nb-list>
+        <nb-list-item *ngFor="let culto of cultos">
+          <div class="culto-item">
+            <div>
+              <strong>{{ culto.dataCulto | date:'dd/MM/yyyy' }} {{ culto.horarioInicio }}</strong>
+              <div>{{ culto.cultoNome }}</div>
+              <small>{{ culto.statusCultoNome }} | {{ culto.totalMusicas }} música(s)</small>
+            </div>
+            <div class="culto-acoes">
+              <button nbButton size="tiny" status="basic" type="button" (click)="selecionarCulto(culto.cultoId)">Ver repertório</button>
+            </div>
+          </div>
+        </nb-list-item>
+      </nb-list>
+    </nb-card-body>
+  </nb-card>
+
+  <ng-template #detalheTpl>
+    <nb-card *ngIf="detalhe as d; else vazioTpl">
+      <nb-card-header>Repertório de {{ d.cultoNome }}</nb-card-header>
+      <nb-card-body>
+        <div class="cabecalho">
+          <div>
+            <strong>{{ d.dataCulto | date:'dd/MM/yyyy' }}</strong>
+            <div>{{ d.horarioInicio }} | {{ d.statusCultoNome }}</div>
+          </div>
+          <div class="acoes-topo">
+            <button nbButton status="basic" type="button" (click)="voltarLista()">Voltar</button>
+          </div>
+        </div>
+
+        <textarea nbInput fullWidth rows="2" [(ngModel)]="repertorio.observacoes" placeholder="Observações do repertório" [disabled]="!podeEditar()"></textarea>
+
+        <div class="busca-box" *ngIf="podeEditar()">
+          <button nbButton status="basic" type="button" (click)="abrirModalAdicionar()">Adicionar música</button>
+          <button nbButton status="info" type="button" (click)="abrirModalCadastro()">Cadastrar nova música</button>
+        </div>
+
+        <nb-list>
+          <nb-list-item *ngFor="let musica of repertorio.itens; let i = index">
+            <div class="musica">
+              <strong>{{ musica.ordem }}. {{ musica.musicaTitulo || ('Música #' + musica.musicaId) }}</strong>
+              <small *ngIf="musica.musicaArtistaBanda">{{ musica.musicaArtistaBanda }}</small>
+              <small *ngIf="musica.musicaTom">Tom: {{ musica.musicaTom }}</small>
+              <small *ngIf="musica.responsavel">Responsável: {{ musica.responsavel }}</small>
+              <small *ngIf="musica.etapaAtividade">Etapa: {{ musica.etapaAtividade }}</small>
+              <div class="link-acoes" *ngIf="musica.musicaLinkCifra || musica.musicaLinkVideo">
+                <app-external-link-viewer *ngIf="musica.musicaLinkCifra" [url]="musica.musicaLinkCifra" label="Cifra" mode="modal"></app-external-link-viewer>
+                <app-external-link-viewer *ngIf="musica.musicaLinkVideo" [url]="musica.musicaLinkVideo" label="Vídeo" mode="blank"></app-external-link-viewer>
+              </div>
+              <small class="quebra" *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
+              <small class="quebra" *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
+              <div class="links" *ngIf="podeEditar()">
+                <button nbButton size="tiny" status="basic" type="button" (click)="moverItem(i, -1)" [disabled]="i === 0">Subir</button>
+                <button nbButton size="tiny" status="basic" type="button" (click)="moverItem(i, 1)" [disabled]="i === repertorio.itens.length - 1">Descer</button>
+                <button nbButton size="tiny" status="danger" type="button" (click)="removerItem(i)">Retirar</button>
+              </div>
+            </div>
+          </nb-list-item>
+        </nb-list>
+      </nb-card-body>
+      <nb-card-footer *ngIf="podeEditar()">
+        <button nbButton status="primary" [disabled]="salvando" (click)="salvar()">Salvar repertório</button>
+      </nb-card-footer>
+    </nb-card>
+  </ng-template>
+
+  <ng-template #vazioTpl>
+    <nb-card>
+      <nb-card-body>Repertório não encontrado.</nb-card-body>
+    </nb-card>
+  </ng-template>
+</ng-container>
+
+<div class="modal-backdrop" *ngIf="modalAdicionarAberto || modalCadastroAberto" (click)="fecharModalAdicionar(); fecharModalCadastro()"></div>
+
+<div class="modal-wrapper" *ngIf="modalAdicionarAberto">
+  <nb-card class="modal-card" (click)="$event.stopPropagation()">
+    <nb-card-header>Adicionar música</nb-card-header>
+    <nb-card-body>
+      <div class="busca-box">
+        <input
+          nbInput
+          fullWidth
+          type="search"
+          [formControl]="buscaMusicaControl"
+          [nbAutocomplete]="musicasAutocomplete"
+          placeholder="Selecione uma música"
+          (focus)="mostrarTodasMusicas()"
+        />
+      </div>
+
+      <div class="resultado-busca">
+        <small *ngIf="carregandoMusicas">Buscando músicas...</small>
+      </div>
+
+      <nb-autocomplete #musicasAutocomplete (selectedChange)="selecionarMusicaAutocomplete($event)">
+        <nb-option *ngFor="let musica of musicasDisponiveis" [value]="textoMusica(musica)">
+          {{ textoMusica(musica) }}
+        </nb-option>
+        <nb-option *ngIf="!carregandoMusicas && !musicasDisponiveis.length" disabled>
+          Nenhuma música disponível.
+        </nb-option>
+      </nb-autocomplete>
+
+      <form class="form-grid" [formGroup]="itemForm" (ngSubmit)="adicionarItem()">
+        <input nbInput formControlName="musicaTom" placeholder="Tom (opcional)" />
+        <input nbInput formControlName="responsavel" placeholder="Responsável (opcional)" />
+        <input nbInput formControlName="observacoes" placeholder="Observações (opcional)" />
+        <button nbButton status="success" type="submit" [disabled]="!itemForm.controls.musicaId.value">Adicionar ao repertório</button>
+      </form>
+    </nb-card-body>
+    <nb-card-footer>
+      <button nbButton status="basic" type="button" (click)="fecharModalAdicionar()">Cancelar</button>
+    </nb-card-footer>
+  </nb-card>
+</div>
+
+<div class="modal-wrapper" *ngIf="modalCadastroAberto">
+  <nb-card class="modal-card" (click)="$event.stopPropagation()">
+    <nb-card-header>Cadastrar nova música</nb-card-header>
+    <nb-card-body>
+      <form class="music-form" [formGroup]="musicaForm" (ngSubmit)="cadastrarMusica()">
+        <input nbInput fullWidth formControlName="titulo" placeholder="Título *" />
+        <input nbInput fullWidth formControlName="artistaBanda" placeholder="Artista ou banda *" />
+        <input nbInput fullWidth formControlName="tom" placeholder="Tom (opcional)" />
+        <input nbInput fullWidth formControlName="linkCifra" placeholder="Link da cifra (opcional)" />
+        <input nbInput fullWidth formControlName="linkVideo" placeholder="Link do vídeo (opcional)" />
+        <textarea nbInput fullWidth rows="2" formControlName="observacoes" placeholder="Observações (opcional)"></textarea>
+        <button nbButton status="success" type="submit" [disabled]="cadastrandoMusica">Salvar música</button>
+      </form>
+    </nb-card-body>
+    <nb-card-footer>
+      <button nbButton status="basic" type="button" (click)="fecharModalCadastro()">Cancelar</button>
+    </nb-card-footer>
+  </nb-card>
+</div>
+
+<ng-template #carregandoTpl>
+  <nb-card>
+    <nb-card-body>Carregando repertório...</nb-card-body>
+  </nb-card>
+</ng-template>

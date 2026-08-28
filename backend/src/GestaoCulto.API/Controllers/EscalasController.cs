@@ -61,6 +61,7 @@ namespace GestaoCulto.API.Controllers
                     e.Funcao,
                     e.HorarioPrevisto,
                     e.PresencaStatusId,
+                    e.PodeGerenciarRepertorio,
                     PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == e.PresencaStatusId).Select(s => s.Nome).FirstOrDefault(),
                     e.ConfirmadoEm,
                     e.Observacoes
@@ -99,6 +100,7 @@ namespace GestaoCulto.API.Controllers
             }
 
             var blocoCronograma = await ObterBlocoCronogramaDaFuncao(dto.MinisterioId, funcaoNormalizada);
+            var podeGerenciarRepertorio = await PodeGerenciarRepertorioDaFuncao(dto.MinisterioId, funcaoNormalizada);
 
             var voluntarioIdNormalizado = dto.VoluntarioId.HasValue && dto.VoluntarioId.Value > 0
                 ? dto.VoluntarioId
@@ -142,6 +144,7 @@ namespace GestaoCulto.API.Controllers
                 MinisterioId = dto.MinisterioId,
                 Funcao = funcaoNormalizada,
                 BlocoCronograma = blocoCronograma,
+                PodeGerenciarRepertorio = podeGerenciarRepertorio,
                 HorarioPrevisto = null,
                 PresencaStatusId = dto.PresencaStatusId,
                 Observacoes = dto.Observacoes,
@@ -224,6 +227,7 @@ namespace GestaoCulto.API.Controllers
             entity.MinisterioId = dto.MinisterioId;
             entity.Funcao = funcaoNormalizada;
             entity.BlocoCronograma = blocoCronograma;
+            entity.PodeGerenciarRepertorio = await PodeGerenciarRepertorioDaFuncao(dto.MinisterioId, funcaoNormalizada);
             entity.PresencaStatusId = dto.PresencaStatusId;
             entity.Observacoes = dto.Observacoes;
             entity.AtualizadoEm = DateTime.UtcNow;
@@ -426,6 +430,23 @@ namespace GestaoCulto.API.Controllers
                 .FirstOrDefaultAsync();
 
             return NormalizarBlocoCronograma(bloco);
+        }
+
+        private async Task<bool> PodeGerenciarRepertorioDaFuncao(long? ministerioId, string funcao)
+        {
+            if (!ministerioId.HasValue || ministerioId.Value <= 0)
+            {
+                return false;
+            }
+
+            return await _db.MinisteriosFuncoesPadrao
+                .AsNoTracking()
+                .Where(x => x.MinisterioId == ministerioId.Value
+                    && x.Ativo
+                    && x.Ministerio.Codigo == "LOUVOR"
+                    && x.Nome.ToLower() == funcao.ToLower())
+                .Select(x => x.PodeGerenciarRepertorio)
+                .FirstOrDefaultAsync();
         }
 
         private static string NormalizarBlocoCronograma(string? valor)

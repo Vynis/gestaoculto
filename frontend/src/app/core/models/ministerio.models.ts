@@ -17,6 +17,7 @@ export interface MinisterioFuncaoPadrao {
   blocoCronograma?: string;
   ordem?: number;
   ativo: boolean;
+  podeGerenciarRepertorio?: boolean;
 }
 
 export interface MinisterioCompleto {

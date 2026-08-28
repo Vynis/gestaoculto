@@ -30,6 +30,7 @@ namespace GestaoCulto.Infrastructure.Persistence
         public DbSet<TelegramUpdateProcessado> TelegramUpdatesProcessados => Set<TelegramUpdateProcessado>();
         public DbSet<TelegramDisponibilidadeRascunho> TelegramDisponibilidadeRascunhos => Set<TelegramDisponibilidadeRascunho>();
         public DbSet<TelegramDisponibilidadeRascunhoMinisterio> TelegramDisponibilidadeRascunhosMinisterios => Set<TelegramDisponibilidadeRascunhoMinisterio>();
+        public DbSet<TelegramRepertorioRascunho> TelegramRepertoriosRascunhos => Set<TelegramRepertorioRascunho>();
         public DbSet<RelatorioCultoCompartilhamento> RelatoriosCultoCompartilhamentos => Set<RelatorioCultoCompartilhamento>();
         public DbSet<StatusCulto> StatusCultos => Set<StatusCulto>();
         public DbSet<StatusEtapa> StatusEtapas => Set<StatusEtapa>();
@@ -147,6 +148,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.BlocoCronograma).HasColumnName("bloco_cronograma").HasMaxLength(80).IsRequired();
                 entity.Property(x => x.Ordem).HasColumnName("ordem");
                 entity.Property(x => x.Ativo).HasColumnName("ativo");
+                entity.Property(x => x.PodeGerenciarRepertorio).HasColumnName("pode_gerenciar_repertorio");
                 entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
                 entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
                 entity.HasOne(x => x.Ministerio).WithMany().HasForeignKey(x => x.MinisterioId);
@@ -336,6 +338,23 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.HasIndex(x => new { x.VoluntarioId, x.CultoId }).IsUnique();
                 entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId);
                 entity.HasOne(x => x.Culto).WithMany().HasForeignKey(x => x.CultoId);
+            });
+
+            modelBuilder.Entity<TelegramRepertorioRascunho>(entity =>
+            {
+                entity.ToTable("telegram_repertorio_rascunho");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.VoluntarioId).HasColumnName("voluntario_id");
+                entity.Property(x => x.CultoId).HasColumnName("culto_id");
+                entity.Property(x => x.MusicaIds).HasColumnName("musica_ids").HasMaxLength(4000).IsRequired();
+                entity.Property(x => x.AcaoPendente).HasColumnName("acao_pendente").HasMaxLength(30);
+                entity.Property(x => x.ExpiraEm).HasColumnName("expira_em");
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Property(x => x.AtualizadoEm).HasColumnName("atualizado_em");
+                entity.HasOne(x => x.Voluntario).WithMany().HasForeignKey(x => x.VoluntarioId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Culto).WithMany().HasForeignKey(x => x.CultoId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(x => new { x.VoluntarioId, x.CultoId }).IsUnique();
             });
 
             modelBuilder.Entity<TelegramDisponibilidadeRascunhoMinisterio>(entity =>
@@ -624,6 +643,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.VoluntarioAvulsoTelefone).HasColumnName("voluntario_avulso_telefone").HasMaxLength(40);
                 entity.Property(x => x.MinisterioId).HasColumnName("ministerio_id");
                 entity.Property(x => x.Funcao).HasColumnName("funcao").HasMaxLength(120).IsRequired();
+                entity.Property(x => x.PodeGerenciarRepertorio).HasColumnName("pode_gerenciar_repertorio");
                 entity.Property(x => x.HorarioPrevisto).HasColumnName("horario_previsto");
                 entity.Property(x => x.PresencaStatusId).HasColumnName("presenca_status_id");
                 entity.Property(x => x.ConfirmadoEm).HasColumnName("confirmado_em");

@@ -41,7 +41,8 @@
       <p *ngIf="d.item.etapaAtividade || d.item.etapaBlocoCronograma">
         Etapa: {{ d.item.etapaAtividade || 'Sem atividade' }}<span *ngIf="d.item.etapaBlocoCronograma"> ({{ d.item.etapaBlocoCronograma }})</span>
       </p>
-      <p *ngIf="d.item.observacoes">Obs: {{ d.item.observacoes }}</p>
+       <p *ngIf="d.item.observacoes">Obs: {{ d.item.observacoes }}</p>
+        <a nbButton size="tiny" status="info" *ngIf="d.item.podeGerenciarRepertorio" [routerLink]="['/voluntario/repertorio/culto', d.item.cultoId]">Abrir repertório</a>
 
       <h5>Colegas do mesmo ministério nesse culto</h5>
       <nb-list>
@@ -61,8 +62,10 @@
               <small *ngIf="musica.musicaTom">Tom: {{ musica.musicaTom }}</small>
               <small *ngIf="musica.etapaAtividade">Etapa: {{ musica.etapaAtividade }}</small>
               <small *ngIf="musica.responsavel">Responsável: {{ musica.responsavel }}</small>
-              <small class="quebra-linha" *ngIf="musica.musicaLinkCifra">Cifra: {{ musica.musicaLinkCifra }}</small>
-              <small class="quebra-linha" *ngIf="musica.musicaLinkVideo">Vídeo: {{ musica.musicaLinkVideo }}</small>
+              <div class="link-acoes" *ngIf="musica.musicaLinkCifra || musica.musicaLinkVideo">
+                <app-external-link-viewer *ngIf="musica.musicaLinkCifra" [url]="musica.musicaLinkCifra" label="Cifra" mode="modal"></app-external-link-viewer>
+                <app-external-link-viewer *ngIf="musica.musicaLinkVideo" [url]="musica.musicaLinkVideo" label="Vídeo" mode="blank"></app-external-link-viewer>
+              </div>
               <small class="quebra-linha" *ngIf="musica.observacoes">Obs item: {{ musica.observacoes }}</small>
               <small class="quebra-linha" *ngIf="musica.musicaObservacoes">Obs música: {{ musica.musicaObservacoes }}</small>
             </div>

@@ -7,6 +7,7 @@ import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component'
 import { AuthGuard } from './core/guards/auth.guard';
 import { GestaoGuard } from './core/guards/gestao.guard';
 import { VoluntarioGuard } from './core/guards/voluntario.guard';
+import { LouvorGuard } from './core/guards/louvor.guard';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
 import { CultosComponent } from './modules/cultos/cultos.component';
 import { RecorrenciasCultoComponent } from './modules/recorrencias-culto/recorrencias-culto.component';
@@ -31,6 +32,7 @@ import { EscalaVoluntarioComponent } from './modules/voluntario/escala-voluntari
 import { MinisteriosVoluntarioComponent } from './modules/voluntario/ministerios-voluntario.component';
 import { ColegasMinisterioVoluntarioComponent } from './modules/voluntario/colegas-ministerio-voluntario.component';
 import { MeusDadosVoluntarioComponent } from './modules/voluntario/meus-dados-voluntario.component';
+import { RepertorioVoluntarioComponent } from './modules/voluntario/repertorio-voluntario.component';
 import { AppInfoPageComponent } from './modules/publico/app-info-page.component';
 import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
 import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
@@ -76,6 +78,9 @@ const routes: Routes = [
       { path: 'painel', component: PainelVoluntarioComponent },
       { path: 'calendario', component: CalendarioVoluntarioComponent },
       { path: 'minha-escala', component: EscalaVoluntarioComponent },
+      { path: 'repertorio', component: RepertorioVoluntarioComponent, canActivate: [LouvorGuard] },
+      { path: 'repertorio/culto/:cultoId', component: RepertorioVoluntarioComponent, canActivate: [LouvorGuard] },
+      { path: 'repertorio/escala/:escalaId', component: RepertorioVoluntarioComponent, canActivate: [LouvorGuard] },
       { path: 'meus-ministerios', component: MinisteriosVoluntarioComponent },
       { path: 'colegas', component: ColegasMinisterioVoluntarioComponent },
       { path: 'meus-dados', component: MeusDadosVoluntarioComponent }

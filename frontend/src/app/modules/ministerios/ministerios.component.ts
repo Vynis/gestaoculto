@@ -21,6 +21,7 @@ export class MinisteriosComponent implements OnInit {
   funcoesPadraoEmEdicao: MinisterioFuncaoPadrao[] = [];
   novaFuncaoNome = '';
   novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
+  novaFuncaoPodeGerenciarRepertorio = false;
 
   readonly blocosCronograma = [
     { value: 'SOMENTE_EQUIPE', label: 'Somente equipe' },
@@ -81,6 +82,7 @@ export class MinisteriosComponent implements OnInit {
       .sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0));
     this.novaFuncaoNome = '';
     this.novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
+    this.novaFuncaoPodeGerenciarRepertorio = false;
 
     this.form.patchValue({
       nome: ministerio.nome,
@@ -119,7 +121,8 @@ export class MinisteriosComponent implements OnInit {
           nome: (item.nome || '').trim(),
           blocoCronograma: (item.blocoCronograma || 'SOMENTE_EQUIPE').trim().toUpperCase(),
           ordem: index + 1,
-          ativo: item.ativo !== false
+          ativo: item.ativo !== false,
+          podeGerenciarRepertorio: this.isLouvorEmEdicao() && item.podeGerenciarRepertorio === true
         }))
         .filter((item) => !!item.nome)
     };
@@ -169,6 +172,7 @@ export class MinisteriosComponent implements OnInit {
     this.funcoesPadraoEmEdicao = [];
     this.novaFuncaoNome = '';
     this.novaFuncaoBlocoCronograma = 'SOMENTE_EQUIPE';
+    this.novaFuncaoPodeGerenciarRepertorio = false;
     this.form.reset({
       nome: '',
       descricao: '',
@@ -197,7 +201,8 @@ export class MinisteriosComponent implements OnInit {
         nome,
         blocoCronograma: this.novaFuncaoBlocoCronograma,
         ordem: this.funcoesPadraoEmEdicao.length + 1,
-        ativo: true
+        ativo: true,
+        podeGerenciarRepertorio: this.isLouvorEmEdicao() && this.novaFuncaoPodeGerenciarRepertorio
       }
     ];
     this.novaFuncaoNome = '';
@@ -218,6 +223,24 @@ export class MinisteriosComponent implements OnInit {
     this.funcoesPadraoEmEdicao = this.funcoesPadraoEmEdicao.map((item, idx) => idx === index
       ? { ...item, blocoCronograma }
       : item);
+  }
+
+  isLouvorEmEdicao(): boolean {
+    if (this.ministerioEditandoId !== null) {
+      return this.ministerios.find((item) => item.id === this.ministerioEditandoId)?.codigo === 'LOUVOR';
+    }
+
+    return this.codigoGerado(this.form.controls.nome.value) === 'LOUVOR';
+  }
+
+  alterarPermissaoRepertorio(index: number, permitido: boolean): void {
+    this.funcoesPadraoEmEdicao = this.funcoesPadraoEmEdicao.map((item, idx) => idx === index
+      ? { ...item, podeGerenciarRepertorio: permitido }
+      : item);
+  }
+
+  private codigoGerado(nome: string | null | undefined): string {
+    return String(nome || '').trim().toUpperCase().replace(/[ -]+/g, '_');
   }
 
   labelBlocoCronograma(valor?: string | null): string {

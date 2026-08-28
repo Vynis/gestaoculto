@@ -89,6 +89,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                   bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'SOMENTE_EQUIPE',
                   ordem INT NOT NULL DEFAULT 0,
                   ativo TINYINT(1) NOT NULL DEFAULT 1,
+                  pode_gerenciar_repertorio TINYINT(1) NOT NULL DEFAULT 0,
                   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   atualizado_em DATETIME NULL,
                   PRIMARY KEY (id),
@@ -104,6 +105,22 @@ namespace GestaoCulto.Infrastructure.Persistence
                 await _db.Database.ExecuteSqlRawAsync(@"
                     ALTER TABLE ministerio_funcao_padrao
                     ADD COLUMN bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'SOMENTE_EQUIPE' AFTER nome;
+                ");
+            }
+
+            if (await TabelaExisteAsync("ministerio_funcao_padrao") && !await ColunaExisteAsync("ministerio_funcao_padrao", "pode_gerenciar_repertorio"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE ministerio_funcao_padrao
+                    ADD COLUMN pode_gerenciar_repertorio TINYINT(1) NOT NULL DEFAULT 0 AFTER ativo;
+                ");
+            }
+
+            if (await TabelaExisteAsync("escala") && !await ColunaExisteAsync("escala", "pode_gerenciar_repertorio"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE escala
+                    ADD COLUMN pode_gerenciar_repertorio TINYINT(1) NOT NULL DEFAULT 0 AFTER funcao;
                 ");
             }
 
@@ -258,6 +275,24 @@ namespace GestaoCulto.Infrastructure.Persistence
                   KEY ix_telegram_disp_rascunho_ministerio (ministerio_id),
                   CONSTRAINT fk_telegram_disp_rascunho_min_rascunho FOREIGN KEY (telegram_disponibilidade_rascunho_id) REFERENCES telegram_disponibilidade_rascunho(id) ON DELETE CASCADE,
                   CONSTRAINT fk_telegram_disp_rascunho_min_ministerio FOREIGN KEY (ministerio_id) REFERENCES ministerio(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS telegram_repertorio_rascunho (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  culto_id BIGINT UNSIGNED NOT NULL,
+                  musica_ids VARCHAR(4000) NOT NULL,
+                  acao_pendente VARCHAR(30) NULL,
+                  expira_em DATETIME NOT NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  atualizado_em DATETIME NULL,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_telegram_rep_rascunho_voluntario_culto (voluntario_id, culto_id),
+                  KEY ix_telegram_rep_rascunho_expira (expira_em),
+                  CONSTRAINT fk_telegram_rep_rascunho_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+                  CONSTRAINT fk_telegram_rep_rascunho_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
 

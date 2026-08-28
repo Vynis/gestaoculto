@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS ministerio_funcao_padrao (
   bloco_cronograma VARCHAR(80) NOT NULL DEFAULT 'SOMENTE_EQUIPE',
   ordem INT NOT NULL DEFAULT 0,
   ativo TINYINT(1) NOT NULL DEFAULT 1,
+  pode_gerenciar_repertorio TINYINT(1) NOT NULL DEFAULT 0,
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   atualizado_em DATETIME NULL,
   PRIMARY KEY (id),
@@ -525,6 +526,7 @@ CREATE TABLE IF NOT EXISTS escala (
   voluntario_avulso_telefone VARCHAR(40) NULL,
   ministerio_id BIGINT UNSIGNED NULL,
   funcao VARCHAR(120) NOT NULL,
+  pode_gerenciar_repertorio TINYINT(1) NOT NULL DEFAULT 0,
   horario_previsto DATETIME NULL,
   presenca_status_id BIGINT UNSIGNED NOT NULL,
   confirmado_em DATETIME NULL,
@@ -781,5 +783,21 @@ VALUES
   ('Indisponível', 'INDISPONIVEL', '#DC3545', 2),
   ('Em análise', 'EM_ANALISE', '#FD7E14', 3)
 ON DUPLICATE KEY UPDATE nome = VALUES(nome), cor_hex = VALUES(cor_hex), ordem = VALUES(ordem);
+
+CREATE TABLE IF NOT EXISTS telegram_repertorio_rascunho (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  voluntario_id BIGINT UNSIGNED NOT NULL,
+  culto_id BIGINT UNSIGNED NOT NULL,
+  musica_ids VARCHAR(4000) NOT NULL,
+  acao_pendente VARCHAR(30) NULL,
+  expira_em DATETIME NOT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_telegram_rep_rascunho_voluntario_culto (voluntario_id, culto_id),
+  KEY ix_telegram_rep_rascunho_expira (expira_em),
+  CONSTRAINT fk_telegram_rep_rascunho_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_telegram_rep_rascunho_culto FOREIGN KEY (culto_id) REFERENCES culto(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

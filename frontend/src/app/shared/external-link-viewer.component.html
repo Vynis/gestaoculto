@@ -1,0 +1,37 @@
+<ng-container *ngIf="urlNormalizada">
+  <a
+    *ngIf="mode === 'blank'; else modalBtn"
+    nbButton
+    size="tiny"
+    status="info"
+    type="button"
+    [href]="urlNormalizada"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    {{ label }}
+  </a>
+
+  <ng-template #modalBtn>
+    <button nbButton size="tiny" status="info" type="button" (click)="abrirModal()">{{ label }}</button>
+  </ng-template>
+
+  <div class="link-modal-backdrop" *ngIf="modalAberto" (click)="fecharModal()"></div>
+  <div class="link-modal-wrapper" *ngIf="modalAberto">
+    <nb-card class="link-modal-card" (click)="$event.stopPropagation()">
+      <nb-card-header>{{ label }}</nb-card-header>
+      <nb-card-body>
+        <div class="link-modal-actions">
+          <a nbButton status="primary" [href]="urlNormalizada" target="_blank" rel="noopener noreferrer">Abrir em nova aba</a>
+          <button nbButton status="basic" type="button" (click)="fecharModal()">Fechar</button>
+        </div>
+
+        <div class="link-modal-preview">
+          <iframe *ngIf="safeUrl" [src]="safeUrl" [title]="label"></iframe>
+        </div>
+
+        <p class="link-modal-aviso">Se a pré-visualização não carregar, use o botão de nova aba.</p>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</ng-container>

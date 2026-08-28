@@ -10,5 +10,6 @@ namespace GestaoCulto.Domain.Entities
         public string BlocoCronograma { get; set; } = "SOMENTE_EQUIPE";
         public int Ordem { get; set; }
         public bool Ativo { get; set; } = true;
+        public bool PodeGerenciarRepertorio { get; set; }
     }
 }

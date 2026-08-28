@@ -17,6 +17,7 @@ namespace GestaoCulto.Domain.Entities
         public long? MinisterioId { get; set; }
         public Ministerio? Ministerio { get; set; }
         public string Funcao { get; set; } = string.Empty;
+        public bool PodeGerenciarRepertorio { get; set; }
         public DateTime? HorarioPrevisto { get; set; }
         public long PresencaStatusId { get; set; }
         public PresencaEscalaStatus PresencaStatus { get; set; } = null!;

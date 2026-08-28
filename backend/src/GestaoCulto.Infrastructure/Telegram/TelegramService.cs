@@ -22,6 +22,7 @@ namespace GestaoCulto.Infrastructure.Telegram
         private const string CallbackDisponibilidade = "disp:";
         private const string CallbackRelatorio = "rel:c:";
         private const string CallbackConfirmarEscala = "esc:conf:";
+        private const string CallbackRepertorio = "rp:";
         private readonly GestaoCultoDbContext _db;
         private readonly ITelegramBotClient _botClient;
         private readonly IDisponibilidadeVoluntarioService _disponibilidadeService;
@@ -273,6 +274,9 @@ namespace GestaoCulto.Infrastructure.Telegram
                 case "/relatorio":
                     await EnviarRelatoriosAsync(conexao.VoluntarioId, mensagem.Chat.Id);
                     break;
+                case "/repertorio":
+                    await ProcessarComandoRepertorioAsync(conexao.VoluntarioId, mensagem.Chat.Id, parametro);
+                    break;
                 case "/desvincular":
                     conexao.Ativo = false;
                     conexao.DesvinculadoEm = DateTime.UtcNow;
@@ -355,6 +359,13 @@ namespace GestaoCulto.Infrastructure.Telegram
                 && callback.Data.StartsWith(CallbackConfirmarEscala, StringComparison.Ordinal))
             {
                 await ProcessarConfirmarEscalaCallbackAsync(callback);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(callback.Data)
+                && callback.Data.StartsWith(CallbackRepertorio, StringComparison.Ordinal))
+            {
+                await ProcessarRepertorioCallbackAsync(callback);
                 return;
             }
 
@@ -696,6 +707,368 @@ namespace GestaoCulto.Infrastructure.Telegram
                     }
                 });
             await _botClient.ResponderCallbackAsync(callback.Id, "Relatório disponível.");
+        }
+
+        private async Task ProcessarComandoRepertorioAsync(long voluntarioId, long chatId, string parametro)
+        {
+            var cultos = await ListarCultosLouvorAsync(voluntarioId);
+
+            if (!cultos.Any())
+            {
+                await _botClient.EnviarMensagemAsync(chatId, "Você não possui cultos de louvor disponíveis para repertório.");
+                return;
+            }
+
+            var botoes = cultos.Select((x, i) => new TelegramBotaoDto
+            {
+                Texto = $"{x.DataCulto:dd/MM} {x.HorarioInicio:hh\\:mm} - {x.Nome}",
+                CallbackData = CallbackRepertorio + "v:" + x.Id,
+                Linha = i
+            }).ToList();
+            await _botClient.EnviarMensagemAsync(chatId, "Escolha o culto para visualizar o repertório:", botoes);
+        }
+
+        private async Task ProcessarRepertorioCallbackAsync(TelegramCallbackDto callback)
+        {
+            var mensagem = callback.Message!;
+            var conexao = await ObterConexaoAsync(callback.From.Id, mensagem.Chat.Id);
+            if (conexao == null)
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, "Sua conta não está vinculada.");
+                return;
+            }
+
+            var partes = (callback.Data ?? string.Empty).Split(':');
+            if (partes.Length < 3 || !long.TryParse(partes[2], out var cultoId) || cultoId <= 0)
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, "Ação de repertório inválida.");
+                return;
+            }
+
+            if (partes[1] != "v")
+            {
+                await _botClient.ResponderCallbackAsync(callback.Id, "Ação de repertório indisponível. Use a área web para editar.");
+                return;
+            }
+
+            await _botClient.ResponderCallbackAsync(callback.Id, "Abrindo repertório...");
+            await ExibirRepertorioAsync(callback, conexao.VoluntarioId, cultoId);
+        }
+
+        private async Task ExibirRepertorioAsync(TelegramCallbackDto callback, long voluntarioId, long cultoId)
+        {
+            var culto = await _db.Cultos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == cultoId);
+            if (culto == null)
+            {
+                await _botClient.EditarMensagemAsync(callback.Message!.Chat.Id, callback.Message.MessageId, "Culto não encontrado.");
+                return;
+            }
+
+            var repertorio = await _db.RepertoriosCulto.AsNoTracking().FirstOrDefaultAsync(x => x.CultoId == cultoId);
+            var itens = repertorio == null
+                ? new List<RepertorioTelegramItemViewModel>()
+                : await _db.RepertoriosCultoItens.AsNoTracking()
+                    .Where(x => x.RepertorioCultoId == repertorio.Id)
+                    .OrderBy(x => x.Ordem)
+                    .Select(x => new RepertorioTelegramItemViewModel
+                    {
+                        MusicaId = x.MusicaId,
+                        MusicaTitulo = x.MusicaTitulo,
+                        MusicaArtistaBanda = x.MusicaArtistaBanda,
+                        MusicaLinkCifra = !string.IsNullOrWhiteSpace(x.MusicaLinkCifra)
+                            ? x.MusicaLinkCifra
+                            : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkCifra).FirstOrDefault(),
+                        MusicaLinkVideo = !string.IsNullOrWhiteSpace(x.MusicaLinkVideo)
+                            ? x.MusicaLinkVideo
+                            : _db.Musicas.Where(m => m.Id == x.MusicaId).Select(m => m.LinkVideo).FirstOrDefault()
+                    })
+                    .ToListAsync();
+
+            var texto = new StringBuilder($"{culto.Nome} - {culto.DataCulto:dd/MM/yyyy}\n\nRepertório:\n");
+            for (var i = 0; i < itens.Count; i++)
+            {
+                var item = itens[i];
+                var titulo = !string.IsNullOrWhiteSpace(item.MusicaTitulo) ? item.MusicaTitulo : $"Música #{item.MusicaId}";
+                var artista = !string.IsNullOrWhiteSpace(item.MusicaArtistaBanda) ? $" - {item.MusicaArtistaBanda}" : string.Empty;
+                texto.AppendLine($"{i + 1}. {titulo}{artista}");
+            }
+
+            if (!itens.Any())
+            {
+                texto.AppendLine("(vazio)");
+            }
+
+            var botoes = new List<TelegramBotaoDto>();
+            var linhaBotao = itens.Count;
+            for (var i = 0; i < itens.Count; i++)
+            {
+                var item = itens[i];
+                var indice = i + 1;
+                AdicionarBotaoUrlSeguro(botoes, $"{indice}. Cifra", item.MusicaLinkCifra, i);
+                AdicionarBotaoUrlSeguro(botoes, $"{indice}. Vídeo", item.MusicaLinkVideo, i);
+            }
+
+            var escalaGerenciavelId = await ObterEscalaGerenciavelIdTelegramAsync(voluntarioId, cultoId);
+            if (escalaGerenciavelId.HasValue)
+            {
+                botoes.Add(new TelegramBotaoDto
+                {
+                    Texto = "Editar na web",
+                    Url = MontarUrlEdicaoRepertorio(escalaGerenciavelId.Value),
+                    Linha = linhaBotao
+                });
+                linhaBotao++;
+            }
+
+            botoes.Add(new TelegramBotaoDto
+            {
+                Texto = "Voltar aos cultos",
+                Url = MontarUrlEdicaoRepertorioListagem(),
+                Linha = linhaBotao
+            });
+
+            await _botClient.EditarMensagemAsync(callback.Message!.Chat.Id, callback.Message.MessageId, texto.ToString(), botoes);
+        }
+
+        private async Task<List<Culto>> ListarCultosLouvorAsync(long voluntarioId)
+        {
+            var usuarioId = await _db.Voluntarios.AsNoTracking()
+                .Where(v => v.Id == voluntarioId && v.Ativo)
+                .Select(v => v.UsuarioId)
+                .FirstOrDefaultAsync();
+
+            if (!usuarioId.HasValue)
+            {
+                return new List<Culto>();
+            }
+
+            var ehLouvor = await _db.MinisteriosVoluntarios.AsNoTracking()
+                .Join(_db.Voluntarios.AsNoTracking(),
+                    vm => vm.VoluntarioId,
+                    v => v.Id,
+                    (vm, v) => new { vm.MinisterioId, v.UsuarioId, v.Ativo })
+                .Join(_db.Ministerios.AsNoTracking(),
+                    x => x.MinisterioId,
+                    m => m.Id,
+                    (x, m) => new { x.UsuarioId, x.Ativo, m.Codigo })
+                .AnyAsync(x => x.UsuarioId == usuarioId.Value && x.Ativo && x.Codigo == "LOUVOR");
+
+            if (!ehLouvor)
+            {
+                return new List<Culto>();
+            }
+
+            var cultos = await _db.Cultos.AsNoTracking()
+                .Join(_db.StatusCultos.AsNoTracking(),
+                    culto => culto.StatusCultoId,
+                    status => status.Id,
+                    (culto, status) => new { culto, status })
+                .Where(x => x.status.Codigo == "ATIVO")
+                .Select(x => x.culto)
+                .ToListAsync();
+
+            return cultos
+                .OrderByDescending(x => x.DataCulto >= DateTime.Today)
+                .ThenBy(x => x.DataCulto >= DateTime.Today ? x.DataCulto : DateTime.MinValue)
+                .ThenByDescending(x => x.DataCulto < DateTime.Today)
+                .ThenByDescending(x => x.DataCulto)
+                .ToList();
+        }
+
+        private async Task<long?> ObterEscalaGerenciavelIdTelegramAsync(long voluntarioId, long cultoId)
+        {
+            return await _db.Escalas.AsNoTracking()
+                .Where(x => x.CultoId == cultoId
+                    && x.VoluntarioId == voluntarioId
+                    && x.PodeGerenciarRepertorio
+                    && x.Ministerio != null && x.Ministerio.Codigo == "LOUVOR"
+                    && x.Voluntario != null && x.Voluntario.Ativo
+                    && x.Culto != null
+                    && x.Culto.DataCulto >= DateTime.Today
+                    && _db.StatusCultos.Any(s => s.Id == x.Culto.StatusCultoId && s.Codigo == "ATIVO"))
+                .Select(x => (long?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        private string MontarUrlEdicaoRepertorio(long escalaId)
+        {
+            var baseUrl = (_options.FrontendBaseUrl ?? string.Empty).Trim().TrimEnd('/');
+            return $"{baseUrl}/voluntario/repertorio/escala/{escalaId}";
+        }
+
+        private string MontarUrlEdicaoRepertorioListagem()
+        {
+            var baseUrl = (_options.FrontendBaseUrl ?? string.Empty).Trim().TrimEnd('/');
+            return $"{baseUrl}/voluntario/repertorio";
+        }
+
+        private static bool AdicionarBotaoUrlSeguro(List<TelegramBotaoDto> botoes, string texto, string? url, int linha)
+        {
+            var urlNormalizada = NormalizarUrl(url);
+            if (urlNormalizada == null)
+            {
+                return false;
+            }
+
+            botoes.Add(new TelegramBotaoDto
+            {
+                Texto = texto,
+                Url = urlNormalizada,
+                Linha = linha
+            });
+
+            return true;
+        }
+
+        private static string? NormalizarUrl(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return null;
+            }
+
+            return Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri) &&
+                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+                ? uri.ToString()
+                : null;
+        }
+
+        private sealed class RepertorioTelegramItemViewModel
+        {
+            public long MusicaId { get; set; }
+            public string? MusicaTitulo { get; set; }
+            public string? MusicaArtistaBanda { get; set; }
+            public string? MusicaLinkCifra { get; set; }
+            public string? MusicaLinkVideo { get; set; }
+        }
+
+        private async Task<Culto?> ObterCultoRepertorioAutorizadoAsync(long voluntarioId, long cultoId)
+        {
+            return await _db.Cultos.FirstOrDefaultAsync(x => x.Id == cultoId
+                && x.DataCulto >= DateTime.Today
+                && _db.StatusCultos.Any(s => s.Id == x.StatusCultoId && s.Codigo == "ATIVO")
+                && _db.Escalas.Any(e => e.CultoId == cultoId && e.VoluntarioId == voluntarioId && e.PodeGerenciarRepertorio));
+        }
+
+        private async Task<TelegramRepertorioRascunho> ObterOuCriarRascunhoRepertorioAsync(long voluntarioId, long cultoId)
+        {
+            var rascunho = await _db.TelegramRepertoriosRascunhos
+                .FirstOrDefaultAsync(x => x.VoluntarioId == voluntarioId && x.CultoId == cultoId);
+            var expirado = rascunho != null && rascunho.ExpiraEm <= DateTime.UtcNow;
+            if (rascunho == null || expirado)
+            {
+                var repertorio = await _db.RepertoriosCulto.AsNoTracking().FirstOrDefaultAsync(x => x.CultoId == cultoId);
+                var ids = repertorio == null
+                    ? new List<long>()
+                    : await _db.RepertoriosCultoItens.AsNoTracking().Where(x => x.RepertorioCultoId == repertorio.Id).OrderBy(x => x.Ordem).Select(x => x.MusicaId).ToListAsync();
+                if (rascunho == null)
+                {
+                    rascunho = new TelegramRepertorioRascunho
+                    {
+                        VoluntarioId = voluntarioId,
+                        CultoId = cultoId
+                    };
+                    _db.TelegramRepertoriosRascunhos.Add(rascunho);
+                }
+                rascunho.MusicaIds = string.Join(",", ids);
+                rascunho.AcaoPendente = null;
+                rascunho.ExpiraEm = DateTime.UtcNow.AddMinutes(30);
+            }
+            else
+            {
+                rascunho.ExpiraEm = DateTime.UtcNow.AddMinutes(30);
+                rascunho.AtualizadoEm = DateTime.UtcNow;
+            }
+            await _db.SaveChangesAsync();
+            return rascunho;
+        }
+
+        private async Task<string?> SalvarRepertorioTelegramAsync(long voluntarioId, long cultoId, List<long> ids)
+        {
+            if (await ObterCultoRepertorioAutorizadoAsync(voluntarioId, cultoId) == null)
+            {
+                return "Você não está autorizado para este culto.";
+            }
+            var musicas = await _db.Musicas.Where(x => ids.Contains(x.Id) && x.Ativo).ToListAsync();
+            if (musicas.Count != ids.Count) return "Uma música não está mais disponível.";
+            if (ids.Count != ids.Distinct().Count()) return "Não é possível repetir uma música no repertório.";
+            using var transacao = await _db.Database.BeginTransactionAsync();
+            var repertorio = await _db.RepertoriosCulto.FirstOrDefaultAsync(x => x.CultoId == cultoId);
+            if (repertorio == null)
+            {
+                repertorio = new RepertorioCulto { CultoId = cultoId };
+                _db.RepertoriosCulto.Add(repertorio);
+                await _db.SaveChangesAsync();
+            }
+            var atuais = await _db.RepertoriosCultoItens.Where(x => x.RepertorioCultoId == repertorio.Id).ToListAsync();
+            _db.RepertoriosCultoItens.RemoveRange(atuais);
+            for (var i = 0; i < ids.Count; i++)
+            {
+                var musica = musicas.First(x => x.Id == ids[i]);
+                _db.RepertoriosCultoItens.Add(new RepertorioCultoItem
+                {
+                    RepertorioCultoId = repertorio.Id, MusicaId = musica.Id, Ordem = i + 1,
+                    MusicaTitulo = musica.Titulo, MusicaArtistaBanda = musica.ArtistaBanda,
+                    MusicaTom = musica.Tom, MusicaLinkCifra = musica.LinkCifra,
+                    MusicaLinkVideo = musica.LinkVideo, MusicaObservacoes = musica.Observacoes,
+                    CriadoEm = DateTime.UtcNow
+                });
+            }
+            repertorio.AtualizadoEm = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            await transacao.CommitAsync();
+            return null;
+        }
+
+        private static List<long> LerIds(string valor)
+        {
+            return valor.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => long.TryParse(x, out var id) ? id : 0).Where(x => x > 0).Distinct().ToList();
+        }
+
+        private static void Mover(List<long> ids, long id, int deslocamento)
+        {
+            var indice = ids.IndexOf(id);
+            var destino = indice + deslocamento;
+            if (indice >= 0 && destino >= 0 && destino < ids.Count)
+            {
+                ids[indice] = ids[destino];
+                ids[destino] = id;
+            }
+        }
+
+        private async Task CadastrarMusicaTelegramAsync(long chatId, TelegramRepertorioRascunho rascunho, string texto)
+        {
+            if (await ObterCultoRepertorioAutorizadoAsync(rascunho.VoluntarioId, rascunho.CultoId) == null)
+            {
+                rascunho.AcaoPendente = null;
+                await _db.SaveChangesAsync();
+                await _botClient.EnviarMensagemAsync(chatId, "Você não está autorizado para este culto.");
+                return;
+            }
+            var partes = texto.Split(new[] { '|' }, 2);
+            if (partes.Length != 2 || string.IsNullOrWhiteSpace(partes[0]) || string.IsNullOrWhiteSpace(partes[1]))
+            {
+                await _botClient.EnviarMensagemAsync(chatId, "Formato inválido. Use: Título | Artista/Banda");
+                return;
+            }
+            var titulo = partes[0].Trim();
+            var artista = partes[1].Trim();
+            if (await _db.Musicas.AnyAsync(x => x.Titulo.ToLower() == titulo.ToLower() && x.ArtistaBanda.ToLower() == artista.ToLower()))
+            {
+                await _botClient.EnviarMensagemAsync(chatId, "Esta música já está cadastrada. Use a busca para adicioná-la.");
+                return;
+            }
+            var musica = new Musica { Titulo = titulo, ArtistaBanda = artista, Ativo = true, CriadoEm = DateTime.UtcNow };
+            _db.Musicas.Add(musica);
+            await _db.SaveChangesAsync();
+            var ids = LerIds(rascunho.MusicaIds);
+            ids.Add(musica.Id);
+            rascunho.MusicaIds = string.Join(",", ids);
+            rascunho.AcaoPendente = null;
+            rascunho.ExpiraEm = DateTime.UtcNow.AddMinutes(30);
+            await _db.SaveChangesAsync();
+            await _botClient.EnviarMensagemAsync(chatId, $"Música adicionada: {musica.Titulo}. Use o botão Salvar repertório.");
         }
 
         private async Task ProcessarConfirmarEscalaCallbackAsync(TelegramCallbackDto callback)
@@ -1186,7 +1559,7 @@ namespace GestaoCulto.Infrastructure.Telegram
 
         private static string MontarAjuda()
         {
-            return "Comandos disponíveis:\n/minhaescala - consultar e confirmar suas escalas pendentes\n/proximas - listar próximas escalas\n/disponibilidade - informar disponibilidade\n/relatorio - abrir relatório de um culto\n/desvincular - remover o vínculo\n/ajuda - exibir esta mensagem";
+            return "Comandos disponíveis:\n/minhaescala - consultar e confirmar suas escalas pendentes\n/proximas - listar próximas escalas\n/disponibilidade - informar disponibilidade\n/relatorio - abrir relatório de um culto\n/repertorio - gerenciar repertório dos cultos autorizados\n/cancelar - cancelar uma edição em andamento\n/desvincular - remover o vínculo\n/ajuda - exibir esta mensagem";
         }
 
         private static string GerarToken()

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { CanActivate, ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -9,11 +9,15 @@ export class AuthGuard implements CanActivate {
     private readonly router: Router
   ) {}
 
-  canActivate(): boolean | UrlTree {
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     if (this.authService.estaAutenticado()) {
       return true;
     }
 
-    return this.router.parseUrl('/auth/login');
+    const destino = state.url.startsWith('/voluntario')
+      ? '/voluntario/login'
+      : '/auth/login';
+
+    return this.router.parseUrl(`${destino}?returnUrl=${encodeURIComponent(state.url)}`);
   }
 }

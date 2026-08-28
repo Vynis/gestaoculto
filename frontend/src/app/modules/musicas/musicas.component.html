@@ -7,10 +7,15 @@
 </div>
 
 <nb-card>
-  <nb-card-header>Lista de músicas</nb-card-header>
+  <nb-card-header class="grid-header">
+    <span>Lista de músicas</span>
+    <div class="grid-search">
+      <input nbInput fullWidth type="search" placeholder="Buscar música..." [(ngModel)]="filtroGrid" [ngModelOptions]="{ standalone: true }" />
+      <button nbButton size="small" status="basic" type="button" *ngIf="filtroGrid" (click)="filtroGrid = ''">Limpar</button>
+    </div>
+  </nb-card-header>
   <nb-card-body>
     <div class="toolbar">
-      <input nbInput fullWidth [(ngModel)]="termoBusca" placeholder="Buscar por título ou artista" />
       <nb-select [(ngModel)]="filtroAtivo" placeholder="Status" [ngModelOptions]="{ standalone: true }">
         <nb-option value="">Todos</nb-option>
         <nb-option value="true">Ativas</nb-option>
@@ -19,20 +24,17 @@
       <button nbButton status="info" type="button" (click)="carregar()">Filtrar</button>
     </div>
 
-    <nb-list>
-      <nb-list-item *ngFor="let musica of musicas">
-        <div class="item">
-          <div>
-            <strong>{{ musica.titulo }}</strong>
-            <small>{{ musica.artistaBanda }} {{ musica.tom ? '- Tom ' + musica.tom : '' }}</small>
-          </div>
-          <div class="item-actions">
-            <button nbButton size="tiny" status="basic" type="button" (click)="editar(musica)">Editar</button>
-            <button nbButton size="tiny" status="danger" type="button" (click)="excluir(musica)">Excluir</button>
-          </div>
-        </div>
-      </nb-list-item>
-    </nb-list>
+    <ag-grid-angular
+      class="ag-theme-alpine musicas-grid"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [pagination]="true"
+      [paginationPageSize]="paginationPageSize"
+      [localeText]="localeText"
+      [quickFilterText]="filtroGrid"
+      (cellClicked)="onGridCellClicked($event)"
+    ></ag-grid-angular>
   </nb-card-body>
 </nb-card>
 
@@ -57,10 +59,16 @@
         <div class="form-field">
           <label for="musica-cifra">Link da cifra</label>
           <input id="musica-cifra" nbInput formControlName="linkCifra" placeholder="URL da cifra (opcional)" />
+          <div class="link-acoes" *ngIf="form.controls.linkCifra.value">
+            <app-external-link-viewer [url]="form.controls.linkCifra.value" label="Cifra" mode="modal"></app-external-link-viewer>
+          </div>
         </div>
         <div class="form-field">
           <label for="musica-video">Link de vídeo</label>
           <input id="musica-video" nbInput formControlName="linkVideo" placeholder="URL de referência (opcional)" />
+          <div class="link-acoes" *ngIf="form.controls.linkVideo.value">
+            <app-external-link-viewer [url]="form.controls.linkVideo.value" label="Vídeo" mode="blank"></app-external-link-viewer>
+          </div>
         </div>
         <div class="form-field">
           <label for="musica-obs">Observações</label>
