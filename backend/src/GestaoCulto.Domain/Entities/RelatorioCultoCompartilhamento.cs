@@ -7,8 +7,8 @@ namespace GestaoCulto.Domain.Entities
     {
         public long CultoId { get; set; }
         public Culto Culto { get; set; } = null!;
-        public long VoluntarioId { get; set; }
-        public Voluntario Voluntario { get; set; } = null!;
+        public long? VoluntarioId { get; set; }
+        public Voluntario? Voluntario { get; set; }
         public string TokenHash { get; set; } = string.Empty;
         public DateTime ExpiraEm { get; set; }
         public DateTime? UltimoAcessoEm { get; set; }

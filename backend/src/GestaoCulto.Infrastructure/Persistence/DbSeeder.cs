@@ -300,7 +300,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 CREATE TABLE IF NOT EXISTS relatorio_culto_compartilhamento (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                   culto_id BIGINT UNSIGNED NOT NULL,
-                  voluntario_id BIGINT UNSIGNED NOT NULL,
+                  voluntario_id BIGINT UNSIGNED NULL,
                   token_hash VARCHAR(64) NOT NULL,
                   expira_em DATETIME NOT NULL,
                   ultimo_acesso_em DATETIME NULL,
@@ -316,6 +316,14 @@ namespace GestaoCulto.Infrastructure.Persistence
                   CONSTRAINT fk_relatorio_compartilhamento_voluntario FOREIGN KEY (voluntario_id) REFERENCES voluntario(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ");
+
+            if (await TabelaExisteAsync("relatorio_culto_compartilhamento"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE relatorio_culto_compartilhamento
+                    MODIFY COLUMN voluntario_id BIGINT UNSIGNED NULL;
+                ");
+            }
 
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS voluntario_google_calendar_conexao (

@@ -28,7 +28,7 @@
 </nb-card>
 
 <div class="modal-backdrop" *ngIf="modalAberto" (click)="cancelarEdicao()"></div>
-<div class="modal-wrapper" *ngIf="modalAberto">
+<div class="modal-wrapper" [class.modal-wrapper--obscured]="acaoModalAberto" *ngIf="modalAberto">
   <nb-card class="modal-card">
     <nb-card-header>{{ templateEditandoId ? 'Editar template' : 'Novo template' }}</nb-card-header>
     <nb-card-body>
@@ -119,8 +119,8 @@
   </nb-card>
 </div>
 
-<div class="modal-backdrop" *ngIf="acaoModalAberto" (click)="fecharAcoesDaEtapa()"></div>
-<div class="modal-wrapper" *ngIf="acaoModalAberto">
+<div class="modal-backdrop modal-backdrop--nested" *ngIf="acaoModalAberto" (click)="fecharAcoesDaEtapa()"></div>
+<div class="modal-wrapper modal-wrapper--nested" *ngIf="acaoModalAberto">
   <nb-card class="modal-card">
     <nb-card-header>Acoes por ministerio da etapa</nb-card-header>
     <nb-card-body>

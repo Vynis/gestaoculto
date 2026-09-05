@@ -166,11 +166,12 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpPost("compartilhar/{cultoId:long}")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
         public async Task<IActionResult> GerarLinkCompartilhado(long cultoId)
         {
             try
             {
-                return Ok(await _compartilhamentoService.GerarLinkAsync(cultoId));
+                return Ok(await _compartilhamentoService.GerarLinkAdministrativoAsync(cultoId));
             }
             catch (InvalidOperationException ex)
             {
@@ -460,7 +461,19 @@ namespace GestaoCulto.API.Controllers
                 StatusEtapaNome = publico ? null : x.StatusEtapaNome,
                 AtrasoMinutos = publico ? 0 : x.AtrasoMinutos,
                 AcoesMinisterio = publico
-                    ? (object)Array.Empty<object>()
+                    ? (object)acoesEtapa
+                        .Where(a => a.EtapaCultoId == x.Id && a.Ativo)
+                        .Select(a => new
+                        {
+                            a.Id,
+                            a.EtapaCultoId,
+                            a.MinisterioId,
+                            a.MinisterioNome,
+                            a.Ordem,
+                            a.DescricaoAcao,
+                            a.Ativo
+                        })
+                        .ToList()
                     : mapaAcoesEtapa.ContainsKey(x.Id) ? mapaAcoesEtapa[x.Id] : Array.Empty<object>()
             }).ToList();
 

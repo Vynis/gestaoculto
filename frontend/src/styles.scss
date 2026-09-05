@@ -68,6 +68,27 @@ nb-layout .layout {
   z-index: 3010 !important;
 }
 
+.modal-backdrop--nested {
+  z-index: 3020 !important;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(4px);
+}
+
+.modal-wrapper--nested {
+  z-index: 3030 !important;
+}
+
+.modal-wrapper--obscured {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.swal2-container {
+  z-index: 6000 !important;
+  backdrop-filter: blur(4px);
+}
+
 nb-card {
   border: 1px solid var(--gc-border);
   border-radius: 14px;

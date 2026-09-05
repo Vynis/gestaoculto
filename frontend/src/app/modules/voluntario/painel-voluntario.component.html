@@ -40,7 +40,7 @@
 </nb-card>
 
 <div class="modal-backdrop" *ngIf="modalProximosAberto" (click)="fecharModalProximos()"></div>
-<div class="modal-wrapper" *ngIf="modalProximosAberto">
+<div class="modal-wrapper" [class.modal-wrapper--obscured]="modalDetalheAberto" *ngIf="modalProximosAberto">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Próximos compromissos</nb-card-header>
     <nb-card-body>
@@ -72,7 +72,7 @@
 </div>
 
 <div class="modal-backdrop" *ngIf="modalNaoRespondidosAberto" (click)="fecharModalNaoRespondidos()"></div>
-<div class="modal-wrapper" *ngIf="modalNaoRespondidosAberto">
+<div class="modal-wrapper" [class.modal-wrapper--obscured]="modalDisponibilidadeAberto" *ngIf="modalNaoRespondidosAberto">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Cultos sem resposta de disponibilidade</nb-card-header>
     <nb-card-body>
@@ -98,8 +98,8 @@
   </nb-card>
 </div>
 
-<div class="modal-backdrop" *ngIf="modalDisponibilidadeAberto" (click)="fecharModalDisponibilidade()"></div>
-<div class="modal-wrapper" *ngIf="modalDisponibilidadeAberto && detalheDisponibilidade as d">
+<div class="modal-backdrop modal-backdrop--nested" *ngIf="modalDisponibilidadeAberto" (click)="fecharModalDisponibilidade()"></div>
+<div class="modal-wrapper modal-wrapper--nested" *ngIf="modalDisponibilidadeAberto && detalheDisponibilidade as d">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Disponibilidade para {{ d.culto.nome }}</nb-card-header>
     <nb-card-body>
@@ -128,7 +128,7 @@
 </div>
 
 <div class="modal-backdrop" *ngIf="modalPendentesAberto" (click)="fecharModalPendentes()"></div>
-<div class="modal-wrapper" *ngIf="modalPendentesAberto">
+<div class="modal-wrapper" [class.modal-wrapper--obscured]="modalDetalheAberto" *ngIf="modalPendentesAberto">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Pendentes de confirmação</nb-card-header>
     <nb-card-body>
@@ -157,8 +157,8 @@
   </nb-card>
 </div>
 
-<div class="modal-backdrop" *ngIf="modalDetalheAberto" (click)="fecharModalDetalhe()"></div>
-<div class="modal-wrapper" *ngIf="modalDetalheAberto && detalheEscala as d">
+<div class="modal-backdrop modal-backdrop--nested" *ngIf="modalDetalheAberto" (click)="fecharModalDetalhe()"></div>
+<div class="modal-wrapper modal-wrapper--nested" *ngIf="modalDetalheAberto && detalheEscala as d">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Detalhes da participação</nb-card-header>
     <nb-card-body>

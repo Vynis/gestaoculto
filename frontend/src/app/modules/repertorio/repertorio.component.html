@@ -46,8 +46,8 @@
   </nb-card-body>
 </nb-card>
 
-<div class="modal-backdrop" *ngIf="modalItemAberto" (click)="fecharModalItem()"></div>
-<div class="modal-wrapper" *ngIf="modalItemAberto">
+<div class="modal-backdrop" *ngIf="modalItemAberto || modalCadastroAberto" (click)="modalCadastroAberto ? fecharModalCadastro() : fecharModalItem()"></div>
+<div class="modal-wrapper" [class.modal-wrapper--obscured]="modalCadastroAberto" *ngIf="modalItemAberto">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>{{ itemEditandoIndex === null ? 'Adicionar música' : 'Editar música' }}</nb-card-header>
     <nb-card-body>
@@ -70,6 +70,7 @@
             </nb-option>
           </nb-autocomplete>
           <small class="campo-aviso" *ngIf="!carregandoMusicas && !musicas.length">Nenhuma música ativa cadastrada.</small>
+          <button *ngIf="podeCadastrarMusica" nbButton status="info" size="small" type="button" (click)="abrirModalCadastro()">Cadastrar nova música</button>
         </div>
         <div class="form-field">
           <label for="rep-titulo">Título no repertório</label>
@@ -119,6 +120,27 @@
         <div class="actions-modal">
           <button nbButton status="success" type="submit">{{ itemEditandoIndex === null ? 'Adicionar música' : 'Salvar alterações' }}</button>
           <button nbButton status="basic" type="button" (click)="fecharModalItem()">Cancelar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>
+
+<div class="modal-backdrop modal-backdrop--nested" *ngIf="modalCadastroAberto" (click)="fecharModalCadastro()"></div>
+<div class="modal-wrapper modal-wrapper--nested" *ngIf="modalCadastroAberto">
+  <nb-card class="modal-card" (click)="$event.stopPropagation()">
+    <nb-card-header>Cadastrar nova música</nb-card-header>
+    <nb-card-body>
+      <form class="form-grid" [formGroup]="musicaForm" (ngSubmit)="cadastrarMusica()">
+        <input nbInput formControlName="titulo" placeholder="Título *" />
+        <input nbInput formControlName="artistaBanda" placeholder="Artista/Banda *" />
+        <input nbInput formControlName="tom" placeholder="Tom (opcional)" />
+        <input nbInput formControlName="linkCifra" placeholder="Link da cifra (opcional)" />
+        <input nbInput formControlName="linkVideo" placeholder="Link do vídeo (opcional)" />
+        <input nbInput formControlName="observacoes" placeholder="Observações (opcional)" />
+        <div class="actions-modal">
+          <button nbButton status="success" type="submit" [disabled]="cadastrandoMusica">{{ cadastrandoMusica ? 'Cadastrando...' : 'Cadastrar música' }}</button>
+          <button nbButton status="basic" type="button" (click)="fecharModalCadastro()">Cancelar</button>
         </div>
       </form>
     </nb-card-body>

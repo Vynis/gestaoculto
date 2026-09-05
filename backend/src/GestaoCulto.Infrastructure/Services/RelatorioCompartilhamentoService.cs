@@ -36,25 +36,29 @@ namespace GestaoCulto.Infrastructure.Services
             _telegramOptions = telegramOptions.Value;
         }
 
-        public async Task<RelatorioCompartilhadoLinkDto> GerarLinkAsync(long cultoId)
+        public async Task<RelatorioCompartilhadoLinkDto> GerarLinkAdministrativoAsync(long cultoId)
         {
-            var voluntarioId = await _db.Escalas
+            var culto = await _db.Cultos
                 .AsNoTracking()
-                .Where(x => x.CultoId == cultoId && x.VoluntarioId.HasValue)
-                .Select(x => x.VoluntarioId!.Value)
-                .Where(x => _db.Voluntarios.Any(v => v.Id == x && v.Ativo))
-                .OrderBy(x => x)
+                .Where(x => x.Id == cultoId
+                    && _db.StatusCultos.Any(s => s.Id == x.StatusCultoId && s.Codigo == "ATIVO"))
+                .Select(x => new
+                {
+                    x.DataCulto,
+                    x.HorarioInicio,
+                    x.HorarioFimPrevisto
+                })
                 .FirstOrDefaultAsync();
 
-            if (voluntarioId <= 0)
+            if (culto == null)
             {
-                throw new InvalidOperationException("Não há um voluntário ativo escalado para este culto.");
+                throw new InvalidOperationException("O culto não foi encontrado ou não está ativo.");
             }
 
-            return await GerarLinkAsync(cultoId, voluntarioId);
+            return await CriarLinkAsync(cultoId, null, culto.DataCulto, culto.HorarioInicio, culto.HorarioFimPrevisto);
         }
 
-        public async Task<RelatorioCompartilhadoLinkDto> GerarLinkAsync(long cultoId, long voluntarioId)
+        public async Task<RelatorioCompartilhadoLinkDto> GerarLinkVoluntarioAsync(long cultoId, long voluntarioId)
         {
             var culto = await _db.Cultos
                 .AsNoTracking()
@@ -75,11 +79,21 @@ namespace GestaoCulto.Infrastructure.Services
                 throw new InvalidOperationException("Você não está escalado para este culto ou ele não está ativo.");
             }
 
+            return await CriarLinkAsync(cultoId, voluntarioId, culto.DataCulto, culto.HorarioInicio, culto.HorarioFimPrevisto);
+        }
+
+        private async Task<RelatorioCompartilhadoLinkDto> CriarLinkAsync(
+            long cultoId,
+            long? voluntarioId,
+            DateTime dataCulto,
+            TimeSpan horarioInicio,
+            TimeSpan? horarioFimPrevisto)
+        {
             var frontendBaseUrl = ObterFrontendBaseUrlPublica();
 
-            var horarioFim = culto.HorarioFimPrevisto ?? culto.HorarioInicio.Add(TimeSpan.FromHours(3));
-            var fimLocal = culto.DataCulto.Date.Add(horarioFim);
-            if (horarioFim <= culto.HorarioInicio)
+            var horarioFim = horarioFimPrevisto ?? horarioInicio.Add(TimeSpan.FromHours(3));
+            var fimLocal = dataCulto.Date.Add(horarioFim);
+            if (horarioFim <= horarioInicio)
             {
                 fimLocal = fimLocal.AddDays(1);
             }
@@ -122,8 +136,9 @@ namespace GestaoCulto.Infrastructure.Services
                     && x.ExpiraEm > agora
                     && x.RevogadoEm == null
                     && _db.StatusCultos.Any(s => s.Id == x.Culto.StatusCultoId && s.Codigo == "ATIVO")
-                    && _db.Voluntarios.Any(v => v.Id == x.VoluntarioId && v.Ativo)
-                    && _db.Escalas.Any(e => e.CultoId == x.CultoId && e.VoluntarioId == x.VoluntarioId));
+                    && (!x.VoluntarioId.HasValue
+                        || (_db.Voluntarios.Any(v => v.Id == x.VoluntarioId.Value && v.Ativo)
+                            && _db.Escalas.Any(e => e.CultoId == x.CultoId && e.VoluntarioId == x.VoluntarioId.Value))));
 
             if (compartilhamento == null)
             {

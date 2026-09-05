@@ -500,7 +500,7 @@ CREATE TABLE IF NOT EXISTS telegram_disponibilidade_rascunho_ministerio (
 CREATE TABLE IF NOT EXISTS relatorio_culto_compartilhamento (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   culto_id BIGINT UNSIGNED NOT NULL,
-  voluntario_id BIGINT UNSIGNED NOT NULL,
+  voluntario_id BIGINT UNSIGNED NULL,
   token_hash VARCHAR(64) NOT NULL,
   expira_em DATETIME NOT NULL,
   ultimo_acesso_em DATETIME NULL,

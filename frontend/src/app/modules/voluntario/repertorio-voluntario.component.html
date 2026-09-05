@@ -79,7 +79,7 @@
 
 <div class="modal-backdrop" *ngIf="modalAdicionarAberto || modalCadastroAberto" (click)="fecharModalAdicionar(); fecharModalCadastro()"></div>
 
-<div class="modal-wrapper" *ngIf="modalAdicionarAberto">
+<div class="modal-wrapper" [class.modal-wrapper--obscured]="modalCadastroAberto" *ngIf="modalAdicionarAberto">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Adicionar música</nb-card-header>
     <nb-card-body>
@@ -123,7 +123,8 @@
   </nb-card>
 </div>
 
-<div class="modal-wrapper" *ngIf="modalCadastroAberto">
+<div class="modal-backdrop modal-backdrop--nested" *ngIf="modalCadastroAberto" (click)="fecharModalCadastro()"></div>
+<div class="modal-wrapper modal-wrapper--nested" *ngIf="modalCadastroAberto">
   <nb-card class="modal-card" (click)="$event.stopPropagation()">
     <nb-card-header>Cadastrar nova música</nb-card-header>
     <nb-card-body>

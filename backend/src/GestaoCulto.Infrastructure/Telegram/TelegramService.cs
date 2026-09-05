@@ -718,7 +718,7 @@ namespace GestaoCulto.Infrastructure.Telegram
             RelatorioCompartilhadoLinkDto link;
             try
             {
-                link = await _relatorioCompartilhamentoService.GerarLinkAsync(cultoId, conexao.VoluntarioId);
+                link = await _relatorioCompartilhamentoService.GerarLinkVoluntarioAsync(cultoId, conexao.VoluntarioId);
             }
             catch (InvalidOperationException ex)
             {

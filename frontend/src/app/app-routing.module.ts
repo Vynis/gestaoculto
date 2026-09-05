@@ -36,6 +36,7 @@ import { RepertorioVoluntarioComponent } from './modules/voluntario/repertorio-v
 import { AppInfoPageComponent } from './modules/publico/app-info-page.component';
 import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
 import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
+import { RepertorioCanDeactivateGuard } from './core/guards/repertorio-can-deactivate.guard';
 
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
@@ -63,7 +64,7 @@ const routes: Routes = [
       { path: 'escalas', component: EscalasComponent },
       { path: 'disponibilidades', component: DisponibilidadesComponent },
       { path: 'musicas', component: MusicasComponent },
-      { path: 'repertorio', component: RepertorioComponent },
+      { path: 'repertorio', component: RepertorioComponent, canDeactivate: [RepertorioCanDeactivateGuard] },
       { path: 'usuarios', component: UsuariosComponent },
       { path: 'voluntarios', component: VoluntariosComponent },
       { path: 'convidados', component: ConvidadosComponent }

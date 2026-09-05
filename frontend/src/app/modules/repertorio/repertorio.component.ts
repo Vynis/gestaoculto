@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { NbToastrService } from '@nebular/theme';
@@ -10,7 +10,8 @@ import { CronogramaService } from '../../core/services/cronograma.service';
 import { CultoService } from '../../core/services/culto.service';
 import { MusicaService } from '../../core/services/musica.service';
 import { RepertorioService } from '../../core/services/repertorio.service';
-import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
+import { confirmarAcao, confirmarExclusao } from '../../core/utils/confirm-dialog.util';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-repertorio',
@@ -25,10 +26,25 @@ export class RepertorioComponent implements OnInit {
   rowData: RepertorioGridRow[] = [];
   filtroGrid = '';
   modalItemAberto = false;
+  modalCadastroAberto = false;
   itemEditandoIndex: number | null = null;
   carregandoMusicas = false;
+  cadastrandoMusica = false;
   musicasFiltradas: Musica[] = [];
+  readonly musicaForm = this.fb.group({
+    titulo: ['', Validators.required],
+    artistaBanda: ['', Validators.required],
+    tom: [''],
+    linkCifra: [''],
+    linkVideo: [''],
+    observacoes: ['']
+  });
   readonly buscaMusicaControl = new FormControl('', { nonNullable: true });
+  private cultoCarregadoId: number | null = null;
+  private alteracoesPendentes = false;
+  private cultoSelecionadoId = 0;
+  private alterandoCultoProgramaticamente = false;
+  private carregamentoAtual = 0;
 
   readonly defaultColDef: ColDef<RepertorioGridRow> = {
     sortable: true,
@@ -104,12 +120,35 @@ export class RepertorioComponent implements OnInit {
     private readonly cronogramaService: CronogramaService,
     private readonly musicaService: MusicaService,
     private readonly repertorioService: RepertorioService,
-    private readonly toastr: NbToastrService
+    private readonly toastr: NbToastrService,
+    private readonly authService: AuthService
   ) {}
 
+  get podeCadastrarMusica(): boolean {
+    return this.authService.possuiPerfil(['ADMIN', 'GESTAO_CULTO', 'LIDER_MINISTERIO']);
+  }
+
   ngOnInit(): void {
-    this.filtro.controls.cultoId.valueChanges.subscribe((valor) => {
+    this.filtro.controls.cultoId.valueChanges.subscribe(async (valor) => {
       const cultoId = Number(valor || 0);
+
+      if (this.alterandoCultoProgramaticamente) {
+        return;
+      }
+
+      if (this.cultoSelecionadoId && cultoId !== this.cultoSelecionadoId && this.temAlteracoesNaoSalvas()) {
+        const confirmou = await this.confirmarDescarte('Deseja descartar as alterações e trocar de culto?');
+        if (!confirmou) {
+          this.alterandoCultoProgramaticamente = true;
+          this.filtro.controls.cultoId.setValue(this.cultoSelecionadoId);
+          this.alterandoCultoProgramaticamente = false;
+          return;
+        }
+
+        this.descartarEstadoAtual();
+      }
+
+      this.cultoSelecionadoId = cultoId;
       this.etapas = [];
       this.itemForm.patchValue({ etapaCultoId: null });
 
@@ -170,21 +209,36 @@ export class RepertorioComponent implements OnInit {
     this.carregarMusicas();
   }
 
-  carregar(): void {
+  async carregar(): Promise<void> {
     const cultoId = Number(this.filtro.value.cultoId);
     if (!cultoId) {
       this.etapas = [];
       return;
     }
 
+    if (this.temAlteracoesNaoSalvas()) {
+      const confirmou = await this.confirmarDescarte('Deseja descartar as alterações e carregar este culto?');
+      if (!confirmou) {
+        return;
+      }
+    }
+
+    const carregamentoId = ++this.carregamentoAtual;
     this.carregarEtapasDoCulto(cultoId);
 
     this.repertorioService.obterPorCulto(cultoId).subscribe((data) => {
+      if (carregamentoId !== this.carregamentoAtual || cultoId !== Number(this.filtro.value.cultoId || 0)) {
+        return;
+      }
+
       this.repertorio = {
         ...data,
         cultoId,
         itens: (data.itens || []).slice().sort((a, b) => a.ordem - b.ordem)
       };
+      this.cultoCarregadoId = cultoId;
+      this.alteracoesPendentes = false;
+      this.fecharModais();
       this.atualizarGrid();
     });
   }
@@ -200,10 +254,83 @@ export class RepertorioComponent implements OnInit {
       return;
     }
 
+    if (this.cultoCarregadoId !== cultoId) {
+      this.toastr.warning('Carregue o repertório do culto selecionado antes de adicionar músicas.', 'Repertório');
+      return;
+    }
+
     this.itemEditandoIndex = null;
     this.limparFormularioItem();
     this.modalItemAberto = true;
     this.carregarMusicas();
+  }
+
+  abrirModalCadastro(): void {
+    this.musicaForm.reset({ titulo: '', artistaBanda: '', tom: '', linkCifra: '', linkVideo: '', observacoes: '' });
+    this.modalCadastroAberto = true;
+  }
+
+  fecharModalCadastro(): void {
+    if (this.cadastrandoMusica) {
+      return;
+    }
+
+    this.modalCadastroAberto = false;
+    this.musicaForm.reset({ titulo: '', artistaBanda: '', tom: '', linkCifra: '', linkVideo: '', observacoes: '' });
+  }
+
+  cadastrarMusica(): void {
+    if (this.musicaForm.invalid) {
+      this.musicaForm.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.musicaForm.getRawValue();
+    const titulo = (raw.titulo || '').trim();
+    const artistaBanda = (raw.artistaBanda || '').trim();
+    const duplicadaLocal = this.musicas.some((musica) =>
+      musica.titulo.trim().toLowerCase() === titulo.toLowerCase()
+      && musica.artistaBanda.trim().toLowerCase() === artistaBanda.toLowerCase()
+    );
+
+    if (duplicadaLocal) {
+      this.toastr.warning('Já existe música com mesmo título e artista/banda.', 'Repertório');
+      return;
+    }
+
+    this.cadastrandoMusica = true;
+    this.musicaService.criar({
+      titulo,
+      artistaBanda,
+      tom: raw.tom || null,
+      linkCifra: raw.linkCifra || null,
+      linkVideo: raw.linkVideo || null,
+      observacoes: raw.observacoes || null,
+      ativo: true
+    }).subscribe({
+      next: (response) => {
+        const musica: Musica = {
+          id: response.id,
+          titulo,
+          artistaBanda,
+          tom: raw.tom || null,
+          linkCifra: raw.linkCifra || null,
+          linkVideo: raw.linkVideo || null,
+          observacoes: raw.observacoes || null,
+          ativo: true
+        };
+        this.musicas = [...this.musicas, musica].sort((a, b) => a.titulo.localeCompare(b.titulo));
+        this.atualizarMusicasFiltradas();
+        this.selecionarMusicaAutocomplete(this.textoMusica(musica));
+        this.cadastrandoMusica = false;
+        this.fecharModalCadastro();
+        this.toastr.success('Música cadastrada e selecionada.', 'Repertório');
+      },
+      error: (error) => {
+        this.cadastrandoMusica = false;
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível cadastrar a música.', 'Erro');
+      }
+    });
   }
 
   abrirModalEditarItem(index: number): void {
@@ -284,6 +411,7 @@ export class RepertorioComponent implements OnInit {
 
     this.recalcularOrdens();
     this.atualizarGrid();
+    this.alteracoesPendentes = true;
     this.fecharModalItem();
   }
 
@@ -298,6 +426,7 @@ export class RepertorioComponent implements OnInit {
     this.repertorio.itens.splice(index, 1);
     this.recalcularOrdens();
     this.atualizarGrid();
+    this.alteracoesPendentes = true;
   }
 
   moverItem(index: number, deslocamento: number): void {
@@ -312,6 +441,7 @@ export class RepertorioComponent implements OnInit {
     this.repertorio.itens = itens;
     this.recalcularOrdens();
     this.atualizarGrid();
+    this.alteracoesPendentes = true;
   }
 
   onGridCellClicked(event: CellClickedEvent<RepertorioGridRow>): void {
@@ -350,12 +480,18 @@ export class RepertorioComponent implements OnInit {
     const etapaId = etapaCultoId ? Number(etapaCultoId) : null;
     item.etapaCultoId = etapaId;
     item.etapaAtividade = this.etapas.find((x) => x.id === etapaId)?.atividade || null;
+    this.alteracoesPendentes = true;
   }
 
   salvar(): void {
     const cultoId = Number(this.filtro.value.cultoId);
     if (!cultoId) {
       this.toastr.warning('Selecione um culto.', 'Repertório');
+      return;
+    }
+
+    if (this.cultoCarregadoId !== cultoId) {
+      this.toastr.warning('Carregue o repertório do culto selecionado antes de salvar.', 'Repertório');
       return;
     }
 
@@ -366,21 +502,35 @@ export class RepertorioComponent implements OnInit {
         ...item,
         ordem: index + 1
       }))
-    }).subscribe(() => {
-      this.toastr.success('Repertório salvo com sucesso.', 'Repertório');
-      this.carregar();
+    }).subscribe({
+      next: () => {
+        this.toastr.success('Repertório salvo com sucesso.', 'Repertório');
+        this.alteracoesPendentes = false;
+        this.carregar();
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível salvar o repertório.', 'Erro');
+      }
     });
   }
 
-  duplicarCultoAnterior(): void {
+  async duplicarCultoAnterior(): Promise<void> {
     const cultoId = Number(this.filtro.value.cultoId);
     if (!cultoId) {
       return;
     }
 
+    if (this.temAlteracoesNaoSalvas()) {
+      const confirmou = await this.confirmarDescarte('Deseja descartar as alterações e duplicar o culto anterior?');
+      if (!confirmou) {
+        return;
+      }
+    }
+
     this.repertorioService.duplicarDoCultoAnterior(cultoId).subscribe({
       next: () => {
         this.toastr.success('Repertório duplicado do culto anterior.', 'Repertório');
+        this.alteracoesPendentes = false;
         this.carregar();
       },
       error: (error) => {
@@ -389,8 +539,54 @@ export class RepertorioComponent implements OnInit {
     });
   }
 
+  temAlteracoesNaoSalvas(): boolean {
+    const rascunhoItem = this.modalItemAberto
+      && (this.itemForm.dirty || this.buscaMusicaControl.dirty || Number(this.itemForm.value.musicaId || 0) > 0);
+    const rascunhoMusica = this.modalCadastroAberto && this.musicaForm.dirty;
+    return this.alteracoesPendentes || rascunhoItem || rascunhoMusica;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protegerSaida(event: BeforeUnloadEvent): void {
+    if (this.temAlteracoesNaoSalvas()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  private confirmarDescarte(mensagem: string): Promise<boolean> {
+    return confirmarAcao(
+      'Alterações não salvas',
+      mensagem,
+      'warning',
+      'Descartar alterações',
+      '#c62828'
+    );
+  }
+
+  private descartarEstadoAtual(): void {
+    this.carregamentoAtual += 1;
+    this.alteracoesPendentes = false;
+    this.cultoCarregadoId = null;
+    this.repertorio = { cultoId: 0, observacoes: null, itens: [] };
+    this.fecharModais();
+    this.atualizarGrid();
+  }
+
+  private fecharModais(): void {
+    this.modalItemAberto = false;
+    this.itemEditandoIndex = null;
+    this.limparFormularioItem();
+    this.modalCadastroAberto = false;
+    this.musicaForm.reset({ titulo: '', artistaBanda: '', tom: '', linkCifra: '', linkVideo: '', observacoes: '' });
+  }
+
   private carregarEtapasDoCulto(cultoId: number): void {
     this.cronogramaService.listarPorCulto(cultoId).subscribe((etapas) => {
+      if (cultoId !== Number(this.filtro.value.cultoId || 0)) {
+        return;
+      }
+
       const etapasUnicasPorAssinatura = new Map<string, EtapaCulto>();
 
       (etapas || [])

@@ -20,7 +20,7 @@
           <nb-option value="cards">HTML em cards</nb-option>
         </nb-select>
         <button nbButton status="primary" type="submit" [disabled]="carregando">Gerar relatório</button>
-        <button nbButton status="success" type="button" (click)="abrirModalCompartilhamento()" [disabled]="!cultos.length">
+        <button *ngIf="podeGerarLinkPublico" nbButton status="success" type="button" (click)="abrirModalCompartilhamento()" [disabled]="!cultos.length">
           Gerar link público
         </button>
       </form>

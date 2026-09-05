@@ -4,7 +4,7 @@
 
 1. O voluntario vinculado envia `/relatorio`.
 2. O bot lista ate cinco cultos futuros ativos em que ele esta escalado.
-3. Ao escolher um culto, o backend valida novamente a escala e cria um token aleatorio.
+3. Ao escolher um culto, o backend valida novamente a escala e cria um token aleatorio pessoal.
 4. O bot apresenta um botao URL para `/relatorio-culto-publico?t=TOKEN`.
 5. A pagina consulta `GET /api/relatorios/compartilhado?t=TOKEN`.
 
@@ -16,8 +16,11 @@ escala, inativar o voluntario ou inativar o culto tambem invalida o acesso.
 
 - O banco armazena somente SHA-256 do token, nunca o token original.
 - O endpoint responde somente para token valido, nao revogado e nao expirado.
+- Links gerados pelo painel administrativo nao dependem de um voluntario escalado; links
+  gerados pelo Telegram continuam vinculados a um voluntario ativo e escalado.
 - A resposta publica nao inclui telefone, e-mail, presenca, confirmacao, observacoes
-  internas, visitantes, convertidos, lideres ou acoes administrativas.
+  internas, visitantes, convertidos ou lideres. Ela inclui apenas a descricao das acoes
+  operacionais da timeline, sem as observacoes dessas acoes.
 - Os endpoints legados por data e por ID exigem autenticacao.
 - A resposta publica usa `Cache-Control: no-store`.
 - O link pode ser encaminhado enquanto estiver valido; por isso o bot orienta que ele e

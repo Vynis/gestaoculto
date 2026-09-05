@@ -2,12 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { Culto } from '../../core/models/culto.models';
 import { MinisterioCompleto } from '../../core/models/ministerio.models';
 import { RelatorioCompartilhadoLinkDto, RelatorioCultoDiaResponse, RelatorioCultoEtapa, RelatorioCultoRepertorioItem } from '../../core/models/relatorio-culto.models';
 import { MinisterioService } from '../../core/services/ministerio.service';
 import { CultoService } from '../../core/services/culto.service';
 import { RelatorioService } from '../../core/services/relatorio.service';
+import { AuthService } from '../../core/services/auth.service';
 
 type ColunaOperacional = 'pulpito' | 'iluminacao' | 'telao' | 'som' | 'atmosfera';
 
@@ -158,8 +160,13 @@ export class RelatorioCultoComponent implements OnInit {
     private readonly ministerioService: MinisterioService,
     private readonly toastr: NbToastrService,
     private readonly router: Router,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly authService: AuthService
   ) {}
+
+  get podeGerarLinkPublico(): boolean {
+    return this.authService.possuiPerfil(['ADMIN', 'GESTAO_CULTO']);
+  }
 
   ngOnInit(): void {
     this.modoPublico = this.router.url.includes('relatorio-culto-publico');
@@ -249,18 +256,19 @@ export class RelatorioCultoComponent implements OnInit {
     }
 
     this.gerandoLinkCompartilhado = true;
-    this.relatorioService.gerarLinkRelatorioCompartilhado(cultoId).subscribe({
-      next: (response) => {
-        this.linkCompartilhado = response;
-        this.toastr.success('Link público gerado com sucesso.', 'Relatório');
-      },
-      error: (error) => {
-        this.toastr.danger(error?.error?.mensagem || 'Não foi possível gerar o link público.', 'Erro');
-      },
-      complete: () => {
+    this.relatorioService.gerarLinkRelatorioCompartilhado(cultoId)
+      .pipe(finalize(() => {
         this.gerandoLinkCompartilhado = false;
-      }
-    });
+      }))
+      .subscribe({
+        next: (response) => {
+          this.linkCompartilhado = response;
+          this.toastr.success('Link público gerado com sucesso.', 'Relatório');
+        },
+        error: (error) => {
+          this.toastr.danger(error?.error?.mensagem || 'Não foi possível gerar o link público.', 'Erro');
+        }
+      });
   }
 
   async copiarLinkCompartilhado(): Promise<void> {
