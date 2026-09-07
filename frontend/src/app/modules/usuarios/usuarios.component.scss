@@ -66,6 +66,12 @@
   line-height: 1;
 }
 
+:host ::ng-deep .grid-btn .icon-key::before {
+  content: '\1F511';
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
 :host ::ng-deep .grid-btn.edit {
   border-color: #a9c6e8;
   background: #eef6ff;
@@ -76,6 +82,12 @@
   border-color: #e7b4b4;
   background: #fff1f1;
   color: #a53b3b;
+}
+
+:host ::ng-deep .grid-btn.reset {
+  border-color: #e8c58f;
+  background: #fff8e8;
+  color: #9a6518;
 }
 
 .form-grid {

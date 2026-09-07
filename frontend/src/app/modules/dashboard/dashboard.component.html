@@ -39,3 +39,83 @@
     </nb-card-body>
   </nb-card>
 </div>
+
+<section class="estatisticas" *ngIf="podeVerEstatisticas">
+  <div class="section-header">
+    <div>
+      <h3>Desempenho histórico</h3>
+      <p>Confira a participação e o repertório dos cultos realizados.</p>
+    </div>
+    <div class="filtros">
+      <label>De <input nbInput type="date" [(ngModel)]="dataInicio" /></label>
+      <label>Até <input nbInput type="date" [(ngModel)]="dataFim" /></label>
+      <button nbButton status="primary" (click)="carregarEstatisticas()">Filtrar</button>
+    </div>
+  </div>
+
+  <div class="ranking-grid" *ngIf="estatisticas as e">
+    <nb-card class="ranking-card">
+      <nb-card-header>Voluntários que mais serviram</nb-card-header>
+      <nb-card-body>
+        <p class="periodo">{{ e.periodoInicio | date:'dd/MM/yyyy' }} a {{ e.periodoFim | date:'dd/MM/yyyy' }}</p>
+        <div class="ranking-empty" *ngIf="!e.voluntarios.length">Nenhum voluntário confirmado no período.</div>
+        <div class="ranking-item" *ngFor="let item of e.voluntarios; let i = index">
+          <span class="posicao">{{ i + 1 }}</span>
+          <div class="ranking-content">
+            <div class="ranking-label"><strong>{{ item.nome }}</strong><span>{{ item.quantidadeCultos }} {{ item.quantidadeCultos === 1 ? 'culto' : 'cultos' }}</span></div>
+            <div class="barra"><span [style.width.%]="larguraBarra(item.quantidadeCultos, e.voluntarios)"></span></div>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <nb-card class="ranking-card">
+      <nb-card-header>Músicas mais usadas nos repertórios</nb-card-header>
+      <nb-card-body>
+        <p class="periodo">{{ e.periodoInicio | date:'dd/MM/yyyy' }} a {{ e.periodoFim | date:'dd/MM/yyyy' }}</p>
+        <div class="ranking-empty" *ngIf="!e.musicas.length">Nenhuma música no período.</div>
+        <div class="ranking-item" *ngFor="let item of e.musicas; let i = index">
+          <span class="posicao">{{ i + 1 }}</span>
+          <div class="ranking-content">
+            <div class="ranking-label"><strong>{{ item.titulo }}</strong><span>{{ item.quantidadeCultos }} {{ item.quantidadeCultos === 1 ? 'culto' : 'cultos' }}</span></div>
+            <small>{{ item.artistaBanda }}</small>
+            <div class="barra musica"><span [style.width.%]="larguraBarra(item.quantidadeCultos, e.musicas)"></span></div>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+
+  <div class="chart-grid" *ngIf="estatisticas as e">
+    <nb-card class="chart-card">
+      <nb-card-header>Participação dos voluntários</nb-card-header>
+      <nb-card-body>
+        <div class="ranking-empty" *ngIf="!e.voluntarios.length">Sem dados para gerar o gráfico.</div>
+        <div class="column-chart" *ngIf="e.voluntarios.length">
+          <div class="chart-column" *ngFor="let item of e.voluntarios" [attr.title]="item.nome + ': ' + item.quantidadeCultos + ' cultos'">
+            <strong>{{ item.quantidadeCultos }}</strong>
+            <div class="column-track"><span [style.height.%]="larguraBarra(item.quantidadeCultos, e.voluntarios)"></span></div>
+            <small>{{ item.nome }}</small>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+
+    <nb-card class="chart-card">
+      <nb-card-header>Utilização das músicas</nb-card-header>
+      <nb-card-body>
+        <div class="ranking-empty" *ngIf="!e.musicas.length">Sem dados para gerar o gráfico.</div>
+        <div class="column-chart" *ngIf="e.musicas.length">
+          <div class="chart-column musica" *ngFor="let item of e.musicas" [attr.title]="item.titulo + ': ' + item.quantidadeCultos + ' cultos'">
+            <strong>{{ item.quantidadeCultos }}</strong>
+            <div class="column-track"><span [style.height.%]="larguraBarra(item.quantidadeCultos, e.musicas)"></span></div>
+            <small>{{ item.titulo }}</small>
+          </div>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </div>
+
+  <div class="estado" *ngIf="carregandoEstatisticas">Carregando estatísticas...</div>
+  <div class="estado erro" *ngIf="erroEstatisticas">Não foi possível carregar as estatísticas. Verifique o período e tente novamente.</div>
+</section>

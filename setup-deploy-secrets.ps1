@@ -7,6 +7,7 @@ param(
         'DB_CONNECTION_STRING',
         'SMTP_PASSWORD',
         'JWT_KEY',
+        'ADMIN_DEFAULT_PASSWORD',
         'GOOGLE_CLIENT_ID',
         'GOOGLE_CLIENT_SECRET',
         'SENTRY_DSN'
@@ -26,6 +27,7 @@ $definitions = @(
     [pscustomobject]@{ Name = 'DB_CONNECTION_STRING'; Prompt = 'Connection string MySQL de producao'; Required = $true },
     [pscustomobject]@{ Name = 'SMTP_PASSWORD'; Prompt = 'Senha SMTP de producao'; Required = $true },
     [pscustomobject]@{ Name = 'JWT_KEY'; Prompt = 'Chave JWT de producao'; Required = $true },
+    [pscustomobject]@{ Name = 'ADMIN_DEFAULT_PASSWORD'; Prompt = 'Senha padrao temporaria para resets administrativos'; Required = $true },
     [pscustomobject]@{ Name = 'GOOGLE_CLIENT_ID'; Prompt = 'Google OAuth Client ID (opcional; Enter remove o valor salvo)'; Required = $false },
     [pscustomobject]@{ Name = 'GOOGLE_CLIENT_SECRET'; Prompt = 'Google OAuth Client Secret (opcional; Enter remove o valor salvo)'; Required = $false },
     [pscustomobject]@{ Name = 'SENTRY_DSN'; Prompt = 'Sentry DSN (opcional; Enter remove o valor salvo)'; Required = $false }

@@ -32,6 +32,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './modules/auth/login/login.component';
 import { RecuperarSenhaComponent } from './modules/auth/recuperar-senha/recuperar-senha.component';
+import { TrocarSenhaObrigatoriaComponent } from './modules/auth/trocar-senha-obrigatoria/trocar-senha-obrigatoria.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
@@ -72,6 +73,7 @@ import { ExternalLinkViewerComponent } from './shared/external-link-viewer.compo
     AppComponent,
     LoginComponent,
     RecuperarSenhaComponent,
+    TrocarSenhaObrigatoriaComponent,
     MainLayoutComponent,
     VoluntarioLayoutComponent,
     DashboardComponent,

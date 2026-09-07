@@ -115,6 +115,7 @@ if ([string]::IsNullOrWhiteSpace($TelegramWebhookSecret) -and -not [string]::IsN
 $dbConnectionString = $env:DB_CONNECTION_STRING
 $smtpPassword = $env:SMTP_PASSWORD
 $jwtKey = $env:JWT_KEY
+$adminDefaultPassword = $env:ADMIN_DEFAULT_PASSWORD
 $googleClientId = $env:GOOGLE_CLIENT_ID
 $googleClientSecret = $env:GOOGLE_CLIENT_SECRET
 
@@ -122,6 +123,7 @@ $missingProductionSecrets = @()
 if ([string]::IsNullOrWhiteSpace($dbConnectionString)) { $missingProductionSecrets += 'DB_CONNECTION_STRING' }
 if ([string]::IsNullOrWhiteSpace($smtpPassword)) { $missingProductionSecrets += 'SMTP_PASSWORD' }
 if ([string]::IsNullOrWhiteSpace($jwtKey)) { $missingProductionSecrets += 'JWT_KEY' }
+if ([string]::IsNullOrWhiteSpace($adminDefaultPassword)) { $missingProductionSecrets += 'ADMIN_DEFAULT_PASSWORD' }
 if ($missingProductionSecrets.Count -gt 0) {
     throw "Segredos obrigatorios de producao ausentes: $($missingProductionSecrets -join ', ')."
 }
@@ -182,6 +184,7 @@ if (Test-Path $backendWebConfigPath) {
             Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'ConnectionStrings__DefaultConnection' -Value $dbConnectionString
             Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Email__Smtp__Password' -Value $smtpPassword
             Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Jwt__Key' -Value $jwtKey
+            Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'AdminPasswordReset__DefaultPassword' -Value $adminDefaultPassword
 
             if ($shouldInjectSentryVars) {
                 Set-WebConfigAspNetCoreEnvVar -Xml $webConfigXml -EnvironmentVariablesNode $environmentVariablesNode -Name 'Sentry__Dsn' -Value $SentryDsn

@@ -19,7 +19,8 @@ $requiredNames = @(
     'TELEGRAM_WEBHOOK_SECRET',
     'DB_CONNECTION_STRING',
     'SMTP_PASSWORD',
-    'JWT_KEY'
+    'JWT_KEY',
+    'ADMIN_DEFAULT_PASSWORD'
 )
 $optionalNames = @(
     'GOOGLE_CLIENT_ID',

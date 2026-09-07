@@ -1,0 +1,22 @@
+<nb-layout>
+  <nb-layout-column>
+    <div class="auth-page">
+      <nb-card>
+        <nb-card-header>
+          <img class="brand-logo" src="assets/logo-vertical.png" alt="Gestão de Culto" />
+          <h3>Defina uma nova senha</h3>
+          <p>Sua senha foi redefinida pelo administrador. Escolha uma senha pessoal para continuar.</p>
+        </nb-card-header>
+        <nb-card-body>
+          <form [formGroup]="form" class="form" (ngSubmit)="salvar()">
+            <input nbInput fullWidth formControlName="novaSenha" type="password" placeholder="Nova senha" />
+            <input nbInput fullWidth formControlName="confirmarSenha" type="password" placeholder="Confirmar nova senha" />
+            <small>A senha deve ter no mínimo 6 caracteres e ser diferente da senha padrão.</small>
+            <button nbButton status="primary" fullWidth [disabled]="carregando">Alterar senha</button>
+          </form>
+          <button nbButton ghost status="basic" fullWidth type="button" (click)="sair()">Sair</button>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </nb-layout-column>
+</nb-layout>

@@ -9,6 +9,7 @@ namespace GestaoCulto.Application.DTOs.Auth
         public DateTime ExpiraEm { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public bool DeveTrocarSenha { get; set; }
         public IList<string> Perfis { get; set; } = new List<string>();
     }
 }

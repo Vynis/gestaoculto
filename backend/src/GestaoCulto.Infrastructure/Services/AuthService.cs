@@ -51,6 +51,7 @@ namespace GestaoCulto.Infrastructure.Services
                 ExpiraEm = request.ManterConectado ? DateTime.UtcNow.AddDays(7) : DateTime.UtcNow.AddHours(8),
                 Nome = usuario.Nome,
                 Email = usuario.Email,
+                DeveTrocarSenha = usuario.DeveTrocarSenha,
                 Perfis = perfis
             };
         }
@@ -105,6 +106,7 @@ namespace GestaoCulto.Infrastructure.Services
                 ExpiraEm = request.ManterConectado ? DateTime.UtcNow.AddDays(7) : DateTime.UtcNow.AddHours(8),
                 Nome = usuario.Nome,
                 Email = usuario.Email,
+                DeveTrocarSenha = usuario.DeveTrocarSenha,
                 Perfis = perfis
             };
         }

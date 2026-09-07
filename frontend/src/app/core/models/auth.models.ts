@@ -3,6 +3,7 @@ export interface AuthResponse {
   expiraEm: string;
   nome: string;
   email: string;
+  deveTrocarSenha: boolean;
   perfis: string[];
 }
 
@@ -10,5 +11,6 @@ export interface AuthSession {
   token: string;
   nome: string;
   email: string;
+  deveTrocarSenha: boolean;
   perfis: string[];
 }

@@ -26,6 +26,7 @@ Arquivo: `src/GestaoCulto.API/appsettings.Development.json`
 - `ConnectionStrings:DefaultConnection`
 - `Jwt:Key`
 - `GoogleAuth:ClientId`
+- `AdminPasswordReset:DefaultPassword`
 
 Credenciais locais também devem usar User Secrets, pois os arquivos `appsettings` versionados
 não possuem senhas:
@@ -34,7 +35,13 @@ não possuem senhas:
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "SUA_CONNECTION_STRING_LOCAL" --project src/GestaoCulto.API/GestaoCulto.API.csproj
 dotnet user-secrets set "Jwt:Key" "SUA_CHAVE_JWT_LOCAL" --project src/GestaoCulto.API/GestaoCulto.API.csproj
 dotnet user-secrets set "Email:Smtp:Password" "SUA_SENHA_SMTP" --project src/GestaoCulto.API/GestaoCulto.API.csproj
+dotnet user-secrets set "AdminPasswordReset:DefaultPassword" "SUA_SENHA_PADRAO_FORTE" --project src/GestaoCulto.API/GestaoCulto.API.csproj
 ```
+
+Em produção, salve `ADMIN_DEFAULT_PASSWORD` com `setup-deploy-secrets.ps1`; o script de release
+a injeta como `AdminPasswordReset__DefaultPassword`. Essa senha é aplicada somente pela ação
+administrativa de redefinição e deve ser comunicada ao usuário por canal seguro. No primeiro
+acesso, o sistema exige a definição de uma senha pessoal.
 
 ## Telegram
 

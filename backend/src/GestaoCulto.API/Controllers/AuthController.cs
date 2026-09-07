@@ -25,6 +25,11 @@ namespace GestaoCulto.API.Controllers
         public string NovaSenha { get; set; } = string.Empty;
     }
 
+    public class TrocarSenhaObrigatoriaRequest
+    {
+        public string NovaSenha { get; set; } = string.Empty;
+    }
+
     [ApiController]
     [Route("api/auth")]
     public class AuthController : ControllerBase
@@ -136,6 +141,43 @@ namespace GestaoCulto.API.Controllers
 
             await _db.SaveChangesAsync();
             return Ok(new { mensagem = "Senha redefinida com sucesso." });
+        }
+
+        [Authorize]
+        [HttpPost("trocar-senha-obrigatoria")]
+        public async Task<IActionResult> TrocarSenhaObrigatoria([FromBody] TrocarSenhaObrigatoriaRequest request)
+        {
+            var novaSenha = request.NovaSenha?.Trim() ?? string.Empty;
+            if (novaSenha.Length < 6)
+            {
+                return BadRequest(new { mensagem = "A nova senha deve ter no mínimo 6 caracteres." });
+            }
+
+            var senhaPadrao = _configuration["AdminPasswordReset:DefaultPassword"]?.Trim();
+            if (!string.IsNullOrWhiteSpace(senhaPadrao) && novaSenha == senhaPadrao)
+            {
+                return BadRequest(new { mensagem = "Escolha uma senha diferente da senha padrão." });
+            }
+
+            var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            if (!long.TryParse(sub, out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(x => x.Id == usuarioId && x.Ativo && x.DeveTrocarSenha);
+            if (usuario == null)
+            {
+                return BadRequest(new { mensagem = "Não há troca obrigatória de senha pendente para este usuário." });
+            }
+
+            usuario.SenhaHash = _passwordHasher.Hash(novaSenha);
+            usuario.DeveTrocarSenha = false;
+            usuario.AtualizadoEm = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            return Ok(new { mensagem = "Senha alterada com sucesso." });
         }
 
         private int ObterExpiracaoMinutos()

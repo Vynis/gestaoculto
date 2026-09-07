@@ -11,6 +11,12 @@ export class AuthGuard implements CanActivate {
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     if (this.authService.estaAutenticado()) {
+      if (this.authService.deveTrocarSenha() && state.url !== '/auth/trocar-senha') {
+        return this.router.parseUrl('/auth/trocar-senha');
+      }
+      if (!this.authService.deveTrocarSenha() && state.url === '/auth/trocar-senha') {
+        return this.router.parseUrl(this.authService.destinoPadraoPosLogin());
+      }
       return true;
     }
 

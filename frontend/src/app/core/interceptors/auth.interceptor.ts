@@ -5,7 +5,7 @@ import {
   HttpInterceptor,
   HttpRequest
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
@@ -24,6 +24,13 @@ export class AuthInterceptor implements HttpInterceptor {
       }
     });
 
-    return next.handle(cloned);
+    return next.handle(cloned).pipe(
+      catchError((error) => {
+        if (error?.status === 403 && error?.error?.codigo === 'TROCA_SENHA_OBRIGATORIA') {
+          this.authService.exigirTrocaSenha();
+        }
+        return throwError(() => error);
+      })
+    );
   }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { DashboardResumo } from '../../core/models/dashboard.models';
+import { DashboardEstatisticas, DashboardResumo } from '../../core/models/dashboard.models';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -10,11 +11,24 @@ import { DashboardService } from '../../core/services/dashboard.service';
 export class DashboardComponent implements OnInit {
   carregando = false;
   resumo: DashboardResumo | null = null;
+  estatisticas: DashboardEstatisticas | null = null;
+  carregandoEstatisticas = false;
+  erroEstatisticas = false;
+  dataInicio = `${new Date().getFullYear()}-01-01`;
+  dataFim = this.formatarData(new Date());
+  podeVerEstatisticas = false;
 
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.carregar();
+    this.podeVerEstatisticas = this.authService.possuiAlgumPerfil(['ADMIN', 'GESTAO_CULTO']);
+    if (this.podeVerEstatisticas) {
+      this.carregarEstatisticas();
+    }
   }
 
   carregar(): void {
@@ -27,5 +41,39 @@ export class DashboardComponent implements OnInit {
         this.carregando = false;
       }
     });
+  }
+
+  carregarEstatisticas(): void {
+    if (!this.dataInicio || !this.dataFim || this.dataInicio > this.dataFim) {
+      this.erroEstatisticas = true;
+      return;
+    }
+
+    this.carregandoEstatisticas = true;
+    this.erroEstatisticas = false;
+    this.dashboardService.obterEstatisticas(this.dataInicio, this.dataFim).subscribe({
+      next: (estatisticas) => {
+        this.estatisticas = estatisticas;
+      },
+      error: () => {
+        this.erroEstatisticas = true;
+        this.carregandoEstatisticas = false;
+      },
+      complete: () => {
+        this.carregandoEstatisticas = false;
+      }
+    });
+  }
+
+  maiorQuantidade(itens: { quantidadeCultos: number }[]): number {
+    return itens.length ? Math.max(...itens.map((item) => item.quantidadeCultos)) : 1;
+  }
+
+  larguraBarra(quantidade: number, itens: { quantidadeCultos: number }[]): number {
+    return Math.max(8, Math.round((quantidade / this.maiorQuantidade(itens)) * 100));
+  }
+
+  private formatarData(data: Date): string {
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
   }
 }

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './modules/auth/login/login.component';
 import { RecuperarSenhaComponent } from './modules/auth/recuperar-senha/recuperar-senha.component';
+import { TrocarSenhaObrigatoriaComponent } from './modules/auth/trocar-senha-obrigatoria/trocar-senha-obrigatoria.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { VoluntarioLayoutComponent } from './layout/voluntario-layout.component';
 import { AuthGuard } from './core/guards/auth.guard';
@@ -41,6 +42,7 @@ import { RepertorioCanDeactivateGuard } from './core/guards/repertorio-can-deact
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
   { path: 'auth/recuperar-senha', component: RecuperarSenhaComponent },
+  { path: 'auth/trocar-senha', component: TrocarSenhaObrigatoriaComponent, canActivate: [AuthGuard] },
   { path: 'voluntario/login', component: LoginVoluntarioComponent },
   { path: 'voluntario/primeiro-acesso', component: PrimeiroAcessoVoluntarioComponent },
   { path: 'voluntario/recuperar-acesso', component: RecuperarAcessoVoluntarioComponent },

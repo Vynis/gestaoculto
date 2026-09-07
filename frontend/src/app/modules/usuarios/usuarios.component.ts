@@ -4,7 +4,8 @@ import { NbToastrService } from '@nebular/theme';
 import { CellClickedEvent, ColDef } from 'ag-grid-community';
 import { PerfilOpcao, UsuarioRequest, Usuario } from '../../core/models/usuario.models';
 import { UsuarioService } from '../../core/services/usuario.service';
-import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
+import { confirmarAcao, confirmarExclusao } from '../../core/utils/confirm-dialog.util';
+import { AuthService } from '../../core/services/auth.service';
 
 interface UsuarioGridRow {
   nome: string;
@@ -12,6 +13,7 @@ interface UsuarioGridRow {
   telefone: string;
   ativo: string;
   perfis: string;
+  senha: string;
   usuario: Usuario;
 }
 
@@ -28,6 +30,7 @@ export class UsuariosComponent implements OnInit {
   usuarioEditandoId: number | null = null;
   carregando = false;
   termoBusca = '';
+  podeResetarSenha = false;
 
   readonly defaultColDef: ColDef<UsuarioGridRow> = {
     sortable: true,
@@ -43,15 +46,15 @@ export class UsuariosComponent implements OnInit {
     { headerName: 'Telefone', field: 'telefone', minWidth: 140 },
     { headerName: 'Ativo', field: 'ativo', minWidth: 110, maxWidth: 130 },
     { headerName: 'Perfis', field: 'perfis', minWidth: 220 },
+    { headerName: 'Senha', field: 'senha', minWidth: 150 },
     {
       headerName: 'Acoes',
       field: 'usuario',
-      minWidth: 110,
-      maxWidth: 130,
+      minWidth: 150,
+      maxWidth: 180,
       sortable: false,
       filter: false,
-      cellRenderer: () =>
-        '<div class="grid-actions"><button class="grid-btn icon edit" data-action="editar" type="button" title="Editar usuario" aria-label="Editar usuario"><span class="icon-pencil"></span></button><button class="grid-btn icon delete" data-action="excluir" type="button" title="Excluir usuario" aria-label="Excluir usuario"><span class="icon-trash"></span></button></div>'
+      cellRenderer: () => this.renderizarAcoes()
     }
   ];
 
@@ -73,10 +76,12 @@ export class UsuariosComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly usuarioService: UsuarioService,
-    private readonly toastr: NbToastrService
+    private readonly toastr: NbToastrService,
+    private readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.podeResetarSenha = this.authService.possuiPerfil(['ADMIN']);
     this.carregarOpcoes();
     this.carregar();
   }
@@ -112,6 +117,11 @@ export class UsuariosComponent implements OnInit {
 
     if (action === 'excluir') {
       this.excluir(event.data.usuario);
+      return;
+    }
+
+    if (action === 'resetar-senha' && this.podeResetarSenha) {
+      this.resetarSenha(event.data.usuario);
     }
   }
 
@@ -190,6 +200,29 @@ export class UsuariosComponent implements OnInit {
     });
   }
 
+  async resetarSenha(usuario: Usuario): Promise<void> {
+    const confirmou = await confirmarAcao(
+      'Redefinir senha',
+      `Deseja redefinir a senha de "${usuario.nome}" para a senha padrão? O usuário deverá alterá-la no próximo acesso.`,
+      'warning',
+      'Sim, redefinir',
+      '#dc8b28'
+    );
+    if (!confirmou) {
+      return;
+    }
+
+    this.usuarioService.resetarSenha(usuario.id).subscribe({
+      next: (response) => {
+        this.toastr.success(response.mensagem, 'Usuários');
+        this.carregar();
+      },
+      error: (error) => {
+        this.toastr.danger(error?.error?.mensagem || 'Não foi possível redefinir a senha.', 'Erro');
+      }
+    });
+  }
+
   private carregarOpcoes(): void {
     this.usuarioService.opcoes().subscribe((data) => {
       this.perfis = data.perfis;
@@ -226,7 +259,15 @@ export class UsuariosComponent implements OnInit {
       telefone: usuario.telefone || 'Sem telefone',
       ativo: usuario.ativo ? 'Sim' : 'Nao',
       perfis: usuario.perfis.length ? usuario.perfis.join(', ') : 'Sem perfil',
+      senha: usuario.deveTrocarSenha ? 'Troca pendente' : 'Definida',
       usuario
     }));
+  }
+
+  private renderizarAcoes(): string {
+    const resetar = this.podeResetarSenha
+      ? '<button class="grid-btn icon reset" data-action="resetar-senha" type="button" title="Redefinir senha" aria-label="Redefinir senha"><span class="icon-key"></span></button>'
+      : '';
+    return `<div class="grid-actions"><button class="grid-btn icon edit" data-action="editar" type="button" title="Editar usuario" aria-label="Editar usuario"><span class="icon-pencil"></span></button>${resetar}<button class="grid-btn icon delete" data-action="excluir" type="button" title="Excluir usuario" aria-label="Excluir usuario"><span class="icon-trash"></span></button></div>`;
   }
 }

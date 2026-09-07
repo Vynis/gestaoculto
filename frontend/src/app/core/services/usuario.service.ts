@@ -30,4 +30,8 @@ export class UsuarioService {
   excluir(id: number): Observable<{ mensagem: string }> {
     return this.http.delete<{ mensagem: string }>(`${this.apiUrl}/${id}`);
   }
+
+  resetarSenha(id: number): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/${id}/resetar-senha`, {});
+  }
 }

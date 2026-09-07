@@ -9,6 +9,7 @@ using GestaoCulto.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GestaoCulto.API.Controllers
 {
@@ -19,11 +20,13 @@ namespace GestaoCulto.API.Controllers
     {
         private readonly GestaoCultoDbContext _db;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IConfiguration _configuration;
 
-        public UsuariosController(GestaoCultoDbContext db, IPasswordHasher passwordHasher)
+        public UsuariosController(GestaoCultoDbContext db, IPasswordHasher passwordHasher, IConfiguration configuration)
         {
             _db = db;
             _passwordHasher = passwordHasher;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -45,6 +48,7 @@ namespace GestaoCulto.API.Controllers
                     Email = x.Email,
                     Telefone = x.Telefone,
                     Ativo = x.Ativo,
+                    DeveTrocarSenha = x.DeveTrocarSenha,
                     Perfis = new List<string>(),
                     PerfilIds = new List<long>()
                 })
@@ -161,6 +165,7 @@ namespace GestaoCulto.API.Controllers
             if (!string.IsNullOrWhiteSpace(dto.Senha))
             {
                 entity.SenhaHash = _passwordHasher.Hash(dto.Senha.Trim());
+                entity.DeveTrocarSenha = false;
             }
 
             var perfisAtuais = await _db.UsuariosPerfis.Where(x => x.UsuarioId == id).ToListAsync();
@@ -195,6 +200,39 @@ namespace GestaoCulto.API.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { mensagem = "Usuário excluído com sucesso." });
+        }
+
+        [HttpPost("{id:long}/resetar-senha")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> ResetarSenha(long id)
+        {
+            var senhaPadrao = _configuration["AdminPasswordReset:DefaultPassword"]?.Trim();
+            if (string.IsNullOrWhiteSpace(senhaPadrao) || senhaPadrao.Length < 6)
+            {
+                return StatusCode(503, new { mensagem = "A senha padrão administrativa não está configurada no servidor." });
+            }
+
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(x => x.Id == id);
+            if (usuario == null)
+            {
+                return NotFound(new { mensagem = "Usuário não encontrado." });
+            }
+
+            usuario.SenhaHash = _passwordHasher.Hash(senhaPadrao);
+            usuario.DeveTrocarSenha = true;
+            usuario.AtualizadoEm = DateTime.UtcNow;
+
+            var recuperacoesPendentes = await _db.UsuariosRecuperacaoSenha
+                .Where(x => x.UsuarioId == id && x.UsadoEm == null)
+                .ToListAsync();
+            foreach (var recuperacao in recuperacoesPendentes)
+            {
+                recuperacao.UsadoEm = DateTime.UtcNow;
+                recuperacao.AtualizadoEm = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok(new { mensagem = "Senha redefinida. O usuário deverá alterá-la no próximo acesso." });
         }
 
         private async Task SalvarPerfis(long usuarioId, IList<long> perfilIds)

@@ -46,6 +46,21 @@ export class AuthService {
     return this.http.post<{ mensagem: string }>(`${this.apiUrl}/redefinir-senha`, { token, novaSenha });
   }
 
+  trocarSenhaObrigatoria(novaSenha: string): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.apiUrl}/trocar-senha-obrigatoria`, { novaSenha }).pipe(
+      tap(() => this.atualizarTrocaSenhaObrigatoria(false))
+    );
+  }
+
+  deveTrocarSenha(): boolean {
+    return this.session$.value?.deveTrocarSenha === true;
+  }
+
+  exigirTrocaSenha(): void {
+    this.atualizarTrocaSenhaObrigatoria(true);
+    this.router.navigate(['/auth/trocar-senha']);
+  }
+
   aplicarSessao(response: AuthResponse): void {
     this.storeSession(response);
   }
@@ -104,6 +119,10 @@ export class AuthService {
   }
 
   destinoPosLogin(origem: 'gestao' | 'voluntario' | 'auto' = 'auto'): string {
+    if (this.deveTrocarSenha()) {
+      return '/auth/trocar-senha';
+    }
+
     const podeAcessarGestao = this.possuiAlgumPerfil(['ADMIN', 'GESTAO_CULTO', 'LIDER_MINISTERIO', 'RECEPCAO_DADOS']);
     const podeAcessarVoluntario = this.ehVoluntario();
 
@@ -158,6 +177,7 @@ export class AuthService {
       token: response.token,
       nome: response.nome,
       email: response.email,
+      deveTrocarSenha: response.deveTrocarSenha ?? false,
       perfis: response.perfis ?? []
     };
 
@@ -176,5 +196,16 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  private atualizarTrocaSenhaObrigatoria(deveTrocarSenha: boolean): void {
+    const atual = this.session$.value;
+    if (!atual) {
+      return;
+    }
+
+    const session = { ...atual, deveTrocarSenha };
+    localStorage.setItem(this.storageKey, JSON.stringify(session));
+    this.session$.next(session);
   }
 }

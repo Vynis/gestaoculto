@@ -9,6 +9,7 @@ namespace GestaoCulto.Application.DTOs.Cadastros
         public string Email { get; set; } = string.Empty;
         public string? Telefone { get; set; }
         public bool Ativo { get; set; }
+        public bool DeveTrocarSenha { get; set; }
         public IList<string> Perfis { get; set; } = new List<string>();
         public IList<long> PerfilIds { get; set; } = new List<long>();
     }

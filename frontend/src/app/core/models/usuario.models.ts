@@ -10,6 +10,7 @@ export interface Usuario {
   email: string;
   telefone: string | null;
   ativo: boolean;
+  deveTrocarSenha: boolean;
   perfis: string[];
   perfilIds: number[];
 }
