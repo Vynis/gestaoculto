@@ -26,6 +26,7 @@ import {
 } from '@nebular/theme';
 import { NbEvaIconsModule } from '@nebular/eva-icons';
 import { AgGridModule } from 'ag-grid-angular';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import * as Sentry from '@sentry/angular';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -133,7 +134,8 @@ import { ExternalLinkViewerComponent } from './shared/external-link-viewer.compo
     NbListModule,
     NbCheckboxModule,
     NbTabsetModule,
-    AgGridModule
+    AgGridModule,
+    DragDropModule
   ],
   providers: [
     {

@@ -224,8 +224,19 @@
         </header>
 
         <section class="cv-bloco">
-          <h4 class="cv-titulo">Timeline do culto</h4>
-          <div class="cv-timeline">
+          <div class="cv-titulo-linha">
+            <h4 class="cv-titulo">Timeline do culto</h4>
+            <button
+              type="button"
+              class="cv-toggle"
+              (click)="alternarTimeline()"
+              [attr.aria-expanded]="timelineExpandida"
+              aria-controls="timeline-culto-conteudo">
+              <nb-icon [icon]="timelineExpandida ? 'chevron-up-outline' : 'chevron-down-outline'"></nb-icon>
+              {{ timelineExpandida ? 'Ocultar etapas' : 'Mostrar etapas' }}
+            </button>
+          </div>
+          <div id="timeline-culto-conteudo" class="cv-timeline" [hidden]="!timelineExpandida">
             <article class="cv-item" *ngFor="let linha of linhasCronograma" [ngClass]="categoriaLinhaClasse(linha)">
               <div class="cv-ponto"></div>
               <div class="cv-hora">{{ linha.horario }}</div>

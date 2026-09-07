@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EtapaCulto } from '../models/cronograma.models';
+import { CronogramaReordenarRequest, EtapaCulto } from '../models/cronograma.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -28,5 +28,9 @@ export class CronogramaService {
 
   excluirTodasDoCulto(cultoId: number): Observable<{ mensagem: string; removidas: number }> {
     return this.http.delete<{ mensagem: string; removidas: number }>(`${this.apiUrl}/culto/${cultoId}`);
+  }
+
+  reordenar(cultoId: number, payload: CronogramaReordenarRequest): Observable<{ mensagem: string }> {
+    return this.http.put<{ mensagem: string }>(`${this.apiUrl}/culto/${cultoId}/reordenar`, payload);
   }
 }

@@ -83,6 +83,7 @@ export class RelatorioCultoComponent implements OnInit {
   copiandoLinkCompartilhado = false;
 
   linhasCronograma: LinhaCronogramaModelo[] = [];
+  timelineExpandida = false;
   cronogramasAdicionais: SecaoCronogramaAdicional[] = [];
   secoesVoluntariosMinisterio: SecaoVoluntariosMinisterio[] = [];
   linhasLideresEquipe: LinhaLideresEquipe[] = [];
@@ -152,6 +153,10 @@ export class RelatorioCultoComponent implements OnInit {
       return 'cat-ent';
     }
     return 'cat-org';
+  }
+
+  alternarTimeline(): void {
+    this.timelineExpandida = !this.timelineExpandida;
   }
 
   constructor(
@@ -459,6 +464,7 @@ export class RelatorioCultoComponent implements OnInit {
   }
 
   private montarModeloVisual(relatorio: RelatorioCultoDiaResponse): void {
+    this.timelineExpandida = false;
     this.linhasCronograma = [];
     this.cronogramasAdicionais = [];
     this.secoesVoluntariosMinisterio = [];

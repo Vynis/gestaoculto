@@ -19,6 +19,31 @@
   gap: 0.75rem;
 }
 
+.cronograma-bloco {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.bloco-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0.25rem;
+  border-bottom: 1px solid #d9e5f5;
+}
+
+.bloco-header h3 {
+  margin: 0;
+  color: #263b5f;
+  font-size: 1rem;
+}
+
+.bloco-lista {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .feedback {
   margin-top: 0.8rem;
 }
@@ -31,6 +56,24 @@
   border-radius: 0.75rem;
   background: rgba(58, 122, 254, 0.08);
   border: 1px solid #d9e5f5;
+}
+
+.step.cdk-drag-placeholder {
+  opacity: 0.25;
+  border: 1px dashed #598bff;
+}
+
+.drag-handle {
+  width: 2.25rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid #b8c9e4;
+  border-radius: 0.4rem;
+  background: #fff;
+  color: #456693;
+  cursor: grab;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .hour {
@@ -254,4 +297,19 @@ small {
   .item-inline {
     flex-direction: column;
   }
+
+}
+
+@media (max-width: 520px) {
+  .step {
+    grid-template-columns: 64px 1fr;
+    gap: 0.5rem;
+    padding: 0.6rem;
+  }
+
+  .title-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
 }

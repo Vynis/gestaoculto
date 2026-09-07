@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using GestaoCulto.Domain.Entities;
@@ -31,6 +33,17 @@ namespace GestaoCulto.API.Controllers
         public string DescricaoAcao { get; set; } = string.Empty;
         public string? Observacao { get; set; }
         public bool Ativo { get; set; } = true;
+    }
+
+    public class CronogramaBlocoOrdemRequest
+    {
+        public string? BlocoCronograma { get; set; }
+        public long[] EtapaIds { get; set; } = Array.Empty<long>();
+    }
+
+    public class CronogramaReordenarRequest
+    {
+        public CronogramaBlocoOrdemRequest[] Blocos { get; set; } = Array.Empty<CronogramaBlocoOrdemRequest>();
     }
 
     [ApiController]
@@ -253,6 +266,96 @@ namespace GestaoCulto.API.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { mensagem = "Todas as etapas do culto foram excluídas com sucesso.", removidas = etapas.Count });
+        }
+
+        [HttpPut("culto/{cultoId:long}/reordenar")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
+        public async Task<IActionResult> Reordenar(long cultoId, [FromBody] CronogramaReordenarRequest dto)
+        {
+            var culto = await _db.Cultos.FirstOrDefaultAsync(x => x.Id == cultoId);
+            if (culto == null)
+            {
+                return NotFound(new { mensagem = "Culto não encontrado." });
+            }
+
+            var blocos = dto.Blocos ?? Array.Empty<CronogramaBlocoOrdemRequest>();
+            var etapas = await _db.EtapasCulto
+                .Include(x => x.StatusEtapa)
+                .Where(x => x.CultoId == cultoId)
+                .ToListAsync();
+
+            var idsEsperados = etapas.Select(x => x.Id).ToHashSet();
+            var idsRecebidos = new List<long>();
+            var ordensPorBloco = new List<(string Bloco, long[] EtapaIds)>();
+
+            foreach (var blocoRequest in blocos)
+            {
+                var bloco = NormalizarBlocoCronograma(blocoRequest.BlocoCronograma).ToUpperInvariant();
+                var ids = blocoRequest.EtapaIds ?? Array.Empty<long>();
+                if (ids.Length == 0)
+                {
+                    return BadRequest(new { mensagem = $"O bloco '{bloco}' não possui etapas." });
+                }
+
+                if (ordensPorBloco.Any(x => x.Bloco == bloco))
+                {
+                    return BadRequest(new { mensagem = $"O bloco '{bloco}' foi enviado mais de uma vez." });
+                }
+
+                ordensPorBloco.Add((bloco, ids));
+                idsRecebidos.AddRange(ids);
+            }
+
+            if (idsRecebidos.Count != idsRecebidos.Distinct().Count())
+            {
+                return BadRequest(new { mensagem = "Uma etapa não pode aparecer mais de uma vez." });
+            }
+
+            if (idsRecebidos.Count != idsEsperados.Count || !idsEsperados.SetEquals(idsRecebidos))
+            {
+                return BadRequest(new { mensagem = "A organização deve conter todas as etapas do culto." });
+            }
+
+            if (etapas.Any(x => x.DuracaoMinutos <= 0))
+            {
+                return BadRequest(new { mensagem = "Todas as etapas precisam ter duração maior que zero." });
+            }
+
+            if (etapas.Any(x => x.StatusEtapa.Codigo == "EM_ANDAMENTO" || x.StatusEtapa.Codigo == "CONCLUIDA"))
+            {
+                return Conflict(new { mensagem = "Não é possível reorganizar um cronograma que já está em execução ou concluído." });
+            }
+
+            var etapaPorId = etapas.ToDictionary(x => x.Id);
+            await using var transacao = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            try
+            {
+                foreach (var ordem in ordensPorBloco)
+                {
+                    var etapasDoBloco = ordem.EtapaIds.Select(id => etapaPorId[id]).ToList();
+                    var horarioAtual = etapasDoBloco.Select(x => x.HorarioInicio).Min();
+
+                    for (var index = 0; index < etapasDoBloco.Count; index++)
+                    {
+                        var etapa = etapasDoBloco[index];
+                        etapa.BlocoCronograma = ordem.Bloco;
+                        etapa.Sequencia = index + 1;
+                        etapa.HorarioInicio = horarioAtual;
+                        etapa.HorarioFimCalculado = horarioAtual.AddMinutes(etapa.DuracaoMinutos);
+                        etapa.AtualizadoEm = DateTime.UtcNow;
+                        horarioAtual = etapa.HorarioFimCalculado.Value;
+                    }
+                }
+
+                await _db.SaveChangesAsync();
+                await transacao.CommitAsync();
+                return Ok(new { mensagem = "Cronograma reorganizado com sucesso." });
+            }
+            catch
+            {
+                await transacao.RollbackAsync();
+                throw;
+            }
         }
 
         private async Task SalvarAcoesMinisterio(long etapaId, EtapaMinisterioAcaoRequest[] itens, bool limparAntes)

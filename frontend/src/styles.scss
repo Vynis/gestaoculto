@@ -175,6 +175,11 @@ nb-select .select-button {
 
 .relatorio-page .cv-bloco { margin-top: 1rem; }
 .relatorio-page .cv-titulo { margin: 0 0 0.6rem; color: var(--cv-acc); text-transform: uppercase; font-size: 0.84rem; letter-spacing: 0.06em; }
+.relatorio-page .cv-titulo-linha { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.6rem; }
+.relatorio-page .cv-titulo-linha .cv-titulo { margin-bottom: 0; }
+.relatorio-page .cv-toggle { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--cv-brd); border-radius: 999px; padding: 0.35rem 0.65rem; background: var(--cv-card); color: var(--cv-acc); font: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+.relatorio-page .cv-toggle:hover { background: var(--cv-card-h); }
+.relatorio-page .cv-toggle:focus-visible { outline: 2px solid var(--cv-acc); outline-offset: 2px; }
 .relatorio-page .cv-grid { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .relatorio-page .cv-box { background: var(--cv-card); border: 1px solid var(--cv-brd-s); border-radius: 12px; padding: 0.85rem; }
 .relatorio-page .cv-box h5 { margin: 0 0 0.45rem; font-size: 0.9rem; }
@@ -217,4 +222,8 @@ nb-select .select-button {
   .relatorio-page .cv-detalhes { grid-template-columns: 1fr; }
   .relatorio-page .cv-head { flex-direction: column; }
   .relatorio-page .cv-head span { align-self: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .relatorio-page .cv-titulo-linha { align-items: flex-start; flex-direction: column; }
 }

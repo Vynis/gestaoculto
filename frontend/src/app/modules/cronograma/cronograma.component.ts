@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { CellClickedEvent, ColDef } from 'ag-grid-community';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { EtapaCulto, EtapaMinisterioAcao } from '../../core/models/cronograma.models';
 import { CronogramaService } from '../../core/services/cronograma.service';
 import { Culto } from '../../core/models/culto.models';
@@ -22,6 +23,11 @@ interface AcaoMinisterioGridRow {
   ativo: string;
 }
 
+interface CronogramaBlocoView {
+  nome: string;
+  etapas: EtapaCulto[];
+}
+
 @Component({
   selector: 'app-cronograma',
   templateUrl: './cronograma.component.html',
@@ -39,6 +45,9 @@ export class CronogramaComponent implements OnInit {
   aplicandoTemplate = false;
   carregando = false;
   templateSelecionadoId: number | null = null;
+  modoOrganizacao = false;
+  salvandoOrganizacao = false;
+  private etapasOriginais: EtapaCulto[] | null = null;
   readonly filtro = this.fb.group({
     cultoId: [0, [Validators.required, Validators.min(1)]]
   });
@@ -160,6 +169,88 @@ export class CronogramaComponent implements OnInit {
       this.carregando = false;
     }, () => {
       this.carregando = false;
+    });
+  }
+
+  get gruposCronograma(): CronogramaBlocoView[] {
+    const grupos = new Map<string, EtapaCulto[]>();
+    for (const etapa of this.etapas) {
+      const bloco = this.normalizarBlocoCronograma(etapa.blocoCronograma);
+      if (!grupos.has(bloco)) {
+        grupos.set(bloco, []);
+      }
+      grupos.get(bloco)!.push(etapa);
+    }
+
+    return Array.from(grupos.entries())
+      .sort(([a], [b]) => a === 'PRINCIPAL' ? -1 : b === 'PRINCIPAL' ? 1 : a.localeCompare(b, 'pt-BR'))
+      .map(([nome, etapas]) => ({
+        nome,
+        etapas: etapas.slice().sort((a, b) => a.sequencia - b.sequencia || a.id - b.id)
+      }));
+  }
+
+  iniciarOrganizacao(): void {
+    if (!this.etapas.length) {
+      this.toastr.warning('Não há etapas para organizar.', 'Cronograma');
+      return;
+    }
+
+    this.etapasOriginais = this.clonarEtapas(this.etapas);
+    this.modoOrganizacao = true;
+  }
+
+  cancelarOrganizacao(): void {
+    if (this.etapasOriginais) {
+      this.etapas = this.clonarEtapas(this.etapasOriginais);
+    }
+    this.etapasOriginais = null;
+    this.modoOrganizacao = false;
+  }
+
+  aoSoltarEtapa(event: CdkDragDrop<EtapaCulto[]>, grupo: CronogramaBlocoView): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    moveItemInArray(grupo.etapas, event.previousIndex, event.currentIndex);
+    this.aplicarOrdemDoGrupo(grupo.nome, grupo.etapas);
+  }
+
+  moverEtapa(grupo: CronogramaBlocoView, indice: number, deslocamento: number): void {
+    const novoIndice = indice + deslocamento;
+    if (novoIndice < 0 || novoIndice >= grupo.etapas.length) {
+      return;
+    }
+
+    moveItemInArray(grupo.etapas, indice, novoIndice);
+    this.aplicarOrdemDoGrupo(grupo.nome, grupo.etapas);
+  }
+
+  salvarOrganizacao(): void {
+    const cultoId = Number(this.filtro.value.cultoId);
+    if (!cultoId || !this.modoOrganizacao) {
+      return;
+    }
+
+    this.salvandoOrganizacao = true;
+    this.cronogramaService.reordenar(cultoId, {
+      blocos: this.gruposCronograma.map((grupo) => ({
+        blocoCronograma: grupo.nome,
+        etapaIds: grupo.etapas.map((etapa) => etapa.id)
+      }))
+    }).subscribe({
+      next: (response) => {
+        this.modoOrganizacao = false;
+        this.etapasOriginais = null;
+        this.salvandoOrganizacao = false;
+        this.carregar();
+        this.toastr.success(response.mensagem, 'Cronograma');
+      },
+      error: (error) => {
+        this.salvandoOrganizacao = false;
+        this.toastr.danger(this.extrairMensagemErro(error), 'Erro ao organizar cronograma');
+      }
     });
   }
 
@@ -618,6 +709,52 @@ export class CronogramaComponent implements OnInit {
     const bloco = this.normalizarBlocoCronograma(item.blocoCronograma || 'PRINCIPAL').toLowerCase();
     const atividade = String(item.atividade || '').trim().toLowerCase();
     return `${bloco}|${sequencia}|${atividade}`;
+  }
+
+  private aplicarOrdemDoGrupo(nome: string, etapasOrdenadas: EtapaCulto[]): void {
+    const inicio = etapasOrdenadas
+      .map((etapa) => this.dataHoraEtapa(etapa))
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+
+    if (!inicio || Number.isNaN(inicio.getTime())) {
+      return;
+    }
+
+    let horarioAtual = new Date(inicio);
+    for (let index = 0; index < etapasOrdenadas.length; index += 1) {
+      const etapa = etapasOrdenadas[index];
+      const duracao = Math.max(1, Number(etapa.duracaoMinutos) || 1);
+      const fim = new Date(horarioAtual);
+      fim.setMinutes(fim.getMinutes() + duracao);
+      etapa.blocoCronograma = nome;
+      etapa.sequencia = index + 1;
+      etapa.horarioInicio = this.formatarDateTimeCompleto(horarioAtual);
+      etapa.horarioFimCalculado = this.formatarDateTimeCompleto(fim);
+      horarioAtual = fim;
+    }
+
+    this.etapas = [...this.etapas];
+  }
+
+  private dataHoraEtapa(etapa: EtapaCulto): Date {
+    const valor = new Date(etapa.horarioInicio);
+    if (!Number.isNaN(valor.getTime())) {
+      return valor;
+    }
+
+    const match = String(etapa.horarioInicio || '').match(/(\d{1,2}):(\d{2})/);
+    const resultado = new Date();
+    if (match) {
+      resultado.setHours(Number(match[1]), Number(match[2]), 0, 0);
+    }
+    return resultado;
+  }
+
+  private clonarEtapas(etapas: EtapaCulto[]): EtapaCulto[] {
+    return etapas.map((etapa) => ({
+      ...etapa,
+      acoesMinisterio: (etapa.acoesMinisterio || []).map((acao) => ({ ...acao }))
+    }));
   }
 
   private normalizarBlocoCronograma(valor: string | null | undefined): string {

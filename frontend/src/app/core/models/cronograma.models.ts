@@ -25,3 +25,12 @@ export interface EtapaCulto {
   statusEtapaId: number;
   acoesMinisterio: EtapaMinisterioAcao[];
 }
+
+export interface CronogramaBlocoOrdem {
+  blocoCronograma: string;
+  etapaIds: number[];
+}
+
+export interface CronogramaReordenarRequest {
+  blocos: CronogramaBlocoOrdem[];
+}

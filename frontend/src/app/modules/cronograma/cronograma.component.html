@@ -3,59 +3,90 @@
     <h2>Cronograma</h2>
     <p>Visualize o andamento do culto por sequência e horário.</p>
   </div>
-  <button nbButton status="primary" type="button" (click)="abrirModalNovaEtapa()">Nova etapa</button>
+  <button nbButton status="primary" type="button" (click)="abrirModalNovaEtapa()" [disabled]="modoOrganizacao">Nova etapa</button>
 </div>
 
 <nb-card>
   <nb-card-header>Cronograma do culto</nb-card-header>
   <nb-card-body>
     <div class="toolbar">
-      <nb-select [formControl]="filtro.controls.cultoId" placeholder="Selecione o culto">
+      <nb-select [formControl]="filtro.controls.cultoId" placeholder="Selecione o culto" [disabled]="modoOrganizacao">
         <nb-option *ngFor="let culto of cultos" [value]="culto.id">{{ culto.nome }} - {{ culto.dataCulto | date: 'dd/MM/yyyy' }} </nb-option>
       </nb-select>
-      <button nbButton status="info" type="button" (click)="carregar()" [disabled]="carregando">{{ carregando ? 'Carregando...' : 'Carregar' }}</button>
-      <button nbButton status="danger" type="button" (click)="excluirTodasEtapasDoCulto()">Excluir todas as etapas</button>
-      <nb-select [(ngModel)]="templateSelecionadoId" [ngModelOptions]="{ standalone: true }" placeholder="Template com etapas">
+      <button nbButton status="info" type="button" (click)="carregar()" [disabled]="carregando || modoOrganizacao">{{ carregando ? 'Carregando...' : 'Carregar' }}</button>
+      <button nbButton status="danger" type="button" (click)="excluirTodasEtapasDoCulto()" [disabled]="modoOrganizacao">Excluir todas as etapas</button>
+      <button nbButton status="basic" type="button" (click)="iniciarOrganizacao()" [disabled]="modoOrganizacao || !etapas.length">Organizar cronograma</button>
+      <nb-select [(ngModel)]="templateSelecionadoId" [ngModelOptions]="{ standalone: true }" placeholder="Template com etapas" [disabled]="modoOrganizacao">
         <nb-option *ngFor="let template of templates" [value]="template.id">{{ template.nome }}</nb-option>
       </nb-select>
       <button
         nbButton
         status="primary"
         type="button"
-        [disabled]="aplicandoTemplate || !templateSelecionadoId"
+        [disabled]="aplicandoTemplate || modoOrganizacao || !templateSelecionadoId"
         (click)="aplicarTemplateRapido()"
       >
         Aplicar template
       </button>
     </div>
 
-    <div class="timeline">
-      <div class="step" *ngFor="let etapa of etapas">
-        <span class="hour">{{ etapa.horarioInicio | date: 'HH:mm' }}</span>
-        <div>
-          <div class="title-row">
-            <span class="seq-badge">#{{ etapa.sequencia }}</span>
-            <strong>{{ etapa.atividade }}</strong>
-            <span class="seq-badge">{{ etapa.blocoCronograma || 'PRINCIPAL' }}</span>
-          </div>
-          <p>{{ etapa.descricao }}</p>
-          <small *ngIf="etapa.ministerioResponsavelNome">Equipe: {{ etapa.ministerioResponsavelNome }}</small>
-          <div class="acoes-ministerio" *ngIf="etapa.acoesMinisterio?.length">
-            <small><strong>Acoes por ministerio:</strong></small>
-            <ul>
-              <li *ngFor="let acao of etapa.acoesMinisterio">
-                <strong>{{ acao.ministerioNome || ('Ministerio #' + acao.ministerioId) }}:</strong>
-                {{ acao.descricaoAcao }}
-                <span *ngIf="acao.observacao">({{ acao.observacao }})</span>
-              </li>
-            </ul>
-          </div>
-          <div class="meta">
-            <span *ngIf="etapa.atrasoMinutos > 0" class="atraso">Atraso: {{ etapa.atrasoMinutos }} min</span>
-            <button nbButton size="tiny" status="basic" type="button" (click)="editarEtapa(etapa)">Editar</button>
-            <button nbButton size="tiny" status="danger" type="button" (click)="excluirEtapa(etapa)">Excluir</button>
+    <div class="timeline" *ngIf="gruposCronograma.length; else cronogramaVazio">
+      <section class="cronograma-bloco" *ngFor="let grupo of gruposCronograma">
+        <div class="bloco-header">
+          <h3>{{ grupo.nome }}</h3>
+          <span>{{ grupo.etapas.length }} {{ grupo.etapas.length === 1 ? 'etapa' : 'etapas' }}</span>
+        </div>
+        <div
+          class="bloco-lista"
+          cdkDropList
+          [cdkDropListData]="grupo.etapas"
+          (cdkDropListDropped)="aoSoltarEtapa($event, grupo)"
+        >
+          <div class="step" *ngFor="let etapa of grupo.etapas; let indice = index" cdkDrag [cdkDragDisabled]="!modoOrganizacao || salvandoOrganizacao">
+            <div class="step-time">
+              <span class="hour">{{ etapa.horarioInicio | date: 'HH:mm' }}</span>
+              <small *ngIf="etapa.horarioFimCalculado">até {{ etapa.horarioFimCalculado | date: 'HH:mm' }}</small>
+            </div>
+            <div class="step-main">
+              <div class="title-row">
+                <button *ngIf="modoOrganizacao" class="drag-handle" type="button" cdkDragHandle aria-label="Arrastar etapa">&#9776;</button>
+                <span class="seq-badge">#{{ etapa.sequencia }}</span>
+                <strong>{{ etapa.atividade }}</strong>
+              </div>
+              <p>{{ etapa.descricao }}</p>
+              <small>Duração: {{ etapa.duracaoMinutos }} min</small>
+              <small *ngIf="etapa.ministerioResponsavelNome">Equipe: {{ etapa.ministerioResponsavelNome }}</small>
+              <div class="acoes-ministerio" *ngIf="etapa.acoesMinisterio?.length">
+                <small><strong>Acoes por ministerio:</strong></small>
+                <ul>
+                  <li *ngFor="let acao of etapa.acoesMinisterio">
+                    <strong>{{ acao.ministerioNome || ('Ministerio #' + acao.ministerioId) }}:</strong>
+                    {{ acao.descricaoAcao }}
+                    <span *ngIf="acao.observacao">({{ acao.observacao }})</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="meta">
+                <span *ngIf="etapa.atrasoMinutos > 0" class="atraso">Atraso: {{ etapa.atrasoMinutos }} min</span>
+                <button *ngIf="modoOrganizacao" nbButton size="tiny" status="basic" type="button" (click)="moverEtapa(grupo, indice, -1)" [disabled]="indice === 0 || salvandoOrganizacao">Subir</button>
+                <button *ngIf="modoOrganizacao" nbButton size="tiny" status="basic" type="button" (click)="moverEtapa(grupo, indice, 1)" [disabled]="indice === grupo.etapas.length - 1 || salvandoOrganizacao">Descer</button>
+                <button *ngIf="!modoOrganizacao" nbButton size="tiny" status="basic" type="button" (click)="editarEtapa(etapa)">Editar</button>
+                <button *ngIf="!modoOrganizacao" nbButton size="tiny" status="danger" type="button" (click)="excluirEtapa(etapa)">Excluir</button>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+    </div>
+    <ng-template #cronogramaVazio>
+      <p class="feedback">Nenhuma etapa cadastrada para este culto.</p>
+    </ng-template>
+
+    <div class="organization-actions" *ngIf="modoOrganizacao">
+      <span>Arraste as etapas ou use os botões para reorganizar. Os horários serão recalculados pela duração.</span>
+      <div>
+        <button nbButton status="basic" type="button" (click)="cancelarOrganizacao()" [disabled]="salvandoOrganizacao">Cancelar</button>
+        <button nbButton status="primary" type="button" (click)="salvarOrganizacao()" [disabled]="salvandoOrganizacao">{{ salvandoOrganizacao ? 'Salvando...' : 'Salvar organização' }}</button>
       </div>
     </div>
 
