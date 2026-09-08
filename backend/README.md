@@ -72,7 +72,7 @@ POST /api/telegram/configurar-webhook
 O webhook público configurado é `/gestaoculto/api/telegram/webhook`. Na tela de voluntários,
 edite um cadastro e use **Gerar link de ativação** para iniciar o vínculo.
 
-Depois do vínculo, o voluntário pode consultar escalas com `/proximas` e informar sua
+Depois do vínculo, o voluntário pode consultar escalas com `/minhaescala` e informar sua
 disponibilidade para cultos futuros com `/disponibilidade`.
 
 ## Usuário inicial

@@ -50,6 +50,7 @@ import { RepertorioComponent } from './modules/repertorio/repertorio.component';
 import { UsuariosComponent } from './modules/usuarios/usuarios.component';
 import { RelatorioCultoComponent } from './modules/relatorio-culto/relatorio-culto.component';
 import { RelatorioCultoPublicoPageComponent } from './modules/relatorio-culto/relatorio-culto-publico-page.component';
+import { RelatorioEscalaMensalComponent } from './modules/relatorio-escala-mensal/relatorio-escala-mensal.component';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { LoadingInterceptor } from './core/interceptors/loading.interceptor';
 import { LoginVoluntarioComponent } from './modules/voluntario-auth/login-voluntario.component';
@@ -91,6 +92,7 @@ import { ExternalLinkViewerComponent } from './shared/external-link-viewer.compo
     UsuariosComponent,
     RelatorioCultoComponent,
     RelatorioCultoPublicoPageComponent,
+    RelatorioEscalaMensalComponent,
     LoginVoluntarioComponent,
     PrimeiroAcessoVoluntarioComponent,
     RecuperarAcessoVoluntarioComponent,

@@ -23,6 +23,7 @@ import { RepertorioComponent } from './modules/repertorio/repertorio.component';
 import { UsuariosComponent } from './modules/usuarios/usuarios.component';
 import { RelatorioCultoComponent } from './modules/relatorio-culto/relatorio-culto.component';
 import { RelatorioCultoPublicoPageComponent } from './modules/relatorio-culto/relatorio-culto-publico-page.component';
+import { RelatorioEscalaMensalComponent } from './modules/relatorio-escala-mensal/relatorio-escala-mensal.component';
 import { DisponibilidadesComponent } from './modules/disponibilidades/disponibilidades.component';
 import { LoginVoluntarioComponent } from './modules/voluntario-auth/login-voluntario.component';
 import { PrimeiroAcessoVoluntarioComponent } from './modules/voluntario-auth/primeiro-acesso-voluntario.component';
@@ -63,6 +64,7 @@ const routes: Routes = [
       { path: 'ministerios', component: MinisteriosComponent },
       { path: 'cronograma', component: CronogramaComponent },
       { path: 'relatorio-culto', component: RelatorioCultoComponent },
+      { path: 'relatorio-escala-mensal', component: RelatorioEscalaMensalComponent },
       { path: 'escalas', component: EscalasComponent },
       { path: 'disponibilidades', component: DisponibilidadesComponent },
       { path: 'musicas', component: MusicasComponent },

@@ -1,0 +1,88 @@
+<div class="relatorio-escala-page">
+  <div class="page-header">
+    <div>
+      <h2>Escala mensal de voluntários</h2>
+      <p>Consulte, confira e compartilhe as escalas dos ministérios.</p>
+    </div>
+  </div>
+
+  <nb-card>
+    <nb-card-header>Filtros do relatório</nb-card-header>
+    <nb-card-body>
+      <form class="filtros" [formGroup]="filtro" (ngSubmit)="gerar()">
+        <label>Mês<input nbInput type="month" formControlName="mes"></label>
+        <label>Ministério
+          <nb-select fullWidth formControlName="ministerioId" placeholder="Todos os ministérios">
+            <nb-option [value]="null">Todos os ministérios</nb-option>
+            <nb-option *ngFor="let ministerio of ministerios" [value]="ministerio.id">{{ ministerio.nome }}</nb-option>
+          </nb-select>
+        </label>
+        <label>Voluntário
+          <nb-select fullWidth formControlName="voluntarioId" placeholder="Todos os voluntários">
+            <nb-option [value]="null">Todos os voluntários</nb-option>
+            <nb-option *ngFor="let voluntario of voluntarios" [value]="voluntario.id">{{ voluntario.nome }}</nb-option>
+          </nb-select>
+        </label>
+        <label>Status
+          <nb-select fullWidth formControlName="presencaStatusId" placeholder="Todos os status">
+            <nb-option [value]="null">Todos os status</nb-option>
+            <nb-option *ngFor="let item of status" [value]="item.id">{{ item.nome }}</nb-option>
+          </nb-select>
+        </label>
+        <button nbButton status="primary" type="submit" [disabled]="carregando">{{ carregando ? 'Gerando...' : 'Gerar relatório' }}</button>
+      </form>
+    </nb-card-body>
+  </nb-card>
+
+  <ng-container *ngIf="relatorio as resultado">
+    <div class="resumo-grid">
+      <div class="resumo-card"><span>Cultos</span><strong>{{ resultado.resumo.totalCultos }}</strong></div>
+      <div class="resumo-card"><span>Escalas</span><strong>{{ resultado.resumo.totalEscalas }}</strong></div>
+      <div class="resumo-card"><span>Voluntários</span><strong>{{ resultado.resumo.totalVoluntarios }}</strong></div>
+      <div class="resumo-card confirmado"><span>Confirmadas</span><strong>{{ resultado.resumo.totalConfirmadas }}</strong></div>
+      <div class="resumo-card pendente"><span>Pendentes</span><strong>{{ resultado.resumo.totalPendentes }}</strong></div>
+    </div>
+
+    <nb-card>
+      <nb-card-header class="resultado-header">
+        <span>Escalas de {{ mesTexto() }}</span>
+        <div class="acoes">
+          <button nbButton size="small" status="success" (click)="copiarWhatsApp()" [disabled]="copiando">{{ copiando ? 'Copiando...' : 'Copiar WhatsApp' }}</button>
+          <button nbButton size="small" status="info" (click)="exportarPdf()">PDF</button>
+          <button nbButton size="small" status="basic" (click)="exportarExcel()">Excel</button>
+        </div>
+      </nb-card-header>
+      <nb-card-body>
+        <p class="vazio" *ngIf="!resultado.itens.length">Nenhuma escala encontrada para os filtros selecionados.</p>
+
+        <div class="tabela-wrapper" *ngIf="resultado.itens.length">
+          <table>
+            <thead><tr><th>Data</th><th>Culto</th><th>Ministério</th><th>Função</th><th>Voluntário</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let item of resultado.itens">
+                <td>{{ item.dataCulto | date:'dd/MM/yyyy' }}</td>
+                <td>{{ item.cultoNome }}<small>{{ horaTexto(item.horarioInicio) }}</small></td>
+                <td>{{ item.ministerioNome || 'Sem ministério' }}</td>
+                <td>{{ item.funcao }}</td>
+                <td>{{ item.voluntarioNome || 'Voluntário avulso' }}</td>
+                <td><span class="status" [ngClass]="statusClasse(item)">{{ statusTexto(item) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="subtitulo">Visualização para compartilhamento</h3>
+        <div class="grupos">
+          <section class="grupo-data" *ngFor="let grupo of grupos">
+            <h4>{{ grupo.data | date:'dd/MM' }} <small>{{ grupo.itens[0].cultoNome }}</small></h4>
+            <div class="ministerio-linha" *ngFor="let item of grupo.itens">
+              <strong>{{ item.funcao }}</strong>
+              <span>{{ item.voluntarioNome || 'Voluntário avulso' }}</span>
+              <em class="status" [ngClass]="statusClasse(item)">{{ statusTexto(item) }}</em>
+            </div>
+          </section>
+        </div>
+      </nb-card-body>
+    </nb-card>
+  </ng-container>
+</div>

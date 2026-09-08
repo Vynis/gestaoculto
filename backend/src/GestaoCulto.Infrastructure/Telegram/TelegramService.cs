@@ -1612,7 +1612,7 @@ namespace GestaoCulto.Infrastructure.Telegram
 
         private static string MontarAjuda()
         {
-            return "Comandos disponíveis:\n/minhaescala - consultar e confirmar suas escalas pendentes\n/proximas - listar próximas escalas\n/disponibilidade - informar disponibilidade\n/relatorio - abrir relatório de um culto\n/repertorio - gerenciar repertório dos cultos autorizados\n/cancelar - cancelar uma edição em andamento\n/desvincular - remover o vínculo\n/ajuda - exibir esta mensagem";
+            return "Comandos disponíveis:\n/minhaescala - consultar e confirmar suas escalas\n/disponibilidade - informar disponibilidade\n/relatorio - abrir relatório de um culto\n/repertorio - gerenciar repertório dos cultos autorizados\n/cancelar - cancelar uma edição em andamento\n/desvincular - remover o vínculo\n/ajuda - exibir esta mensagem";
         }
 
         private static string GerarToken()

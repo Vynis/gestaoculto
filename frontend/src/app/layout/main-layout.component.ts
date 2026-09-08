@@ -58,7 +58,10 @@ export class MainLayoutComponent implements OnInit {
       {
         title: 'Relatórios',
         icon: 'file-text-outline',
-        children: [{ title: 'Relatório culto', link: '/relatorio-culto' }]
+        children: [
+          { title: 'Relatório culto', link: '/relatorio-culto' },
+          { title: 'Escala mensal', link: '/relatorio-escala-mensal' }
+        ]
       }
     ];
 

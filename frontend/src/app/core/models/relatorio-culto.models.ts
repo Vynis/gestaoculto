@@ -115,3 +115,40 @@ export interface RelatorioCompartilhadoLinkDto {
   url: string;
   expiraEm: string;
 }
+
+export interface RelatorioEscalaMensalItem {
+  id: number;
+  cultoId: number;
+  cultoNome: string;
+  dataCulto: string;
+  horarioInicio: string | {
+    hours?: number;
+    Hours?: number;
+    minutes?: number;
+    Minutes?: number;
+    totalSeconds?: number;
+    TotalSeconds?: number;
+  };
+  funcao: string;
+  voluntarioId: number | null;
+  voluntarioNome: string | null;
+  ministerioId: number | null;
+  ministerioNome: string | null;
+  presencaStatusId: number;
+  presencaStatusNome: string | null;
+  observacoes: string | null;
+}
+
+export interface RelatorioEscalaMensalResponse {
+  mes: string;
+  resumo: {
+    totalCultos: number;
+    totalEscalas: number;
+    totalVoluntarios: number;
+    totalConfirmadas: number;
+    totalPendentes: number;
+    totalAusentes: number;
+    totalSubstituidas: number;
+  };
+  itens: RelatorioEscalaMensalItem[];
+}

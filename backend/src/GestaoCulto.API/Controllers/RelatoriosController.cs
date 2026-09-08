@@ -49,6 +49,23 @@ namespace GestaoCulto.API.Controllers
             public string? StatusCultoNome { get; set; }
         }
 
+        private class EscalaMensalItem
+        {
+            public long Id { get; set; }
+            public long CultoId { get; set; }
+            public string CultoNome { get; set; } = string.Empty;
+            public DateTime DataCulto { get; set; }
+            public TimeSpan HorarioInicio { get; set; }
+            public string Funcao { get; set; } = string.Empty;
+            public long? VoluntarioId { get; set; }
+            public string? VoluntarioNome { get; set; }
+            public long? MinisterioId { get; set; }
+            public string? MinisterioNome { get; set; }
+            public long PresencaStatusId { get; set; }
+            public string? PresencaStatusNome { get; set; }
+            public string? Observacoes { get; set; }
+        }
+
         private readonly GestaoCultoDbContext _db;
         private readonly IRelatorioCompartilhamentoService _compartilhamentoService;
 
@@ -58,6 +75,86 @@ namespace GestaoCulto.API.Controllers
         {
             _db = db;
             _compartilhamentoService = compartilhamentoService;
+        }
+
+        [HttpGet("escala-mensal")]
+        public async Task<IActionResult> RelatorioEscalaMensal(
+            [FromQuery] string? mes,
+            [FromQuery] long? ministerioId,
+            [FromQuery] long? voluntarioId,
+            [FromQuery] long? presencaStatusId)
+        {
+            if (string.IsNullOrWhiteSpace(mes)
+                || !DateTime.TryParseExact(mes, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var mesInformado))
+            {
+                return BadRequest(new { mensagem = "Informe o mês no formato yyyy-MM." });
+            }
+
+            var inicio = new DateTime(mesInformado.Year, mesInformado.Month, 1);
+            var fim = inicio.AddMonths(1);
+
+            var query = _db.Escalas
+                .AsNoTracking()
+                .Where(e => e.Culto.DataCulto >= inicio
+                    && e.Culto.DataCulto < fim
+                    && _db.StatusCultos.Any(s => s.Id == e.Culto.StatusCultoId && s.Codigo != "CANCELADO"));
+
+            if (ministerioId.HasValue && ministerioId.Value > 0)
+            {
+                query = query.Where(e => e.MinisterioId == ministerioId.Value);
+            }
+
+            if (voluntarioId.HasValue && voluntarioId.Value > 0)
+            {
+                query = query.Where(e => e.VoluntarioId == voluntarioId.Value);
+            }
+
+            if (presencaStatusId.HasValue && presencaStatusId.Value > 0)
+            {
+                query = query.Where(e => e.PresencaStatusId == presencaStatusId.Value);
+            }
+
+            var itens = await query
+                .OrderBy(e => e.Culto.DataCulto)
+                .ThenBy(e => e.Culto.HorarioInicio)
+                .ThenBy(e => e.MinisterioId)
+                .ThenBy(e => e.Funcao)
+                .ThenBy(e => e.VoluntarioId)
+                .Select(e => new EscalaMensalItem
+                {
+                    Id = e.Id,
+                    CultoId = e.CultoId,
+                    CultoNome = e.Culto.Nome,
+                    DataCulto = e.Culto.DataCulto,
+                    HorarioInicio = e.Culto.HorarioInicio,
+                    Funcao = e.Funcao,
+                    VoluntarioId = e.VoluntarioId,
+                    VoluntarioNome = e.VoluntarioId.HasValue
+                        ? _db.Voluntarios.Where(v => v.Id == e.VoluntarioId.Value).Select(v => v.Nome).FirstOrDefault()
+                        : e.VoluntarioAvulsoNome,
+                    MinisterioId = e.MinisterioId,
+                    MinisterioNome = _db.Ministerios.Where(m => m.Id == e.MinisterioId).Select(m => m.Nome).FirstOrDefault(),
+                    PresencaStatusId = e.PresencaStatusId,
+                    PresencaStatusNome = _db.PresencaEscalaStatus.Where(s => s.Id == e.PresencaStatusId).Select(s => s.Nome).FirstOrDefault(),
+                    Observacoes = e.Observacoes
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                mes = inicio.ToString("yyyy-MM"),
+                resumo = new
+                {
+                    totalCultos = itens.Select(x => x.CultoId).Distinct().Count(),
+                    totalEscalas = itens.Count,
+                    totalVoluntarios = itens.Select(x => x.VoluntarioNome).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().Count(),
+                    totalConfirmadas = itens.Count(x => x.PresencaStatusId == 2),
+                    totalPendentes = itens.Count(x => x.PresencaStatusId == 1),
+                    totalAusentes = itens.Count(x => x.PresencaStatusId == 3),
+                    totalSubstituidas = itens.Count(x => x.PresencaStatusId == 4)
+                },
+                itens
+            });
         }
 
         [HttpGet("cultos")]
