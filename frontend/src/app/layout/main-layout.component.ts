@@ -28,6 +28,8 @@ export class MainLayoutComponent implements OnInit {
   }
 
   private montarMenu(): NbMenuItem[] {
+    const podeGerenciarPlanejamento = this.authService.possuiPerfil(['ADMIN', 'GESTAO_CULTO']);
+    const podeGerenciarMinisterios = podeGerenciarPlanejamento;
     const itens: NbMenuItem[] = [
       { title: 'Dashboard', icon: 'grid-outline', link: '/dashboard', home: true },
       {
@@ -35,10 +37,12 @@ export class MainLayoutComponent implements OnInit {
         icon: 'calendar-outline',
         expanded: true,
         children: [
-          { title: 'Cultos', link: '/cultos' },
-          { title: 'Recorrências', link: '/recorrencias-culto' },
-          { title: 'Templates', link: '/templates' },
-          { title: 'Cronograma', link: '/cronograma' },
+          ...(podeGerenciarPlanejamento ? [
+            { title: 'Cultos', link: '/cultos' },
+            { title: 'Recorrências', link: '/recorrencias-culto' },
+            { title: 'Templates', link: '/templates' },
+            { title: 'Cronograma', link: '/cronograma' }
+          ] : []),
           { title: 'Escalas', link: '/escalas' },
           { title: 'Músicas', link: '/musicas' },
           { title: 'Repertório', link: '/repertorio' }
@@ -49,7 +53,7 @@ export class MainLayoutComponent implements OnInit {
         icon: 'people-outline',
         expanded: true,
         children: [
-          { title: 'Ministérios', link: '/ministerios' },
+          ...(podeGerenciarMinisterios ? [{ title: 'Ministérios', link: '/ministerios' }] : []),
           { title: 'Voluntários', link: '/voluntarios' },
           { title: 'Disponibilidades', link: '/disponibilidades' },
           { title: 'Convidados', link: '/convidados' }

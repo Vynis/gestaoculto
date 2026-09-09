@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS voluntario (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   usuario_id BIGINT UNSIGNED NULL,
   nome VARCHAR(150) NOT NULL,
+  data_nascimento DATE NULL,
   telefone VARCHAR(30) NULL,
   email VARCHAR(180) NULL,
   ministerio_principal_id BIGINT UNSIGNED NULL,

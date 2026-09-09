@@ -39,6 +39,7 @@ import { AppInfoPageComponent } from './modules/publico/app-info-page.component'
 import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
 import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 import { RepertorioCanDeactivateGuard } from './core/guards/repertorio-can-deactivate.guard';
+import { AdminGestaoGuard } from './core/guards/admin-gestao.guard';
 
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
@@ -61,7 +62,7 @@ const routes: Routes = [
       { path: 'cultos', component: CultosComponent },
       { path: 'recorrencias-culto', component: RecorrenciasCultoComponent },
       { path: 'templates', component: TemplatesCultoComponent },
-      { path: 'ministerios', component: MinisteriosComponent },
+      { path: 'ministerios', component: MinisteriosComponent, canActivate: [AdminGestaoGuard] },
       { path: 'cronograma', component: CronogramaComponent },
       { path: 'relatorio-culto', component: RelatorioCultoComponent },
       { path: 'relatorio-escala-mensal', component: RelatorioEscalaMensalComponent },

@@ -6,6 +6,13 @@ export interface DashboardResumo {
   convidadosRegistrados: number;
   novosConvertidos: number;
   alertasOperacionais: number;
+  aniversariantes: DashboardAniversariante[];
+}
+
+export interface DashboardAniversariante {
+  voluntarioId: number;
+  nome: string;
+  dataNascimento: string;
 }
 
 export interface DashboardVoluntarioRanking {

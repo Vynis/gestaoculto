@@ -21,6 +21,7 @@ export interface Voluntario {
   usuarioId: number | null;
   usuarioNome?: string | null;
   nome: string;
+  dataNascimento?: string | null;
   telefone: string | null;
   email: string | null;
   ministerioPrincipalId: number | null;

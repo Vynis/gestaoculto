@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace GestaoCulto.Application.DTOs.Cadastros
@@ -8,6 +9,7 @@ namespace GestaoCulto.Application.DTOs.Cadastros
         public long? UsuarioId { get; set; }
         public string? UsuarioNome { get; set; }
         public string Nome { get; set; } = string.Empty;
+        public DateTime? DataNascimento { get; set; }
         public string? Telefone { get; set; }
         public string? Email { get; set; }
         public long? MinisterioPrincipalId { get; set; }

@@ -25,7 +25,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregar();
-    this.podeVerEstatisticas = this.authService.possuiAlgumPerfil(['ADMIN', 'GESTAO_CULTO']);
+    this.podeVerEstatisticas = this.authService.possuiAlgumPerfil(['ADMIN', 'GESTAO_CULTO', 'LIDER_MINISTERIO']);
     if (this.podeVerEstatisticas) {
       this.carregarEstatisticas();
     }
@@ -71,6 +71,12 @@ export class DashboardComponent implements OnInit {
 
   larguraBarra(quantidade: number, itens: { quantidadeCultos: number }[]): number {
     return Math.max(8, Math.round((quantidade / this.maiorQuantidade(itens)) * 100));
+  }
+
+  formatarDiaMes(data: string): string {
+    const valor = data?.substring(0, 10) || '';
+    const [ano, mes, dia] = valor.split('-');
+    return ano && mes && dia ? `${dia}/${mes}` : 'Data não informada';
   }
 
   private formatarData(data: Date): string {

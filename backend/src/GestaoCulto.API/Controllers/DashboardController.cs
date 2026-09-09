@@ -25,7 +25,7 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpGet("estatisticas")]
-        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
         public async Task<IActionResult> Estatisticas([FromQuery] DateTime? inicio, [FromQuery] DateTime? fim, [FromQuery] int limite = 5)
         {
             if (limite < 1 || limite > 20)

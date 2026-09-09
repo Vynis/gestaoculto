@@ -21,6 +21,23 @@ namespace GestaoCulto.Infrastructure.Services
         {
             var hoje = DateTime.UtcNow.Date;
 
+            var aniversariantes = await _db.Voluntarios
+                .AsNoTracking()
+                .Where(v => v.Ativo && v.DataNascimento.HasValue)
+                .Select(v => new DashboardAniversarianteDto
+                {
+                    VoluntarioId = v.Id,
+                    Nome = v.Nome,
+                    DataNascimento = v.DataNascimento!.Value
+                })
+                .ToListAsync();
+
+            aniversariantes = aniversariantes
+                .Where(x => x.DataNascimento.Month == hoje.Month)
+                .OrderBy(x => x.DataNascimento.Day)
+                .ThenBy(x => x.Nome)
+                .ToList();
+
             var proximoCulto = await _db.Cultos
                 .AsNoTracking()
                 .Where(c => c.DataCulto >= hoje)
@@ -42,7 +59,8 @@ namespace GestaoCulto.Infrastructure.Services
                     : await _db.NovosConvertidos.CountAsync(n => _db.Convidados.Any(c => c.Id == n.ConvidadoId && c.CultoId == cultoId.Value)),
                 AlertasOperacionais = cultoId == null
                     ? 0
-                    : await _db.EtapasCulto.CountAsync(e => e.CultoId == cultoId.Value && e.AtrasoMinutos > 0)
+                    : await _db.EtapasCulto.CountAsync(e => e.CultoId == cultoId.Value && e.AtrasoMinutos > 0),
+                Aniversariantes = aniversariantes
             };
         }
 

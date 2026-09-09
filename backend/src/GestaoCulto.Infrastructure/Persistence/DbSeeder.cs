@@ -49,6 +49,14 @@ namespace GestaoCulto.Infrastructure.Persistence
                 ");
             }
 
+            if (!await ColunaExisteAsync("voluntario", "data_nascimento"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE voluntario
+                    ADD COLUMN data_nascimento DATE NULL AFTER nome;
+                ");
+            }
+
             await _db.Database.ExecuteSqlRawAsync(@"
                 CREATE TABLE IF NOT EXISTS usuario_recuperacao_senha (
                   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

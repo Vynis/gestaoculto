@@ -54,7 +54,10 @@
         </div>
         <div class="form-field">
           <label for="musica-tom">Tom</label>
-          <input id="musica-tom" nbInput formControlName="tom" placeholder="Ex.: D, Gm" />
+          <nb-select id="musica-tom" fullWidth formControlName="tom" placeholder="Selecione o tom (opcional)">
+            <nb-option value="">Sem tom</nb-option>
+            <nb-option *ngFor="let tom of tonsMusica" [value]="tom">{{ tom }}</nb-option>
+          </nb-select>
         </div>
         <div class="form-field">
           <label for="musica-cifra">Link da cifra</label>

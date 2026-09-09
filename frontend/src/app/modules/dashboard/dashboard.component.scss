@@ -33,6 +33,43 @@ nb-card-body {
 .card-success { border-top-color: #1f9d63; }
 .card-danger { border-top-color: #d34c4c; }
 
+.aniversariantes {
+  margin-top: 1rem;
+}
+
+.aniversariantes-card {
+  margin: 0;
+  border-top: 4px solid #c98b3c;
+}
+
+.aniversariantes-card nb-card-body {
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.aniversariante-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .65rem 0;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.aniversariante-item:last-child {
+  border-bottom: 0;
+}
+
+.aniversariante-data {
+  min-width: 3.4rem;
+  color: #9a6518;
+  font-weight: 700;
+}
+
+.aniversariantes-empty {
+  color: #6b7894;
+  font-size: .9rem;
+}
+
 .estatisticas {
   margin-top: 2rem;
 }

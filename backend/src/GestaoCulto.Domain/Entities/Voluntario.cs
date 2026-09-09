@@ -1,3 +1,4 @@
+using System;
 using GestaoCulto.Domain.Common;
 
 namespace GestaoCulto.Domain.Entities
@@ -7,6 +8,7 @@ namespace GestaoCulto.Domain.Entities
         public long? UsuarioId { get; set; }
         public Usuario? Usuario { get; set; }
         public string Nome { get; set; } = string.Empty;
+        public DateTime? DataNascimento { get; set; }
         public string? Telefone { get; set; }
         public string? Email { get; set; }
         public long? MinisterioPrincipalId { get; set; }

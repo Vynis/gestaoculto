@@ -46,8 +46,11 @@
           <input id="usuario-telefone" nbInput fullWidth formControlName="telefone" placeholder="Telefone (opcional)" />
         </div>
         <div class="form-field">
-          <label for="usuario-senha">Senha</label>
-          <input id="usuario-senha" nbInput fullWidth formControlName="senha" type="password" placeholder="Deixe em branco para manter" />
+          <label for="usuario-senha">Senha{{ usuarioEditandoId === null ? ' *' : '' }}</label>
+          <input id="usuario-senha" nbInput fullWidth formControlName="senha" type="password" [placeholder]="usuarioEditandoId === null ? 'Informe uma senha' : 'Deixe em branco para manter'" />
+          <small class="form-error" *ngIf="form.controls.senha.touched && form.controls.senha.hasError('required')">
+            Informe uma senha para criar o usuário.
+          </small>
         </div>
         <div class="form-field">
           <label for="usuario-perfis">Perfis de acesso</label>

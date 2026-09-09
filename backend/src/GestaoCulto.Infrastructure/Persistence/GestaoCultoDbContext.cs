@@ -181,6 +181,7 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.UsuarioId).HasColumnName("usuario_id");
                 entity.Property(x => x.Nome).HasColumnName("nome").HasMaxLength(150).IsRequired();
+                entity.Property(x => x.DataNascimento).HasColumnName("data_nascimento").HasColumnType("date");
                 entity.Property(x => x.Telefone).HasColumnName("telefone").HasMaxLength(30);
                 entity.Property(x => x.Email).HasColumnName("email").HasMaxLength(180);
                 entity.Property(x => x.MinisterioPrincipalId).HasColumnName("ministerio_principal_id");

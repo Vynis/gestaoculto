@@ -109,7 +109,10 @@
       </nb-autocomplete>
 
       <form class="form-grid" [formGroup]="itemForm" (ngSubmit)="adicionarItem()">
-        <input nbInput formControlName="musicaTom" placeholder="Tom (opcional)" />
+        <select class="native-select" formControlName="musicaTom">
+          <option value="">Sem tom</option>
+          <option *ngFor="let tom of tonsMusica" [value]="tom">{{ tom }}</option>
+        </select>
         <input nbInput formControlName="musicaLinkCifra" placeholder="Link da cifra (opcional)" />
         <input nbInput formControlName="musicaLinkVideo" placeholder="Link do vídeo (opcional)" />
         <input nbInput formControlName="responsavel" placeholder="Responsável (opcional)" />
@@ -131,7 +134,10 @@
       <form class="music-form" [formGroup]="musicaForm" (ngSubmit)="cadastrarMusica()">
         <input nbInput fullWidth formControlName="titulo" placeholder="Título *" />
         <input nbInput fullWidth formControlName="artistaBanda" placeholder="Artista ou banda *" />
-        <input nbInput fullWidth formControlName="tom" placeholder="Tom (opcional)" />
+        <select class="native-select" formControlName="tom">
+          <option value="">Sem tom</option>
+          <option *ngFor="let tom of tonsMusica" [value]="tom">{{ tom }}</option>
+        </select>
         <input nbInput fullWidth formControlName="linkCifra" placeholder="Link da cifra (opcional)" />
         <input nbInput fullWidth formControlName="linkVideo" placeholder="Link do vídeo (opcional)" />
         <textarea nbInput fullWidth rows="2" formControlName="observacoes" placeholder="Observações (opcional)"></textarea>

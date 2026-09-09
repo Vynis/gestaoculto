@@ -72,6 +72,7 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
         public async Task<IActionResult> Criar([FromBody] CultoRecorrenciaRequest dto)
         {
             var validacao = await ValidarAsync(dto);
@@ -102,6 +103,7 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpPut("{id:long}")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
         public async Task<IActionResult> Atualizar(long id, [FromBody] CultoRecorrenciaRequest dto)
         {
             var entity = await _db.CultosRecorrencias.FirstOrDefaultAsync(x => x.Id == id);
@@ -133,6 +135,7 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpDelete("{id:long}")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
         public async Task<IActionResult> Excluir(long id)
         {
             var entity = await _db.CultosRecorrencias.FirstOrDefaultAsync(x => x.Id == id);
@@ -183,6 +186,7 @@ namespace GestaoCulto.API.Controllers
         }
 
         [HttpPost("{id:long}/gerar")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO")]
         public async Task<IActionResult> Gerar(long id, [FromBody] CultoRecorrenciaGeracaoRequest dto)
         {
             var recorrencia = await _db.CultosRecorrencias.FirstOrDefaultAsync(x => x.Id == id);

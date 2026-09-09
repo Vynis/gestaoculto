@@ -5,6 +5,7 @@ import { NbToastrService } from '@nebular/theme';
 import { Musica, MusicaRequest } from '../../core/models/musica.models';
 import { MusicaService } from '../../core/services/musica.service';
 import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
+import { TONS_MUSICA } from '../../core/models/tom.models';
 
 interface MusicaGridRow {
   titulo: string;
@@ -28,6 +29,7 @@ export class MusicasComponent implements OnInit {
   musicaEditandoId: number | null = null;
   filtroGrid = '';
   filtroAtivo: '' | 'true' | 'false' = '';
+  readonly tonsMusica = TONS_MUSICA;
 
   readonly defaultColDef: ColDef<MusicaGridRow> = {
     sortable: true,

@@ -110,8 +110,14 @@ function Test-FtpPathExists {
         if ($_.Exception.Response -is [System.Net.FtpWebResponse]) {
             $resp = [System.Net.FtpWebResponse]$_.Exception.Response
             $status = [int]$resp.StatusCode
+            $description = $resp.StatusDescription
             $resp.Close()
             if ($status -eq 550) {
+                return $false
+            }
+            if ($status -eq 450) {
+                Write-DeployLog "Caminho FTP temporariamente indisponivel durante verificacao: $Uri | Status: $status | Detalhe: $description" 'WARN'
+                Start-Sleep -Seconds 2
                 return $false
             }
         }
@@ -152,9 +158,18 @@ function Ensure-RemoteDirectory {
             if ($_.Exception.Response -is [System.Net.FtpWebResponse]) {
                 $resp = [System.Net.FtpWebResponse]$_.Exception.Response
                 $status = [int]$resp.StatusCode
+                $description = $resp.StatusDescription
                 $resp.Close()
                 if ($status -eq 550) {
                     continue
+                }
+                if ($status -eq 450) {
+                    Start-Sleep -Seconds 2
+                    if (Test-FtpPathExists -Uri $uri -User $User -Pass $Pass) {
+                        continue
+                    }
+
+                    throw "Falha ao criar pasta remota '$currentPath'. Status: $status | Detalhe: $description"
                 }
             }
             throw
@@ -396,35 +411,55 @@ function Upload-File {
         [Parameter(Mandatory = $true)][string]$RemotePath
     )
 
-    $uri = New-FtpUri -FtpHost $FtpHost -RemotePath $RemotePath
-    $request = New-FtpRequest -Uri $uri -Method ([System.Net.WebRequestMethods+Ftp]::UploadFile) -User $User -Pass $Pass
-
     $bytes = [System.IO.File]::ReadAllBytes($LocalFile)
-    $request.ContentLength = $bytes.Length
-    try {
-        $requestStream = $request.GetRequestStream()
-    }
-    catch [System.Net.WebException] {
-        if ($_.Exception.Response -is [System.Net.FtpWebResponse]) {
-            $resp = [System.Net.FtpWebResponse]$_.Exception.Response
-            $status = [int]$resp.StatusCode
-            $description = $resp.StatusDescription
-            $resp.Close()
-            throw "Falha ao abrir stream FTP para upload. Path remoto: $RemotePath | Status: $status | Detalhe: $description"
+    $maxAttempts = 4
+
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        $request = $null
+        $requestStream = $null
+        $response = $null
+
+        try {
+            $uri = New-FtpUri -FtpHost $FtpHost -RemotePath $RemotePath
+            $request = New-FtpRequest -Uri $uri -Method ([System.Net.WebRequestMethods+Ftp]::UploadFile) -User $User -Pass $Pass
+            $request.ContentLength = $bytes.Length
+            $requestStream = $request.GetRequestStream()
+            $requestStream.Write($bytes, 0, $bytes.Length)
+            $requestStream.Close()
+            $requestStream = $null
+
+            $response = [System.Net.FtpWebResponse]$request.GetResponse()
+            $response.Close()
+            return
         }
+        catch [System.Net.WebException] {
+            $status = $null
+            $description = $_.Exception.Message
+            if ($_.Exception.Response -is [System.Net.FtpWebResponse]) {
+                $resp = [System.Net.FtpWebResponse]$_.Exception.Response
+                $status = [int]$resp.StatusCode
+                $description = $resp.StatusDescription
+                $resp.Close()
+            }
 
-        throw "Falha ao abrir stream FTP para upload. Path remoto: $RemotePath | Erro: $($_.Exception.Message)"
-    }
+            if ($status -eq 450 -and $attempt -lt $maxAttempts) {
+                $waitSeconds = $attempt * 2
+                Write-DeployLog "Arquivo remoto ocupado durante upload '$RemotePath' (tentativa $attempt/$maxAttempts). Nova tentativa em ${waitSeconds}s." 'WARN'
+                Start-Sleep -Seconds $waitSeconds
+                continue
+            }
 
-    try {
-        $requestStream.Write($bytes, 0, $bytes.Length)
-    }
-    finally {
-        $requestStream.Close()
-    }
+            if ($null -ne $status) {
+                throw "Falha no upload FTP. Path remoto: $RemotePath | Status: $status | Detalhe: $description"
+            }
 
-    $response = [System.Net.FtpWebResponse]$request.GetResponse()
-    $response.Close()
+            throw "Falha no upload FTP. Path remoto: $RemotePath | Erro: $description"
+        }
+        finally {
+            if ($null -ne $requestStream) { $requestStream.Close() }
+            if ($null -ne $response) { $response.Close() }
+        }
+    }
 }
 
 function Test-RemoteWriteAccess {
@@ -436,7 +471,8 @@ function Test-RemoteWriteAccess {
     )
 
     $tempLocalFile = [System.IO.Path]::GetTempFileName()
-    $tempRemoteName = ".deploy-write-test-$([Guid]::NewGuid().ToString('N')).tmp"
+    # Alguns servidores FTP recusam arquivos ocultos mesmo quando a pasta permite escrita.
+    $tempRemoteName = "deploy-write-test-$([Guid]::NewGuid().ToString('N')).tmp"
     $tempRemotePath = Join-RemotePath -BasePath $RemoteRoot -RelativePath $tempRemoteName
 
     try {

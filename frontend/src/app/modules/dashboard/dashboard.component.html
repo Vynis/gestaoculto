@@ -40,6 +40,21 @@
   </nb-card>
 </div>
 
+<section class="aniversariantes" *ngIf="resumo as r">
+  <nb-card class="aniversariantes-card">
+    <nb-card-header>Aniversariantes do mês</nb-card-header>
+    <nb-card-body>
+      <div class="aniversariantes-empty" *ngIf="!r.aniversariantes.length">
+        Nenhum voluntário aniversariante neste mês.
+      </div>
+      <div class="aniversariante-item" *ngFor="let aniversariante of r.aniversariantes">
+        <div class="aniversariante-data">{{ formatarDiaMes(aniversariante.dataNascimento) }}</div>
+        <strong>{{ aniversariante.nome }}</strong>
+      </div>
+    </nb-card-body>
+  </nb-card>
+</section>
+
 <section class="estatisticas" *ngIf="podeVerEstatisticas">
   <div class="section-header">
     <div>

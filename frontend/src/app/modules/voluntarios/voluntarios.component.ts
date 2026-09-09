@@ -15,6 +15,7 @@ import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 
 interface VoluntarioGridRow {
   nome: string;
+  dataNascimento: string;
   usuario: string;
   ministerios: string;
   email: string;
@@ -40,10 +41,12 @@ export class VoluntariosComponent implements OnInit {
   telegramVinculo: TelegramVinculo | null = null;
   telegramCarregando = false;
   podeGerenciarTelegram = false;
+  readonly dataNascimentoMaxima = new Date().toISOString().substring(0, 10);
   private telegramRequestGeneration = 0;
 
   readonly form = this.fb.group({
     nome: ['', Validators.required],
+    dataNascimento: [''],
     usuarioId: [null as number | null],
     telefone: [''],
     email: [''],
@@ -63,6 +66,7 @@ export class VoluntariosComponent implements OnInit {
 
   readonly columnDefs: ColDef<VoluntarioGridRow>[] = [
     { headerName: 'Nome', field: 'nome', minWidth: 180 },
+    { headerName: 'Nascimento', field: 'dataNascimento', minWidth: 130 },
     { headerName: 'Usuario vinculado', field: 'usuario', minWidth: 190 },
     { headerName: 'Ministérios', field: 'ministerios', minWidth: 220 },
     { headerName: 'E-mail', field: 'email', minWidth: 180 },
@@ -151,6 +155,7 @@ export class VoluntariosComponent implements OnInit {
     const payload: Voluntario = {
       id: this.voluntarioEditandoId ?? 0,
       nome,
+      dataNascimento: raw.dataNascimento || null,
       usuarioId: raw.usuarioId ?? null,
       telefone: raw.telefone || null,
       email: email || null,
@@ -199,6 +204,7 @@ export class VoluntariosComponent implements OnInit {
     this.voluntarioEditandoId = voluntario.id;
     this.form.patchValue({
       nome: voluntario.nome,
+      dataNascimento: this.formatarDataParaInput(voluntario.dataNascimento),
       usuarioId: voluntario.usuarioId ?? null,
       telefone: voluntario.telefone || '',
       email: voluntario.email || '',
@@ -348,6 +354,7 @@ export class VoluntariosComponent implements OnInit {
     this.telegramCarregando = false;
     this.form.reset({
       nome: '',
+      dataNascimento: '',
       usuarioId: null,
       telefone: '',
       email: '',
@@ -361,12 +368,26 @@ export class VoluntariosComponent implements OnInit {
   private mapearParaGrid(voluntarios: Voluntario[]): VoluntarioGridRow[] {
     return voluntarios.map((voluntario) => ({
       nome: voluntario.nome,
+      dataNascimento: this.formatarDataNascimento(voluntario.dataNascimento),
       usuario: voluntario.usuarioNome || 'Nao vinculado',
       ministerios: this.ministeriosNomes(voluntario.ministerioIds),
       email: voluntario.email || 'Sem e-mail',
       ativo: voluntario.ativo ? 'Ativo' : 'Inativo',
       voluntario
     }));
+  }
+
+  private formatarDataNascimento(data: string | null | undefined): string {
+    if (!data) {
+      return 'Não informado';
+    }
+
+    const [ano, mes, dia] = data.substring(0, 10).split('-');
+    return ano && mes && dia ? `${dia}/${mes}/${ano}` : 'Não informado';
+  }
+
+  private formatarDataParaInput(data: string | null | undefined): string {
+    return data ? data.substring(0, 10) : '';
   }
 
   private carregarUsuarios(): void {

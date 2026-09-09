@@ -82,7 +82,10 @@
         </div>
         <div class="form-field">
           <label for="rep-tom">Tom</label>
-          <input id="rep-tom" nbInput formControlName="musicaTom" placeholder="Tom (ex.: D, Gm)" />
+          <select id="rep-tom" class="native-select" formControlName="musicaTom">
+            <option value="">Sem tom</option>
+            <option *ngFor="let tom of tonsMusica" [value]="tom">{{ tom }}</option>
+          </select>
         </div>
         <div class="form-field">
           <label for="rep-link-cifra">Link da cifra</label>
@@ -134,7 +137,10 @@
       <form class="form-grid" [formGroup]="musicaForm" (ngSubmit)="cadastrarMusica()">
         <input nbInput formControlName="titulo" placeholder="Título *" />
         <input nbInput formControlName="artistaBanda" placeholder="Artista/Banda *" />
-        <input nbInput formControlName="tom" placeholder="Tom (opcional)" />
+        <select class="native-select" formControlName="tom">
+          <option value="">Sem tom</option>
+          <option *ngFor="let tom of tonsMusica" [value]="tom">{{ tom }}</option>
+        </select>
         <input nbInput formControlName="linkCifra" placeholder="Link da cifra (opcional)" />
         <input nbInput formControlName="linkVideo" placeholder="Link do vídeo (opcional)" />
         <input nbInput formControlName="observacoes" placeholder="Observações (opcional)" />

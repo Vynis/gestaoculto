@@ -10,6 +10,7 @@ import {
   VoluntarioRepertorioListaItem
 } from '../../core/models/portal-voluntario.models';
 import { PortalVoluntarioService } from '../../core/services/portal-voluntario.service';
+import { TONS_MUSICA } from '../../core/models/tom.models';
 
 @Component({
   selector: 'app-repertorio-voluntario',
@@ -31,6 +32,7 @@ export class RepertorioVoluntarioComponent implements OnInit {
   musicaSelecionada: Musica | null = null;
   readonly buscaMusicaControl = new FormControl('', { nonNullable: true });
   modoLista = true;
+  readonly tonsMusica = TONS_MUSICA;
 
   readonly itemForm = this.fb.group({
     musicaId: [0, Validators.required],

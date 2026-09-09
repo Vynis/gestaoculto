@@ -40,6 +40,10 @@
           <input id="vol-nome" nbInput fullWidth formControlName="nome" placeholder="Nome completo" />
         </div>
         <div class="form-field">
+          <label for="vol-data-nascimento">Data de nascimento</label>
+          <input id="vol-data-nascimento" nbInput fullWidth formControlName="dataNascimento" type="date" [max]="dataNascimentoMaxima" />
+        </div>
+        <div class="form-field">
           <label for="vol-usuario">Usuário de acesso (opcional)</label>
           <nb-select id="vol-usuario" fullWidth formControlName="usuarioId" placeholder="Selecione um usuário">
             <nb-option [value]="null">Sem vínculo</nb-option>

@@ -12,6 +12,7 @@ import { MusicaService } from '../../core/services/musica.service';
 import { RepertorioService } from '../../core/services/repertorio.service';
 import { confirmarAcao, confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 import { AuthService } from '../../core/services/auth.service';
+import { TONS_MUSICA } from '../../core/models/tom.models';
 
 @Component({
   selector: 'app-repertorio',
@@ -45,6 +46,7 @@ export class RepertorioComponent implements OnInit {
   private cultoSelecionadoId = 0;
   private alterandoCultoProgramaticamente = false;
   private carregamentoAtual = 0;
+  readonly tonsMusica = TONS_MUSICA;
 
   readonly defaultColDef: ColDef<RepertorioGridRow> = {
     sortable: true,

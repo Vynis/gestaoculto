@@ -178,7 +178,10 @@ export class UsuariosComponent implements OnInit {
         this.carregar();
       },
       error: (error) => {
-        this.toastr.danger(error?.error?.mensagem || 'Não foi possível salvar usuário.', 'Erro');
+        const mensagem = error?.status === 403
+          ? 'Seu usuário não tem permissão para cadastrar usuários.'
+          : error?.error?.mensagem || 'Não foi possível salvar usuário.';
+        this.toastr.danger(mensagem, 'Erro');
       }
     });
   }

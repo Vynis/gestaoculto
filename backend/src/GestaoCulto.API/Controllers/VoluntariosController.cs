@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace GestaoCulto.API.Controllers
                     UsuarioId = v.UsuarioId,
                     UsuarioNome = _db.Usuarios.Where(u => u.Id == v.UsuarioId).Select(u => u.Nome).FirstOrDefault(),
                     Nome = v.Nome,
+                    DataNascimento = v.DataNascimento,
                     Telefone = v.Telefone,
                     Email = v.Email,
                     MinisterioPrincipalId = v.MinisterioPrincipalId,
@@ -110,6 +112,11 @@ namespace GestaoCulto.API.Controllers
                 return BadRequest(new { mensagem = "Informe o nome do voluntário." });
             }
 
+            if (dto.DataNascimento.HasValue && dto.DataNascimento.Value.Date > DateTime.UtcNow.Date)
+            {
+                return BadRequest(new { mensagem = "A data de nascimento não pode ser futura." });
+            }
+
             var email = NormalizarEmail(dto.Email);
 
             var nomeDuplicado = await ExisteNomeDuplicado(nome, null);
@@ -167,6 +174,7 @@ namespace GestaoCulto.API.Controllers
             {
                 UsuarioId = dto.UsuarioId.HasValue && dto.UsuarioId.Value > 0 ? dto.UsuarioId : null,
                 Nome = nome,
+                DataNascimento = dto.DataNascimento,
                 Telefone = dto.Telefone,
                 Email = email,
                 MinisterioPrincipalId = ministerioPrincipalId,
@@ -212,6 +220,11 @@ namespace GestaoCulto.API.Controllers
             if (string.IsNullOrWhiteSpace(nome))
             {
                 return BadRequest(new { mensagem = "Informe o nome do voluntário." });
+            }
+
+            if (dto.DataNascimento.HasValue && dto.DataNascimento.Value.Date > DateTime.UtcNow.Date)
+            {
+                return BadRequest(new { mensagem = "A data de nascimento não pode ser futura." });
             }
 
             var email = NormalizarEmail(dto.Email);
@@ -268,6 +281,7 @@ namespace GestaoCulto.API.Controllers
             }
 
             entity.Nome = nome;
+            entity.DataNascimento = dto.DataNascimento;
             entity.UsuarioId = dto.UsuarioId.HasValue && dto.UsuarioId.Value > 0 ? dto.UsuarioId : null;
             entity.Telefone = dto.Telefone;
             entity.Email = email;
