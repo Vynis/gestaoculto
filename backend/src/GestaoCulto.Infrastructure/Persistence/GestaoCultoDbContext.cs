@@ -703,6 +703,28 @@ namespace GestaoCulto.Infrastructure.Persistence
                 entity.Property(x => x.StatusAcompanhamento).HasColumnName("status_acompanhamento").HasMaxLength(30);
                 entity.Property(x => x.Observacoes).HasColumnName("observacoes").HasMaxLength(500);
             });
+
+            modelBuilder.Entity<Auditoria>(entity =>
+            {
+                entity.ToTable("auditoria");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.Tabela).HasColumnName("tabela").HasMaxLength(100).IsRequired();
+                entity.Property(x => x.EntidadeId).HasColumnName("entidade_id").HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Acao).HasColumnName("acao").HasMaxLength(10).IsRequired();
+                entity.Property(x => x.DadosAnteriores).HasColumnName("dados_anteriores");
+                entity.Property(x => x.DadosNovos).HasColumnName("dados_novos");
+                entity.Property(x => x.UsuarioId).HasColumnName("usuario_id");
+                entity.Property(x => x.IpOrigem).HasColumnName("ip_origem").HasMaxLength(45);
+                entity.Property(x => x.UserAgent).HasColumnName("user_agent").HasMaxLength(255);
+                entity.Property(x => x.CriadoEm).HasColumnName("criado_em");
+                entity.Ignore(x => x.AtualizadoEm);
+                entity.HasIndex(x => new { x.Tabela, x.EntidadeId });
+                entity.HasIndex(x => x.UsuarioId);
+                entity.HasIndex(x => x.Acao);
+                entity.HasIndex(x => x.CriadoEm);
+                entity.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.SetNull);
+            });
         }
     }
 }

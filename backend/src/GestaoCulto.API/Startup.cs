@@ -145,6 +145,7 @@ namespace GestaoCulto.API
             app.UseCors("DefaultCors");
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseAuthentication();
+            app.UseMiddleware<AuditoriaMiddleware>();
             app.UseMiddleware<TrocaSenhaObrigatoriaMiddleware>();
             app.UseAuthorization();
 

@@ -568,7 +568,7 @@ export class RelatorioCultoComponent implements OnInit {
 
         return {
           equipe: this.textoValido(ministerio.nome) || 'Sem equipe',
-          lideres: lideres.length ? lideres.join('\n') : 'Sem líder cadastrado'
+          lideres: lideres.length ? lideres.join(' | ') : 'Sem líder cadastrado'
         };
       });
 

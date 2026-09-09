@@ -36,6 +36,15 @@ namespace GestaoCulto.API.Middleware
                     context.User?.Identity?.Name ?? "anonimo");
 
                 SentrySdk.CaptureException(ex);
+
+                if (context.Response.HasStarted)
+                {
+                    _logger.LogWarning(
+                        "A resposta já foi iniciada. Não foi possível retornar o erro HTTP. TraceId={TraceId}",
+                        context.TraceIdentifier);
+                    return;
+                }
+
                 await HandleException(context, ex);
             }
         }

@@ -698,6 +698,8 @@ namespace GestaoCulto.Infrastructure.Persistence
             await GarantirColunasAuditoriaAsync("status_culto");
             await GarantirColunasAuditoriaAsync("status_etapa");
             await GarantirColunasAuditoriaAsync("presenca_escala_status");
+            await GarantirTabelaAuditoriaAsync();
+            await GarantirColunaUserAgentAuditoriaAsync();
 
             if (!_db.Perfis.Any())
             {
@@ -916,6 +918,41 @@ namespace GestaoCulto.Infrastructure.Persistence
                     ADD COLUMN atualizado_em DATETIME NULL;
                 ");
             }
+        }
+
+        private async Task GarantirColunaUserAgentAuditoriaAsync()
+        {
+            if (await TabelaExisteAsync("auditoria") && !await ColunaExisteAsync("auditoria", "user_agent"))
+            {
+                await _db.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE auditoria
+                    ADD COLUMN user_agent VARCHAR(255) NULL AFTER ip_origem;
+                ");
+            }
+        }
+
+        private async Task GarantirTabelaAuditoriaAsync()
+        {
+            await _db.Database.ExecuteSqlRawAsync(@"
+                CREATE TABLE IF NOT EXISTS auditoria (
+                  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  tabela VARCHAR(100) NOT NULL,
+                  entidade_id VARCHAR(50) NOT NULL,
+                  acao ENUM('CREATE','UPDATE','DELETE','LOGIN','LOGOUT') NOT NULL,
+                  dados_anteriores TEXT NULL,
+                  dados_novos TEXT NULL,
+                  usuario_id BIGINT UNSIGNED NULL,
+                  ip_origem VARCHAR(45) NULL,
+                  user_agent VARCHAR(255) NULL,
+                  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (id),
+                  KEY ix_auditoria_tabela_entidade (tabela, entidade_id),
+                  KEY ix_auditoria_usuario (usuario_id),
+                  KEY ix_auditoria_acao (acao),
+                  KEY ix_auditoria_criado_em (criado_em),
+                  CONSTRAINT fk_auditoria_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE SET NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
         }
 
         private async Task SanearEtapasCronogramaDuplicadasAsync()

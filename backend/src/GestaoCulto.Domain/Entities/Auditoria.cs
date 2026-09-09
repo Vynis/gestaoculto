@@ -11,5 +11,6 @@ namespace GestaoCulto.Domain.Entities
         public string? DadosNovos { get; set; }
         public long? UsuarioId { get; set; }
         public string? IpOrigem { get; set; }
+        public string? UserAgent { get; set; }
     }
 }
