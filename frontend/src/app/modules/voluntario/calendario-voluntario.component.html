@@ -4,7 +4,7 @@
   <button nbButton size="tiny" status="basic" (click)="mesProximo()">Próximo mês</button>
 </div>
 
-<nb-card>
+<nb-card *ngIf="googleCalendarDisponivel">
   <nb-card-header>Google Agenda (opcional)</nb-card-header>
   <nb-card-body>
     <div *ngIf="googleCalendarStatus as status; else carregandoStatusGoogle">

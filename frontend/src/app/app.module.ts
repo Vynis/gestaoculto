@@ -69,6 +69,7 @@ import { AppInfoPageComponent } from './modules/publico/app-info-page.component'
 import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
 import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 import { ExternalLinkViewerComponent } from './shared/external-link-viewer.component';
+import { WikiComponent } from './modules/wiki/wiki.component';
 
 @NgModule({
   declarations: [
@@ -108,7 +109,8 @@ import { ExternalLinkViewerComponent } from './shared/external-link-viewer.compo
     AppInfoPageComponent,
     PoliticaPrivacidadePageComponent,
     TermosUsoPageComponent,
-    ExternalLinkViewerComponent
+    ExternalLinkViewerComponent,
+    WikiComponent
   ],
   imports: [
     BrowserModule,

@@ -69,6 +69,8 @@ export class MainLayoutComponent implements OnInit {
       }
     ];
 
+    itens.push({ title: 'Wiki / Ajuda', icon: 'book-open-outline', link: '/wiki', target: '_blank' });
+
     if (this.authService.possuiPerfil(['ADMIN', 'GESTAO_CULTO'])) {
       itens.push({
         title: 'Administração',

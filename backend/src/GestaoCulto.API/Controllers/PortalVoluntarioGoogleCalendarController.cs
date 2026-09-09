@@ -95,6 +95,9 @@ namespace GestaoCulto.API.Controllers
             var state = GerarStateOauth(voluntario.Id);
             var scope = string.Join(" ", new[]
             {
+                "openid",
+                "email",
+                "profile",
                 "https://www.googleapis.com/auth/calendar.events",
                 "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
             });
@@ -117,7 +120,7 @@ namespace GestaoCulto.API.Controllers
 
         [AllowAnonymous]
         [HttpGet("callback")]
-        public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state, [FromQuery] string error = "")
+        public async Task<IActionResult> Callback([FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error = null)
         {
             if (!string.IsNullOrWhiteSpace(error))
             {
@@ -639,7 +642,7 @@ namespace GestaoCulto.API.Controllers
         private async Task<(string? Email, string? Sub)?> ObterUsuarioGoogle(string accessToken)
         {
             using var http = new HttpClient();
-            using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v3/userinfo");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             var response = await http.SendAsync(request);
             if (!response.IsSuccessStatusCode)
@@ -650,7 +653,7 @@ namespace GestaoCulto.API.Controllers
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
             var email = doc.RootElement.TryGetProperty("email", out var emailNode) ? emailNode.GetString() : null;
-            var sub = doc.RootElement.TryGetProperty("id", out var idNode) ? idNode.GetString() : null;
+            var sub = doc.RootElement.TryGetProperty("sub", out var subNode) ? subNode.GetString() : null;
             return (email, sub);
         }
 

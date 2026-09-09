@@ -13,6 +13,7 @@ import { PortalVoluntarioService } from '../core/services/portal-voluntario.serv
 export class VoluntarioLayoutComponent implements OnInit {
   private readonly menuBase: NbMenuItem[] = [
     { title: 'Painel', icon: 'home-outline', link: '/voluntario/painel', home: true },
+    { title: 'Wiki / Ajuda', icon: 'book-open-outline', link: '/voluntario/wiki', target: '_blank' },
     { title: 'Calendário', icon: 'calendar-outline', link: '/voluntario/calendario' },
     { title: 'Minha escala', icon: 'clock-outline', link: '/voluntario/minha-escala' },
     { title: 'Meus ministérios', icon: 'layers-outline', link: '/voluntario/meus-ministerios' },

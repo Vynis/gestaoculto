@@ -1,0 +1,69 @@
+<div class="wiki-page">
+  <div class="page-header wiki-header">
+    <div>
+      <span class="eyebrow">Central de ajuda</span>
+      <h2>{{ contexto === 'voluntario' ? 'Wiki do Portal do Voluntário' : 'Wiki do Gestão Culto' }}</h2>
+      <p>{{ contexto === 'voluntario' ? 'Orientações para consultar suas escalas e participar da equipe.' : 'Orientações práticas para organizar cultos, equipes e escalas.' }}</p>
+    </div>
+    <nb-icon icon="book-open-outline" class="header-icon"></nb-icon>
+  </div>
+
+  <nb-card class="search-card">
+    <nb-card-body>
+      <label for="wiki-search">O que você precisa encontrar?</label>
+      <input
+        nbInput
+        fullWidth
+        id="wiki-search"
+        type="search"
+        [(ngModel)]="busca"
+        (ngModelChange)="filtrar()"
+        placeholder="Busque por assunto, recurso ou palavra-chave"
+      />
+      <small>{{ artigosFiltrados.length }} {{ artigosFiltrados.length === 1 ? 'artigo encontrado' : 'artigos encontrados' }}</small>
+    </nb-card-body>
+  </nb-card>
+
+  <div class="wiki-content" *ngIf="!artigoSelecionado; else articleView">
+    <div class="article-grid" *ngIf="artigosFiltrados.length; else emptyState">
+      <nb-card class="article-card" *ngFor="let artigo of artigosFiltrados" (click)="selecionarArtigo(artigo)">
+        <nb-card-body>
+          <span class="category">{{ artigo.category }}</span>
+          <h3>{{ artigo.title }}</h3>
+          <p>{{ artigo.summary }}</p>
+          <button nbButton ghost size="small" status="primary" type="button">Ler artigo <nb-icon icon="arrow-forward-outline"></nb-icon></button>
+        </nb-card-body>
+      </nb-card>
+    </div>
+  </div>
+
+  <ng-template #emptyState>
+    <nb-card class="empty-card">
+      <nb-card-body>
+        <nb-icon icon="search-outline"></nb-icon>
+        <h3>Nenhum artigo encontrado</h3>
+        <p>Tente buscar por outro termo.</p>
+      </nb-card-body>
+    </nb-card>
+  </ng-template>
+
+  <ng-template #articleView>
+    <nb-card class="article-view">
+      <nb-card-body>
+        <button nbButton ghost size="small" status="primary" type="button" (click)="limparSelecao()">
+          <nb-icon icon="arrow-back-outline"></nb-icon> Voltar para a wiki
+        </button>
+        <span class="category">{{ artigoSelecionado?.category }}</span>
+        <h2>{{ artigoSelecionado?.title }}</h2>
+        <p class="article-summary">{{ artigoSelecionado?.summary }}</p>
+        <section *ngFor="let section of artigoSelecionado?.sections">
+          <h3>{{ section.title }}</h3>
+          <p *ngFor="let paragraph of section.paragraphs">{{ paragraph }}</p>
+          <ol *ngIf="section.steps?.length">
+            <li *ngFor="let step of section.steps">{{ step }}</li>
+          </ol>
+        </section>
+      </nb-card-body>
+    </nb-card>
+  </ng-template>
+</div>

@@ -40,6 +40,7 @@ import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-pri
 import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 import { RepertorioCanDeactivateGuard } from './core/guards/repertorio-can-deactivate.guard';
 import { AdminGestaoGuard } from './core/guards/admin-gestao.guard';
+import { WikiComponent } from './modules/wiki/wiki.component';
 
 const routes: Routes = [
   { path: 'auth/login', component: LoginComponent },
@@ -52,6 +53,12 @@ const routes: Routes = [
   { path: 'app-info', component: AppInfoPageComponent },
   { path: 'politica-de-privacidade', component: PoliticaPrivacidadePageComponent },
   { path: 'termos-de-uso', component: TermosUsoPageComponent },
+  {
+    path: 'wiki',
+    component: WikiComponent,
+    canActivate: [AuthGuard, GestaoGuard],
+    data: { contexto: 'gestao' }
+  },
   {
     path: '',
     component: MainLayoutComponent,
@@ -82,6 +89,7 @@ const routes: Routes = [
     children: [
       { path: '', redirectTo: 'painel', pathMatch: 'full' },
       { path: 'painel', component: PainelVoluntarioComponent },
+      { path: 'wiki', component: WikiComponent, data: { contexto: 'voluntario' } },
       { path: 'calendario', component: CalendarioVoluntarioComponent },
       { path: 'minha-escala', component: EscalaVoluntarioComponent },
       { path: 'repertorio', component: RepertorioVoluntarioComponent, canActivate: [LouvorGuard] },

@@ -37,6 +37,7 @@ export class CalendarioVoluntarioComponent implements OnInit {
   googleCalendarSelecionadoId = '';
   carregandoGoogle = false;
   sincronizandoGoogle = false;
+  googleCalendarDisponivel = false;
 
   readonly disponibilidadeForm = this.fb.group({
     disponivel: [true],
