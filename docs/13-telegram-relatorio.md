@@ -19,8 +19,9 @@ escala, inativar o voluntario ou inativar o culto tambem invalida o acesso.
 - Links gerados pelo painel administrativo nao dependem de um voluntario escalado; links
   gerados pelo Telegram continuam vinculados a um voluntario ativo e escalado.
 - A resposta publica nao inclui telefone, e-mail, presenca, confirmacao, observacoes
-  internas, visitantes, convertidos ou lideres. Ela inclui apenas a descricao das acoes
-  operacionais da timeline, sem as observacoes dessas acoes.
+  internas, visitantes ou convertidos. Ela inclui os nomes dos lideres agrupados por
+  equipe e apenas a descricao das acoes operacionais da timeline, sem as observacoes
+  dessas acoes.
 - Os endpoints legados por data e por ID exigem autenticacao.
 - A resposta publica usa `Cache-Control: no-store`.
 - O link pode ser encaminhado enquanto estiver valido; por isso o bot orienta que ele e

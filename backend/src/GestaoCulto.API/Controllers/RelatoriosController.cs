@@ -402,6 +402,50 @@ namespace GestaoCulto.API.Controllers
                     g => g.Key,
                     g => g.Select(x => x.Principal ? $"{x.UsuarioNome} (principal)" : x.UsuarioNome).ToList());
 
+            var lideresPorEquipe = new List<object>();
+            if (publico)
+            {
+                var ministeriosPublicos = await _db.Ministerios
+                    .AsNoTracking()
+                    .Where(x => x.Ativo)
+                    .OrderBy(x => x.Nome)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Nome
+                    })
+                    .ToListAsync();
+
+                var ministerioIdsPublicos = ministeriosPublicos.Select(x => x.Id).ToList();
+                var lideresPublicos = await _db.MinisteriosLideres
+                    .AsNoTracking()
+                    .Where(x => ministerioIdsPublicos.Contains(x.MinisterioId))
+                    .Join(
+                        _db.Usuarios.AsNoTracking(),
+                        ml => ml.UsuarioId,
+                        u => u.Id,
+                        (ml, u) => new
+                        {
+                            ml.MinisterioId,
+                            u.Nome,
+                            ml.Principal
+                        })
+                    .ToListAsync();
+
+                lideresPorEquipe = ministeriosPublicos
+                    .Select(ministerio => (object)new
+                    {
+                        equipe = ministerio.Nome,
+                        lideres = lideresPublicos
+                            .Where(x => x.MinisterioId == ministerio.Id)
+                            .OrderByDescending(x => x.Principal)
+                            .ThenBy(x => x.Nome)
+                            .Select(x => x.Nome)
+                            .ToList()
+                    })
+                    .ToList();
+            }
+
             var etapaIds = etapas.Select(x => (long)x.Id).ToList();
             var acoesEtapa = await _db.EtapasCultoMinisteriosAcoes
                 .AsNoTracking()
@@ -671,6 +715,7 @@ namespace GestaoCulto.API.Controllers
             {
                 data = dataRef,
                 quantidadeCultos = resultadoCultos.Count,
+                lideresPorEquipe = publico ? lideresPorEquipe : null,
                 cultos = resultadoCultos
             };
         }

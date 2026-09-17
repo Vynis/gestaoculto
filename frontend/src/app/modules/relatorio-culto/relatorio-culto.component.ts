@@ -551,26 +551,31 @@ export class RelatorioCultoComponent implements OnInit {
       this.linhasRepertorio = this.linhasRepertorio.concat(this.montarLinhasRepertorio(repertorio, bloco.cronograma || []));
     }
 
-    this.linhasLideresEquipe = this.ministeriosAtivos
-      .slice()
-      .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
-      .map((ministerio) => {
-        const lideres = (ministerio.lideres || [])
-          .slice()
-          .sort((a, b) => {
-            if (a.principal !== b.principal) {
-              return a.principal ? -1 : 1;
-            }
-            return String(a.usuarioNome || '').localeCompare(String(b.usuarioNome || ''), 'pt-BR');
-          })
-          .map((item) => String(item.usuarioNome || '').trim())
-          .filter((nome) => !!nome);
+    this.linhasLideresEquipe = this.modoPublico && relatorio.lideresPorEquipe
+      ? relatorio.lideresPorEquipe.map((item) => ({
+        equipe: this.textoValido(item.equipe) || 'Sem equipe',
+        lideres: item.lideres.length ? item.lideres.join(' | ') : 'Sem líder cadastrado'
+      }))
+      : this.ministeriosAtivos
+        .slice()
+        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
+        .map((ministerio) => {
+          const lideres = (ministerio.lideres || [])
+            .slice()
+            .sort((a, b) => {
+              if (a.principal !== b.principal) {
+                return a.principal ? -1 : 1;
+              }
+              return String(a.usuarioNome || '').localeCompare(String(b.usuarioNome || ''), 'pt-BR');
+            })
+            .map((item) => String(item.usuarioNome || '').trim())
+            .filter((nome) => !!nome);
 
-        return {
-          equipe: this.textoValido(ministerio.nome) || 'Sem equipe',
-          lideres: lideres.length ? lideres.join(' | ') : 'Sem líder cadastrado'
-        };
-      });
+          return {
+            equipe: this.textoValido(ministerio.nome) || 'Sem equipe',
+            lideres: lideres.length ? lideres.join(' | ') : 'Sem líder cadastrado'
+          };
+        });
 
     this.cronogramasAdicionais = Array.from(mapaBlocosAdicionais.entries())
       .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'))

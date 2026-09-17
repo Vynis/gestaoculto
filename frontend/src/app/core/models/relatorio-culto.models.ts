@@ -3,6 +3,11 @@ export interface RelatorioCultoResumoEquipe {
   total: number;
 }
 
+export interface RelatorioCultoLideresEquipe {
+  equipe: string;
+  lideres: string[];
+}
+
 export interface RelatorioCultoResumo {
   totalEtapas: number;
   totalEscalados: number;
@@ -108,6 +113,7 @@ export interface RelatorioCultoItem {
 export interface RelatorioCultoDiaResponse {
   data: string;
   quantidadeCultos: number;
+  lideresPorEquipe?: RelatorioCultoLideresEquipe[] | null;
   cultos: RelatorioCultoItem[];
 }
 
