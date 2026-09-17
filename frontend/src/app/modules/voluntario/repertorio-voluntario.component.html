@@ -103,9 +103,9 @@
         <nb-option *ngFor="let musica of musicasDisponiveis" [value]="textoMusica(musica)">
           {{ textoMusica(musica) }}
         </nb-option>
-        <nb-option *ngIf="!carregandoMusicas && !musicasDisponiveis.length" disabled>
-          Nenhuma música disponível.
-        </nb-option>
+         <nb-option *ngIf="!carregandoMusicas && !musicasDisponiveis.length && !musicaSelecionada" disabled>
+           Nenhuma música disponível.
+         </nb-option>
       </nb-autocomplete>
 
       <form class="form-grid" [formGroup]="itemForm" (ngSubmit)="adicionarItem()">
@@ -141,7 +141,8 @@
         <input nbInput fullWidth formControlName="linkCifra" placeholder="Link da cifra (opcional)" />
         <input nbInput fullWidth formControlName="linkVideo" placeholder="Link do vídeo (opcional)" />
         <textarea nbInput fullWidth rows="2" formControlName="observacoes" placeholder="Observações (opcional)"></textarea>
-        <button nbButton status="success" type="submit" [disabled]="cadastrandoMusica">Salvar música</button>
+         <button nbButton status="info" type="button" (click)="abrirImportacaoYoutube()">Importar do YouTube</button>
+         <button nbButton status="success" type="submit" [disabled]="cadastrandoMusica">Salvar música</button>
       </form>
     </nb-card-body>
     <nb-card-footer>
@@ -149,6 +150,13 @@
     </nb-card-footer>
   </nb-card>
 </div>
+
+<app-importar-youtube-modal
+  *ngIf="importarYoutubeAberto"
+  contexto="voluntario"
+  (resultado)="aplicarImportacaoYoutube($event)"
+  (cancelar)="fecharImportacaoYoutube()"
+></app-importar-youtube-modal>
 
 <ng-template #carregandoTpl>
   <nb-card>

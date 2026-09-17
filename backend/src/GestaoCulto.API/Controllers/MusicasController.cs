@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using GestaoCulto.Application.Interfaces;
 using GestaoCulto.Domain.Entities;
 using GestaoCulto.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -26,10 +28,35 @@ namespace GestaoCulto.API.Controllers
     public class MusicasController : ControllerBase
     {
         private readonly GestaoCultoDbContext _db;
+        private readonly IImportacaoMusicaService _importacaoMusicaService;
 
-        public MusicasController(GestaoCultoDbContext db)
+        public MusicasController(GestaoCultoDbContext db, IImportacaoMusicaService importacaoMusicaService)
         {
             _db = db;
+            _importacaoMusicaService = importacaoMusicaService;
+        }
+
+        [HttpPost("importar-youtube")]
+        [Authorize(Roles = "ADMIN,GESTAO_CULTO,LIDER_MINISTERIO")]
+        public async Task<IActionResult> ImportarYoutube([FromBody] ImportarYoutubeRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(request.LinkVideo))
+            {
+                return BadRequest(new { mensagem = "Informe o link do vídeo do YouTube." });
+            }
+
+            try
+            {
+                return Ok(await _importacaoMusicaService.ImportarAsync(request.LinkVideo, cancellationToken));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
         }
 
         [HttpGet]
@@ -161,5 +188,10 @@ namespace GestaoCulto.API.Controllers
                 && x.Titulo.ToLower() == tituloNormalizado
                 && x.ArtistaBanda.ToLower() == artistaNormalizado);
         }
+    }
+
+    public class ImportarYoutubeRequest
+    {
+        public string LinkVideo { get; set; } = string.Empty;
     }
 }

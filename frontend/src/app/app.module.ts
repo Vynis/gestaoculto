@@ -69,6 +69,7 @@ import { AppInfoPageComponent } from './modules/publico/app-info-page.component'
 import { PoliticaPrivacidadePageComponent } from './modules/publico/politica-privacidade-page.component';
 import { TermosUsoPageComponent } from './modules/publico/termos-uso-page.component';
 import { ExternalLinkViewerComponent } from './shared/external-link-viewer.component';
+import { ImportarYoutubeModalComponent } from './shared/importar-youtube-modal.component';
 import { WikiComponent } from './modules/wiki/wiki.component';
 
 @NgModule({
@@ -110,6 +111,7 @@ import { WikiComponent } from './modules/wiki/wiki.component';
     PoliticaPrivacidadePageComponent,
     TermosUsoPageComponent,
     ExternalLinkViewerComponent,
+    ImportarYoutubeModalComponent,
     WikiComponent
   ],
   imports: [

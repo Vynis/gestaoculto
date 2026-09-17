@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using GestaoCulto.Application.Interfaces;
 using GestaoCulto.Domain.Entities;
@@ -117,17 +118,48 @@ namespace GestaoCulto.API.Controllers
         private readonly IPasswordHasher _passwordHasher;
         private readonly IDisponibilidadeVoluntarioService _disponibilidadeService;
         private readonly IRepertorioPermissionService _repertorioPermissionService;
+        private readonly IImportacaoMusicaService _importacaoMusicaService;
 
         public PortalVoluntarioController(
             GestaoCultoDbContext db,
             IPasswordHasher passwordHasher,
             IDisponibilidadeVoluntarioService disponibilidadeService,
-            IRepertorioPermissionService repertorioPermissionService)
+            IRepertorioPermissionService repertorioPermissionService,
+            IImportacaoMusicaService importacaoMusicaService)
         {
             _db = db;
             _passwordHasher = passwordHasher;
             _disponibilidadeService = disponibilidadeService;
             _repertorioPermissionService = repertorioPermissionService;
+            _importacaoMusicaService = importacaoMusicaService;
+        }
+
+        [HttpPost("importar-youtube")]
+        public async Task<IActionResult> ImportarYoutube([FromBody] ImportarYoutubeRequest request, CancellationToken cancellationToken)
+        {
+            var usuarioId = ObterUsuarioIdLogado();
+            if (!usuarioId.HasValue || !await _repertorioPermissionService.EhMembroLouvorAsync(usuarioId.Value))
+            {
+                return Forbid();
+            }
+
+            if (string.IsNullOrWhiteSpace(request.LinkVideo))
+            {
+                return BadRequest(new { mensagem = "Informe o link do vídeo do YouTube." });
+            }
+
+            try
+            {
+                return Ok(await _importacaoMusicaService.ImportarAsync(request.LinkVideo, cancellationToken));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
         }
 
         [HttpGet("escala/{escalaId:long}/repertorio")]

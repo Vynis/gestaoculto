@@ -20,7 +20,7 @@ import {
   VoluntarioPainelResponse
 } from '../models/portal-voluntario.models';
 import { RepertorioCulto } from '../models/repertorio.models';
-import { Musica } from '../models/musica.models';
+import { ImportacaoMusicaResult, Musica } from '../models/musica.models';
 
 @Injectable({ providedIn: 'root' })
 export class PortalVoluntarioService {
@@ -60,6 +60,10 @@ export class PortalVoluntarioService {
 
   cadastrarMusicaDaEscala(escalaId: number, payload: Partial<Musica>): Observable<Musica> {
     return this.http.post<Musica>(`${this.apiUrl}/escala/${escalaId}/musicas`, payload);
+  }
+
+  importarYoutube(linkVideo: string): Observable<ImportacaoMusicaResult> {
+    return this.http.post<ImportacaoMusicaResult>(`${this.apiUrl}/importar-youtube`, { linkVideo });
   }
 
   confirmarPresenca(id: number): Observable<{ mensagem: string }> {

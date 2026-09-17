@@ -28,6 +28,7 @@ namespace GestaoCulto.Infrastructure
             services.AddScoped<IPasswordHasher, SimplePasswordHasher>();
             services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
             services.AddScoped<IEmailSender, SmtpEmailSender>();
+            services.AddScoped<IImportacaoMusicaService, ImportacaoMusicaService>();
             services.AddScoped<IDisponibilidadeVoluntarioService, DisponibilidadeVoluntarioService>();
             services.AddScoped<IRepertorioPermissionService, RepertorioPermissionService>();
             services.Configure<RelatorioCompartilhamentoOptions>(configuration.GetSection("RelatorioCompartilhamento"));
@@ -35,6 +36,17 @@ namespace GestaoCulto.Infrastructure
             services.Configure<TelegramOptions>(configuration.GetSection("Telegram"));
             services.AddHttpClient<ITelegramBotClient, TelegramBotClient>(client =>
                 client.BaseAddress = new System.Uri("https://api.telegram.org/"));
+            services.AddHttpClient("YoutubeMetadata", client =>
+            {
+                client.BaseAddress = new System.Uri("https://www.youtube.com/");
+                client.Timeout = System.TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("GestaoCulto/1.0");
+            });
+            services.AddHttpClient("CifraClub", client =>
+            {
+                client.Timeout = System.TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("GestaoCulto/1.0");
+            });
             services.AddScoped<ITelegramService, TelegramService>();
             services.AddScoped<DbSeeder>();
 

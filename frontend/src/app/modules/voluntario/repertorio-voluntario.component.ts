@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { NbToastrService } from '@nebular/theme';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
-import { Musica } from '../../core/models/musica.models';
+import { ImportacaoMusicaResult, Musica } from '../../core/models/musica.models';
 import { RepertorioCulto, RepertorioItem } from '../../core/models/repertorio.models';
 import {
   VoluntarioRepertorioDetalhe,
@@ -28,6 +28,7 @@ export class RepertorioVoluntarioComponent implements OnInit {
   cadastrandoMusica = false;
   modalAdicionarAberto = false;
   modalCadastroAberto = false;
+  importarYoutubeAberto = false;
   musicasFiltradas: Musica[] = [];
   musicaSelecionada: Musica | null = null;
   readonly buscaMusicaControl = new FormControl('', { nonNullable: true });
@@ -159,6 +160,21 @@ export class RepertorioVoluntarioComponent implements OnInit {
     }
 
     this.modalCadastroAberto = true;
+  }
+
+  abrirImportacaoYoutube(): void {
+    if (this.podeEditar()) {
+      this.importarYoutubeAberto = true;
+    }
+  }
+
+  fecharImportacaoYoutube(): void {
+    this.importarYoutubeAberto = false;
+  }
+
+  aplicarImportacaoYoutube(resultado: ImportacaoMusicaResult): void {
+    this.musicaForm.patchValue(resultado);
+    this.importarYoutubeAberto = false;
   }
 
   fecharModalCadastro(): void {

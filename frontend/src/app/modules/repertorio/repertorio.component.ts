@@ -4,7 +4,7 @@ import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community
 import { NbToastrService } from '@nebular/theme';
 import { Culto } from '../../core/models/culto.models';
 import { EtapaCulto } from '../../core/models/cronograma.models';
-import { Musica } from '../../core/models/musica.models';
+import { ImportacaoMusicaResult, Musica } from '../../core/models/musica.models';
 import { RepertorioCulto, RepertorioItem } from '../../core/models/repertorio.models';
 import { CronogramaService } from '../../core/services/cronograma.service';
 import { CultoService } from '../../core/services/culto.service';
@@ -28,6 +28,7 @@ export class RepertorioComponent implements OnInit {
   filtroGrid = '';
   modalItemAberto = false;
   modalCadastroAberto = false;
+  importarYoutubeAberto = false;
   itemEditandoIndex: number | null = null;
   carregandoMusicas = false;
   cadastrandoMusica = false;
@@ -270,6 +271,19 @@ export class RepertorioComponent implements OnInit {
   abrirModalCadastro(): void {
     this.musicaForm.reset({ titulo: '', artistaBanda: '', tom: '', linkCifra: '', linkVideo: '', observacoes: '' });
     this.modalCadastroAberto = true;
+  }
+
+  abrirImportacaoYoutube(): void {
+    this.importarYoutubeAberto = true;
+  }
+
+  fecharImportacaoYoutube(): void {
+    this.importarYoutubeAberto = false;
+  }
+
+  aplicarImportacaoYoutube(resultado: ImportacaoMusicaResult): void {
+    this.musicaForm.patchValue(resultado);
+    this.importarYoutubeAberto = false;
   }
 
   fecharModalCadastro(): void {
@@ -685,6 +699,7 @@ export class RepertorioComponent implements OnInit {
   textoMusica(musica: Musica): string {
     return `${musica.titulo} - ${musica.artistaBanda}`;
   }
+
 }
 
 interface RepertorioGridRow {

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { NbToastrService } from '@nebular/theme';
-import { Musica, MusicaRequest } from '../../core/models/musica.models';
+import { ImportacaoMusicaResult, Musica, MusicaRequest } from '../../core/models/musica.models';
 import { MusicaService } from '../../core/services/musica.service';
 import { confirmarExclusao } from '../../core/utils/confirm-dialog.util';
 import { TONS_MUSICA } from '../../core/models/tom.models';
@@ -26,6 +26,7 @@ export class MusicasComponent implements OnInit {
   musicas: Musica[] = [];
   rowData: MusicaGridRow[] = [];
   modalAberto = false;
+  importarYoutubeAberto = false;
   musicaEditandoId: number | null = null;
   filtroGrid = '';
   filtroAtivo: '' | 'true' | 'false' = '';
@@ -94,6 +95,19 @@ export class MusicasComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregar();
+  }
+
+  abrirImportacaoYoutube(): void {
+    this.importarYoutubeAberto = true;
+  }
+
+  fecharImportacaoYoutube(): void {
+    this.importarYoutubeAberto = false;
+  }
+
+  aplicarImportacaoYoutube(resultado: ImportacaoMusicaResult): void {
+    this.form.patchValue(resultado);
+    this.importarYoutubeAberto = false;
   }
 
   carregar(): void {

@@ -79,6 +79,7 @@
         </div>
         <nb-checkbox formControlName="ativo">Música ativa</nb-checkbox>
         <div class="actions">
+          <button nbButton status="info" type="button" *ngIf="musicaEditandoId === null" (click)="abrirImportacaoYoutube()">Importar do YouTube</button>
           <button nbButton status="primary">{{ musicaEditandoId ? 'Atualizar' : 'Salvar' }}</button>
           <button nbButton status="basic" type="button" (click)="fecharModal()">Fechar</button>
         </div>
@@ -86,3 +87,9 @@
     </nb-card-body>
   </nb-card>
 </div>
+
+<app-importar-youtube-modal
+  *ngIf="importarYoutubeAberto"
+  (resultado)="aplicarImportacaoYoutube($event)"
+  (cancelar)="fecharImportacaoYoutube()"
+></app-importar-youtube-modal>

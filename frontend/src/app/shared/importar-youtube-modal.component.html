@@ -1,0 +1,19 @@
+<div class="modal-backdrop" (click)="fechar()"></div>
+<div class="modal-wrapper" (click)="$event.stopPropagation()">
+  <nb-card class="modal-card">
+    <nb-card-header>Importar do YouTube</nb-card-header>
+    <nb-card-body>
+      <form [formGroup]="form" (ngSubmit)="carregar()">
+        <label for="youtube-link-modal">Link compartilhado do YouTube</label>
+        <input id="youtube-link-modal" nbInput fullWidth formControlName="linkVideo" placeholder="https://www.youtube.com/watch?v=..." />
+        <small>Os dados encontrados serão preenchidos no cadastro para revisão.</small>
+        <div class="actions">
+          <button nbButton status="primary" type="submit" [disabled]="carregando">
+            {{ carregando ? 'Carregando...' : 'Carregar dados' }}
+          </button>
+          <button nbButton status="basic" type="button" (click)="fechar()" [disabled]="carregando">Cancelar</button>
+        </div>
+      </form>
+    </nb-card-body>
+  </nb-card>
+</div>

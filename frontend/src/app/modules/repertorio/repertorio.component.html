@@ -145,6 +145,7 @@
         <input nbInput formControlName="linkVideo" placeholder="Link do vídeo (opcional)" />
         <input nbInput formControlName="observacoes" placeholder="Observações (opcional)" />
         <div class="actions-modal">
+          <button nbButton status="info" type="button" (click)="abrirImportacaoYoutube()">Importar do YouTube</button>
           <button nbButton status="success" type="submit" [disabled]="cadastrandoMusica">{{ cadastrandoMusica ? 'Cadastrando...' : 'Cadastrar música' }}</button>
           <button nbButton status="basic" type="button" (click)="fecharModalCadastro()">Cancelar</button>
         </div>
@@ -152,3 +153,9 @@
     </nb-card-body>
   </nb-card>
 </div>
+
+<app-importar-youtube-modal
+  *ngIf="importarYoutubeAberto"
+  (resultado)="aplicarImportacaoYoutube($event)"
+  (cancelar)="fecharImportacaoYoutube()"
+></app-importar-youtube-modal>
